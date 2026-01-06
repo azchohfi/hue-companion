@@ -46,8 +46,21 @@ public sealed partial class MainWindow : Window
         var hasBridge = await _settingsService.HasConfiguredBridgeAsync();
         if (hasBridge)
         {
-            _navigationService.NavigateTo<DashboardPage>();
-            NavView.SelectedItem = NavView.MenuItems[0];
+            // Auto-connect to the saved bridge
+            var bridgeService = App.Services.GetRequiredService<IHueBridgeService>();
+            var bridge = _settingsService.Settings.ConfiguredBridge!;
+            var connected = await bridgeService.ConnectAsync(bridge.IpAddress!, bridge.AppKey!);
+
+            if (connected)
+            {
+                _navigationService.NavigateTo<DashboardPage>();
+                NavView.SelectedItem = NavView.MenuItems[0];
+            }
+            else
+            {
+                // Connection failed, go to setup to re-pair
+                _navigationService.NavigateTo<SetupPage>();
+            }
         }
         else
         {
