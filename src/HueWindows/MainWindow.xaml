@@ -14,8 +14,22 @@
             IsSettingsVisible="True"
             ItemInvoked="NavView_ItemInvoked"
             BackRequested="NavView_BackRequested"
-            PaneDisplayMode="Left"
-            OpenPaneLength="200">
+            PaneDisplayMode="LeftCompact"
+            IsPaneToggleButtonVisible="True"
+            OpenPaneLength="240"
+            ExpandedModeThresholdWidth="1000"
+            CompactModeThresholdWidth="600"
+            IsTabStop="False"
+            IsTitleBarAutoPaddingEnabled="False">
+
+            <NavigationView.PaneHeader>
+                <Grid Height="40" Margin="12,0,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                        <FontIcon Glyph="&#xE781;" FontSize="20" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                        <TextBlock Text="Hue" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Home" Tag="Dashboard">
@@ -25,7 +39,7 @@
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
-            <Frame x:Name="ContentFrame" />
+            <Frame x:Name="ContentFrame" Padding="0"/>
         </NavigationView>
     </Grid>
 </Window>

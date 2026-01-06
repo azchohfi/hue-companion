@@ -12,37 +12,48 @@
     Loaded="Page_Loaded">
 
     <ScrollViewer>
-        <StackPanel Padding="24" Spacing="24" MaxWidth="800">
+        <StackPanel Padding="36,32,36,36" Spacing="28" MaxWidth="800">
 
             <!-- Header -->
-            <TextBlock Text="Settings"
-                       Style="{StaticResource TitleTextBlockStyle}"/>
+            <StackPanel>
+                <TextBlock Text="Settings"
+                           Style="{StaticResource PageHeaderTextStyle}"/>
+                <TextBlock Text="Customize your experience"
+                           Style="{StaticResource PageSubtitleTextStyle}"/>
+            </StackPanel>
 
             <!-- Theme Section -->
-            <StackPanel Spacing="8">
+            <StackPanel Spacing="12">
                 <TextBlock Text="Appearance"
-                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                           Style="{StaticResource SectionHeaderTextStyle}"/>
 
                 <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
                       CornerRadius="8"
                       Padding="16">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0">
+                    <FontIcon Grid.Column="0" Glyph="&#xE790;" FontSize="20" Margin="0,0,16,0"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="App theme"
                                    Style="{StaticResource BodyStrongTextBlockStyle}"/>
                         <TextBlock Text="Select which app theme to display"
                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                   Opacity="0.7"/>
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
 
-                    <ComboBox Grid.Column="1"
+                    <ComboBox Grid.Column="2"
                               SelectedIndex="{x:Bind GetThemeIndex(ViewModel.SelectedTheme), Mode=OneWay}"
                               SelectionChanged="ThemeComboBox_SelectionChanged"
-                              MinWidth="150">
+                              MinWidth="160"
+                              VerticalAlignment="Center">
                         <ComboBoxItem Content="Use system setting"/>
                         <ComboBoxItem Content="Light"/>
                         <ComboBoxItem Content="Dark"/>
@@ -51,91 +62,99 @@
             </StackPanel>
 
             <!-- Bridge Section -->
-            <StackPanel Spacing="8">
+            <StackPanel Spacing="12">
                 <TextBlock Text="Hue Bridge"
-                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                           Style="{StaticResource SectionHeaderTextStyle}"/>
 
                 <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
                       CornerRadius="8"
-                      Padding="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                      Padding="20,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Row="0" Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Width="48" Height="48"
+                            CornerRadius="24"
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                            Margin="0,0,16,0">
+                        <FontIcon Glyph="&#xE968;" FontSize="22"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                    </Border>
 
-                        <FontIcon Grid.Column="0"
-                                  Glyph="&#xE968;"
-                                  FontSize="32"
-                                  Margin="0,0,16,0"/>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Hue Bridge"
                                        Style="{StaticResource BodyStrongTextBlockStyle}"/>
-
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Ellipse Width="8" Height="8"
-                                         Fill="{x:Bind GetConnectionColor(ViewModel.IsConnected), Mode=OneWay}"/>
-                                <TextBlock Text="{x:Bind GetConnectionStatus(ViewModel.IsConnected), Mode=OneWay}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Opacity="0.7"/>
-                            </StackPanel>
+                            <Border CornerRadius="4"
+                                    Padding="6,2"
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <Ellipse Width="6" Height="6"
+                                             Fill="{x:Bind GetConnectionColor(ViewModel.IsConnected), Mode=OneWay}"/>
+                                    <TextBlock Text="{x:Bind GetConnectionStatus(ViewModel.IsConnected), Mode=OneWay}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               FontSize="11"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                    </Grid>
-
-                    <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,12">
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
-                            <Run Text="IP Address: "/>
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                             <Run Text="{x:Bind ViewModel.BridgeIpAddress, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
-                            <Run Text="Bridge ID: "/>
-                            <Run Text="{x:Bind ViewModel.BridgeId, Mode=OneWay}"/>
                         </TextBlock>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Button Content="Reconnect"
                                 Command="{x:Bind ViewModel.RepairBridgeCommand}"/>
-                        <Button Content="Disconnect"
-                                Command="{x:Bind ViewModel.DisconnectBridgeCommand}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
 
             <!-- About Section -->
-            <StackPanel Spacing="8">
+            <StackPanel Spacing="12">
                 <TextBlock Text="About"
-                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                           Style="{StaticResource SectionHeaderTextStyle}"/>
 
                 <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
                       CornerRadius="8"
-                      Padding="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                      Padding="20,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+                    <Border Grid.Column="0"
+                            Width="48" Height="48"
+                            CornerRadius="8"
+                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            Margin="0,0,16,0">
+                        <FontIcon Glyph="&#xE781;" FontSize="24"
+                                  Foreground="White"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
                         <TextBlock Text="Hue Windows"
                                    Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                             <Run Text="Version "/>
                             <Run Text="{x:Bind ViewModel.AppVersion, Mode=OneWay}"/>
                         </TextBlock>
+                        <TextBlock Text="A modern Philips Hue controller for Windows"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Margin="0,4,0,0"/>
                     </StackPanel>
-
-                    <TextBlock Grid.Row="1"
-                               Text="Control your Philips Hue lights from Windows. This app is not affiliated with Signify (Philips Hue)."
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               Opacity="0.7"
-                               TextWrapping="WrapWholeWords"/>
                 </Grid>
             </StackPanel>
 

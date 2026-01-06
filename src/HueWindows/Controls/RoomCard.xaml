@@ -7,12 +7,16 @@
     xmlns:vm="using:HueWindows.Core.ViewModels"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    PointerEntered="CardRoot_PointerEntered"
+    PointerExited="CardRoot_PointerExited">
 
     <Grid x:Name="CardRoot"
           Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-          CornerRadius="12"
-          Padding="16"
+          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+          BorderThickness="1"
+          CornerRadius="8"
+          Padding="16,14,16,16"
           PointerPressed="CardRoot_PointerPressed"
           PointerMoved="CardRoot_PointerMoved"
           PointerReleased="CardRoot_PointerReleased"
@@ -33,30 +37,42 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <FontIcon x:Name="RoomIcon"
-                      Grid.Column="0"
-                      Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
-                      FontSize="24"/>
+            <Border Grid.Column="0"
+                    Width="40" Height="40"
+                    CornerRadius="20"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                <FontIcon x:Name="RoomIcon"
+                          Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
+                          FontSize="18"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+            </Border>
 
-            <TextBlock Grid.Column="1"
-                       Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
-                       Style="{StaticResource BodyStrongTextBlockStyle}"
-                       Margin="12,0,0,0"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
+                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                    <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
+                    <Run Text=" lights"/>
+                </TextBlock>
+            </StackPanel>
 
             <ToggleSwitch Grid.Column="2"
                           IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
                           OnContent=""
                           OffContent=""
-                          MinWidth="0"/>
+                          MinWidth="0"
+                          Margin="8,0,0,0"/>
         </Grid>
 
         <!-- Center spacer / drag area hint -->
-        <Grid Grid.Row="1" Margin="0,8,0,8">
+        <Grid Grid.Row="1" Margin="0,12,0,12">
             <TextBlock x:Name="DragHintText"
-                       Text="Drag to adjust brightness"
+                       Text="Drag to adjust"
                        Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Opacity="0"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
@@ -64,56 +80,58 @@
 
         <!-- Brightness Bar and Info -->
         <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Brightness Progress Bar -->
-            <ProgressBar Grid.Row="0"
+            <ProgressBar Grid.Column="0"
                          x:Name="BrightnessBar"
                          Value="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"
                          Maximum="100"
-                         Height="6"
-                         CornerRadius="3"/>
+                         Height="4"
+                         CornerRadius="2"
+                         VerticalAlignment="Center"
+                         Margin="0,0,12,0"/>
 
-            <!-- Light count and brightness -->
-            <Grid Grid.Row="1" Margin="0,8,0,0">
-                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
-                    <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
-                    <Run Text=" lights"/>
-                </TextBlock>
-
-                <TextBlock HorizontalAlignment="Right"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           Opacity="0.7">
-                    <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
-                    <Run Text="%"/>
-                </TextBlock>
-            </Grid>
+            <!-- Brightness Percentage -->
+            <TextBlock Grid.Column="1"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       VerticalAlignment="Center"
+                       MinWidth="32"
+                       TextAlignment="Right">
+                <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
+                <Run Text="%"/>
+            </TextBlock>
         </Grid>
 
-        <!-- Visual state indicator for "on" state - subtle glow effect -->
-        <Border x:Name="OnStateGlow"
+        <!-- Visual state indicator for "on" state -->
+        <Border x:Name="OnStateBorder"
                 Grid.RowSpan="3"
-                CornerRadius="12"
+                CornerRadius="8"
+                BorderThickness="1"
                 IsHitTestVisible="False"
-                Opacity="0">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#20FFFFFF" Offset="0"/>
-                    <GradientStop Color="#00FFFFFF" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
-        </Border>
+                Opacity="0"
+                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"/>
 
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="OnOffStates">
                 <VisualState x:Name="Off"/>
                 <VisualState x:Name="On">
                     <VisualState.Setters>
-                        <Setter Target="OnStateGlow.Opacity" Value="1"/>
+                        <Setter Target="OnStateBorder.Opacity" Value="1"/>
                         <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+
+            <VisualStateGroup x:Name="HoverStates">
+                <VisualState x:Name="Default"/>
+                <VisualState x:Name="Hover">
+                    <VisualState.Setters>
+                        <Setter Target="CardRoot.Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -122,8 +140,9 @@
                 <VisualState x:Name="Normal"/>
                 <VisualState x:Name="Dragging">
                     <VisualState.Setters>
-                        <Setter Target="DragHintText.Opacity" Value="0.5"/>
+                        <Setter Target="DragHintText.Opacity" Value="0.8"/>
                         <Setter Target="CardRoot.Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
+                        <Setter Target="CardRoot.BorderBrush" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>

@@ -141,4 +141,20 @@ public sealed partial class RoomCard : UserControl
 
         e.Handled = true;
     }
+
+    private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDragging)
+        {
+            VisualStateManager.GoToState(this, "Hover", true);
+        }
+    }
+
+    private void CardRoot_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDragging)
+        {
+            VisualStateManager.GoToState(this, "Default", true);
+        }
+    }
 }

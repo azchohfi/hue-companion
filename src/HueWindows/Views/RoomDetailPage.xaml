@@ -18,45 +18,56 @@
         </Grid.RowDefinitions>
 
         <!-- Header with Room Controls -->
-        <Grid Grid.Row="0" Padding="24,16">
+        <Grid Grid.Row="0" Padding="36,32,36,24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Spacing="4">
+            <StackPanel Grid.Column="0">
                 <TextBlock Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
-                           Style="{StaticResource TitleTextBlockStyle}"/>
-
-                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
+                           Style="{StaticResource PageHeaderTextStyle}"/>
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}">
                     <Run Text="{x:Bind ViewModel.Lights.Count, Mode=OneWay}"/>
                     <Run Text=" lights"/>
                 </TextBlock>
             </StackPanel>
 
             <ToggleSwitch Grid.Column="1"
+                          VerticalAlignment="Top"
                           IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
                           OnContent="On"
                           OffContent="Off"/>
         </Grid>
 
-        <!-- Room Brightness Slider -->
-        <Grid Grid.Row="1" Padding="24,0,24,16">
+        <!-- Room Brightness Card -->
+        <Grid Grid.Row="1" Margin="36,0,36,24"
+              Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="20,16">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Slider Grid.Column="0"
+            <FontIcon Grid.Column="0" Glyph="&#xE706;" FontSize="20" Margin="0,0,16,0"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+            <Slider Grid.Column="1"
                     Minimum="0"
                     Maximum="100"
                     Value="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"
                     ValueChanged="BrightnessSlider_ValueChanged"
-                    Header="Brightness"/>
+                    VerticalAlignment="Center"/>
 
-            <TextBlock Grid.Column="1"
-                       VerticalAlignment="Bottom"
-                       Margin="12,0,0,8"
+            <TextBlock Grid.Column="2"
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0"
+                       MinWidth="40"
+                       TextAlignment="Right"
                        Style="{StaticResource BodyStrongTextBlockStyle}">
                 <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
                 <Run Text="%"/>
@@ -65,18 +76,17 @@
 
         <!-- Content Area -->
         <ScrollViewer Grid.Row="2">
-            <StackPanel Padding="24,0,24,24" Spacing="24">
+            <StackPanel Padding="36,0,36,36" Spacing="28">
 
                 <!-- Scenes Section -->
                 <StackPanel Visibility="{x:Bind HasScenes(ViewModel.Scenes.Count), Mode=OneWay}">
                     <TextBlock Text="Scenes"
-                               Style="{StaticResource SubtitleTextBlockStyle}"
-                               Margin="0,0,0,12"/>
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
 
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}">
                         <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="120"
-                                               MinItemHeight="80"
+                            <UniformGridLayout MinItemWidth="110"
+                                               MinItemHeight="72"
                                                MinRowSpacing="8"
                                                MinColumnSpacing="8"
                                                ItemsStretch="Fill"/>
@@ -88,19 +98,24 @@
                                             VerticalAlignment="Stretch"
                                             HorizontalContentAlignment="Center"
                                             VerticalContentAlignment="Center"
+                                            Padding="8,12"
+                                            CornerRadius="8"
+                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                             Command="{x:Bind ActivateCommand}">
-                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE91B;" FontSize="20"/>
+                                        <StackPanel HorizontalAlignment="Center" Spacing="6">
+                                            <FontIcon Glyph="&#xE91B;" FontSize="18"/>
                                             <TextBlock Text="{x:Bind Name}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
                                                        TextTrimming="CharacterEllipsis"
-                                                       MaxWidth="100"
+                                                       MaxWidth="90"
+                                                       TextAlignment="Center"
                                                        HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                     <!-- Active indicator border -->
                                     <Border BorderThickness="2"
                                             BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
-                                            CornerRadius="4"
+                                            CornerRadius="8"
                                             IsHitTestVisible="False"
                                             Visibility="{x:Bind IsActive, Mode=OneWay}"/>
                                 </Grid>
@@ -112,8 +127,7 @@
                 <!-- Lights Section -->
                 <StackPanel>
                     <TextBlock Text="Lights"
-                               Style="{StaticResource SubtitleTextBlockStyle}"
-                               Margin="0,0,0,12"/>
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
 
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}">
                         <ItemsRepeater.Layout>
@@ -121,9 +135,11 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:LightItemViewModel">
-                                <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                <Grid Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                      BorderThickness="1"
                                       CornerRadius="8"
-                                      Padding="16"
+                                      Padding="16,12"
                                       PointerPressed="LightCard_PointerPressed"
                                       Tag="{x:Bind LightId}">
                                     <Grid.ColumnDefinitions>
@@ -132,25 +148,33 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <FontIcon Grid.Column="0"
-                                              Glyph="&#xE781;"
-                                              FontSize="24"
-                                              Margin="0,0,16,0"
-                                              Opacity="{x:Bind IconOpacity, Mode=OneWay}"/>
+                                    <Border Grid.Column="0"
+                                            Width="36" Height="36"
+                                            CornerRadius="18"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            Margin="0,0,14,0">
+                                        <FontIcon Glyph="&#xE781;"
+                                                  FontSize="16"
+                                                  Opacity="{x:Bind IconOpacity, Mode=OneWay}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                    </Border>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                         <TextBlock Text="{x:Bind Name}"
                                                    Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7">
+                                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                             <Run Text="{x:Bind BrightnessPercent, Mode=OneWay}"/>
-                                            <Run Text="%"/>
+                                            <Run Text="% brightness"/>
                                         </TextBlock>
                                     </StackPanel>
 
                                     <ToggleSwitch Grid.Column="2"
                                                   IsOn="{x:Bind IsOn, Mode=TwoWay}"
                                                   OnContent=""
-                                                  OffContent=""/>
+                                                  OffContent=""
+                                                  MinWidth="0"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
