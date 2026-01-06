@@ -4,13 +4,15 @@ A modern Windows 11 app for controlling Philips Hue smart lights, built with Win
 
 ## Features
 
-- **Dashboard with Room Cards** - Widget-like tiles for quick room control
-- **Drag to Dim** - Press and drag on room cards to adjust brightness
+- **Dashboard with Room & Zone Cards** - Liquid glass widget tiles for quick control
+- **Zone Support** - Control Hue zones alongside rooms
+- **Drag to Dim** - Press and drag on cards to adjust brightness
+- **Color-Coded Toggles** - Toggle switches show the room's active light color
 - **Scene Selection** - Quickly activate saved Hue scenes
 - **Color Control** - Full color picker with color wheel and temperature slider
 - **Individual Light Control** - Fine-grained control of each light
 - **Dark/Light Theme** - Follows system theme or manual selection
-- **Mica Backdrop** - Modern Windows 11 visual style
+- **Mica Backdrop** - Modern Windows 11 visual style with premium styling
 
 ## Requirements
 
@@ -55,6 +57,7 @@ hue-windows/
 │   ├── HueWindows/                 # WinUI 3 App (MSIX packaged)
 │   │   ├── Views/                  # XAML pages
 │   │   ├── Controls/               # Custom controls (RoomCard)
+│   │   ├── Styles/                 # Global styles and theme overrides
 │   │   ├── Converters/             # Value converters
 │   │   ├── Helpers/                # Navigation and utilities
 │   │   └── Assets/                 # App icons and images
@@ -71,9 +74,10 @@ hue-windows/
 
 ## Technology Stack
 
-- **Framework**: WinUI 3 / Windows App SDK 1.6
+- **Framework**: WinUI 3 / Windows App SDK 1.8
 - **Language**: C# / .NET 8
 - **Architecture**: MVVM with CommunityToolkit.Mvvm
+- **Styling**: WinUI 3 lightweight styling with theme resource overrides
 - **Hue Integration**: HueApi NuGet package (CLIP v2 API)
 - **Packaging**: MSIX for Windows Store
 
