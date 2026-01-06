@@ -182,9 +182,9 @@ public sealed partial class RoomCard : UserControl
                 RoomIcon.ClearValue(FontIcon.ForegroundProperty);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            LogDebug($"UpdateColors ERROR: {ex.Message}");
+            // Silently handle any resource loading errors
         }
     }
 
