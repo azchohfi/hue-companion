@@ -1,4 +1,5 @@
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -20,12 +21,17 @@ public sealed partial class RoomCard : UserControl
     private Point _dragStartPoint;
     private double _startBrightness;
     private bool _hasMovedEnough;
+    private DateTime _lastBrightnessUpdate = DateTime.MinValue;
+    private double _pendingBrightness;
 
     // Minimum drag distance before we consider it a drag (vs tap)
     private const double DragThreshold = 10;
 
     // Vertical pixels per 1% brightness change
     private const double PixelsPerPercent = 3;
+
+    // Minimum time between brightness updates (throttle)
+    private const int ThrottleMs = 100;
 
     public RoomCardViewModel? ViewModel => DataContext as RoomCardViewModel;
 
@@ -63,17 +69,29 @@ public sealed partial class RoomCard : UserControl
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(RoomCardViewModel.IsOn) ||
-            e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb))
+        // Only update visual state when on/off changes (not during drag brightness changes)
+        if (e.PropertyName == nameof(RoomCardViewModel.IsOn))
         {
-            UpdateOnOffState();
-            UpdateToggleColor();
+            // Ensure UI updates happen on the UI thread
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                UpdateOnOffState();
+                UpdateToggleColor();
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(() =>
+                {
+                    UpdateOnOffState();
+                    UpdateToggleColor();
+                });
+            }
         }
     }
 
     private void UpdateOnOffState()
     {
-        if (ViewModel == null) return;
+        if (!_isLoaded || ViewModel == null) return;
 
         VisualStateManager.GoToState(this, ViewModel.IsOn ? "On" : "Off", true);
     }
@@ -82,7 +100,7 @@ public sealed partial class RoomCard : UserControl
     {
         try
         {
-            if (ViewModel == null || RoomToggle == null) return;
+            if (!_isLoaded || ViewModel == null || RoomToggle == null) return;
 
             var lightColors = ViewModel.LightColors;
             if (lightColors.Count > 0 && ViewModel.IsOn)
@@ -117,12 +135,15 @@ public sealed partial class RoomCard : UserControl
         }
         catch
         {
-            // Silently handle any resource loading errors
+            // Silently handle any resource errors
         }
     }
 
     private void CardRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        // Temporarily disabled for debugging
+        return;
+
         if (ViewModel == null) return;
 
         var point = e.GetCurrentPoint(CardRoot);
@@ -162,9 +183,15 @@ public sealed partial class RoomCard : UserControl
             // Calculate brightness change (moving up increases brightness)
             var brightnessChange = deltaY / (PixelsPerPercent * 100);
             var newBrightness = Math.Clamp(_startBrightness + brightnessChange, 0.0, 1.0);
+            _pendingBrightness = newBrightness;
 
-            // Update the view model (this triggers UI update via binding)
-            ViewModel.SetBrightnessCommand.Execute(newBrightness);
+            // Throttle updates to bridge
+            var now = DateTime.UtcNow;
+            if ((now - _lastBrightnessUpdate).TotalMilliseconds >= ThrottleMs)
+            {
+                _lastBrightnessUpdate = now;
+                ViewModel.SetBrightnessCommand.Execute(newBrightness);
+            }
         }
 
         e.Handled = true;
@@ -190,6 +217,12 @@ public sealed partial class RoomCard : UserControl
         if (pointer != null)
         {
             CardRoot.ReleasePointerCapture(pointer);
+        }
+
+        // Send final brightness value if we were dragging
+        if (_hasMovedEnough && ViewModel != null)
+        {
+            ViewModel.SetBrightnessCommand.Execute(_pendingBrightness);
         }
 
         VisualStateManager.GoToState(this, "Normal", true);
