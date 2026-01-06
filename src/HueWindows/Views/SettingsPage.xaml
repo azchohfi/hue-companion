@@ -12,7 +12,7 @@
     Loaded="Page_Loaded">
 
     <ScrollViewer>
-        <StackPanel Padding="36,32,36,36" Spacing="28" MaxWidth="800">
+        <StackPanel Padding="36,32,36,36" Spacing="28" MaxWidth="1000" HorizontalAlignment="Center">
 
             <!-- Header -->
             <StackPanel>
