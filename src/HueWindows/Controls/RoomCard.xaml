@@ -49,10 +49,12 @@
             </Border>
 
             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
+                <TextBlock x:Name="RoomNameText"
+                           Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
                            Style="{StaticResource BodyStrongTextBlockStyle}"
                            TextTrimming="CharacterEllipsis"/>
-                <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                <TextBlock x:Name="LightCountText"
+                           Style="{StaticResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                     <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
                     <Run Text=" lights"/>
@@ -96,7 +98,8 @@
                          Margin="0,0,12,0"/>
 
             <!-- Brightness Percentage -->
-            <TextBlock Grid.Column="1"
+            <TextBlock x:Name="BrightnessText"
+                       Grid.Column="1"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        VerticalAlignment="Center"
@@ -107,32 +110,16 @@
             </TextBlock>
         </Grid>
 
-        <!-- Visual state indicator for "on" state -->
-        <Border x:Name="OnStateBorder"
-                Grid.RowSpan="3"
-                CornerRadius="8"
-                BorderThickness="1"
-                IsHitTestVisible="False"
-                Opacity="0"
-                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"/>
-
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="OnOffStates">
                 <VisualState x:Name="Off"/>
-                <VisualState x:Name="On">
-                    <VisualState.Setters>
-                        <Setter Target="OnStateBorder.Opacity" Value="1"/>
-                        <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                    </VisualState.Setters>
-                </VisualState>
+                <VisualState x:Name="On"/>
             </VisualStateGroup>
 
             <VisualStateGroup x:Name="HoverStates">
                 <VisualState x:Name="Default"/>
                 <VisualState x:Name="Hover">
-                    <VisualState.Setters>
-                        <Setter Target="CardRoot.Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
-                    </VisualState.Setters>
+                    <!-- Hover effect is handled in code-behind to preserve custom colors -->
                 </VisualState>
             </VisualStateGroup>
 
@@ -141,8 +128,6 @@
                 <VisualState x:Name="Dragging">
                     <VisualState.Setters>
                         <Setter Target="DragHintText.Opacity" Value="0.8"/>
-                        <Setter Target="CardRoot.Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
-                        <Setter Target="CardRoot.BorderBrush" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>

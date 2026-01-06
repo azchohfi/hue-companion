@@ -1,9 +1,12 @@
+using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using HueWindows.Core.ViewModels;
 using Windows.Foundation;
+using Windows.UI;
 
 namespace HueWindows.Controls;
 
@@ -24,12 +27,26 @@ public sealed partial class RoomCard : UserControl
     // Vertical pixels per 1% brightness change
     private const double PixelsPerPercent = 3;
 
+    // Store default brushes for restoration when room is off
+    private Brush? _defaultBackgroundBrush;
+    private bool _isHovering;
+
     public RoomCardViewModel? ViewModel => DataContext as RoomCardViewModel;
+
+    private bool _isLoaded;
 
     public RoomCard()
     {
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
+        this.Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = true;
+        UpdateOnOffState();
+        UpdateColors();
     }
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
@@ -38,7 +55,13 @@ public sealed partial class RoomCard : UserControl
         {
             // Subscribe to property changes to update visual states
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-            UpdateOnOffState();
+
+            // Only update colors if the control is already loaded
+            if (_isLoaded)
+            {
+                UpdateOnOffState();
+                UpdateColors();
+            }
         }
     }
 
@@ -47,6 +70,12 @@ public sealed partial class RoomCard : UserControl
         if (e.PropertyName == nameof(RoomCardViewModel.IsOn))
         {
             UpdateOnOffState();
+            UpdateColors();
+        }
+        else if (e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb) ||
+                 e.PropertyName == nameof(RoomCardViewModel.UseBlackText))
+        {
+            UpdateColors();
         }
     }
 
@@ -55,6 +84,108 @@ public sealed partial class RoomCard : UserControl
         if (ViewModel == null) return;
 
         VisualStateManager.GoToState(this, ViewModel.IsOn ? "On" : "Off", true);
+    }
+
+    private void UpdateColors()
+    {
+        try
+        {
+            if (ViewModel == null) return;
+
+            // Check if UI is ready
+            if (CardRoot == null || RoomNameText == null)
+            {
+                return;
+            }
+
+            // Store default background brush on first call - use a safe fallback
+            if (_defaultBackgroundBrush == null)
+            {
+                try
+                {
+                    _defaultBackgroundBrush = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"];
+                }
+                catch
+                {
+                    _defaultBackgroundBrush = new SolidColorBrush(Color.FromArgb(255, 40, 40, 40));
+                }
+            }
+
+            var lightColors = ViewModel.LightColors;
+            if (lightColors.Count > 0 && ViewModel.IsOn)
+            {
+                // Create gradient or solid background based on number of colors
+                if (lightColors.Count == 1)
+                {
+                    var (r, g, b) = lightColors[0];
+                    var bgColor = _isHovering
+                        ? Color.FromArgb(210, (byte)Math.Min(255, r + 15), (byte)Math.Min(255, g + 15), (byte)Math.Min(255, b + 15))
+                        : Color.FromArgb(230, r, g, b);
+                    CardRoot.Background = new SolidColorBrush(bgColor);
+                }
+                else
+                {
+                    // Create a horizontal linear gradient with all colors
+                    var gradient = new LinearGradientBrush
+                    {
+                        StartPoint = new Windows.Foundation.Point(0, 0.5),
+                        EndPoint = new Windows.Foundation.Point(1, 0.5)
+                    };
+
+                    byte alpha = _isHovering ? (byte)210 : (byte)230;
+                    for (int i = 0; i < lightColors.Count; i++)
+                    {
+                        var (r, g, b) = lightColors[i];
+                        var color = _isHovering
+                            ? Color.FromArgb(alpha, (byte)Math.Min(255, r + 15), (byte)Math.Min(255, g + 15), (byte)Math.Min(255, b + 15))
+                            : Color.FromArgb(alpha, r, g, b);
+
+                        double offset = lightColors.Count == 1 ? 0.5 : (double)i / (lightColors.Count - 1);
+                        gradient.GradientStops.Add(new GradientStop { Color = color, Offset = offset });
+                    }
+
+                    CardRoot.Background = gradient;
+                }
+
+                // Update text colors based on contrast
+                if (ViewModel.UseBlackText)
+                {
+                    var blackBrush = new SolidColorBrush(Colors.Black);
+                    var darkGrayBrush = new SolidColorBrush(Color.FromArgb(255, 40, 40, 40));
+
+                    RoomNameText.Foreground = blackBrush;
+                    LightCountText.Foreground = darkGrayBrush;
+                    BrightnessText.Foreground = darkGrayBrush;
+                    RoomIcon.Foreground = blackBrush;
+                }
+                else
+                {
+                    var whiteBrush = new SolidColorBrush(Colors.White);
+                    var lightGrayBrush = new SolidColorBrush(Color.FromArgb(255, 200, 200, 200));
+
+                    RoomNameText.Foreground = whiteBrush;
+                    LightCountText.Foreground = lightGrayBrush;
+                    BrightnessText.Foreground = lightGrayBrush;
+                    RoomIcon.Foreground = whiteBrush;
+                }
+            }
+            else
+            {
+                // Restore default theme colors
+                CardRoot.Background = _defaultBackgroundBrush
+                    ?? (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"];
+
+                // Reset text to theme defaults
+                RoomNameText.ClearValue(TextBlock.ForegroundProperty);
+                LightCountText.Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
+                BrightnessText.Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
+                RoomIcon.ClearValue(FontIcon.ForegroundProperty);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogDebug($"UpdateColors ERROR: {ex.Message}");
+        }
     }
 
     private void CardRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -146,7 +277,8 @@ public sealed partial class RoomCard : UserControl
     {
         if (!_isDragging)
         {
-            VisualStateManager.GoToState(this, "Hover", true);
+            _isHovering = true;
+            ApplyHoverEffect(true);
         }
     }
 
@@ -154,7 +286,16 @@ public sealed partial class RoomCard : UserControl
     {
         if (!_isDragging)
         {
-            VisualStateManager.GoToState(this, "Default", true);
+            _isHovering = false;
+            ApplyHoverEffect(false);
         }
+    }
+
+    private void ApplyHoverEffect(bool isHovering)
+    {
+        if (ViewModel == null || CardRoot == null) return;
+
+        // Just call UpdateColors which handles both normal and hover states
+        UpdateColors();
     }
 }

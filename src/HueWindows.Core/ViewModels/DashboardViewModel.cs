@@ -138,6 +138,63 @@ public partial class RoomCardViewModel : ObservableObject
     public int BrightnessPercent => (int)(Brightness * 100);
     public string BrightnessDisplayText => $"{BrightnessPercent}%";
 
+    /// <summary>
+    /// Gets all unique light colors in the room as RGB values for gradient display.
+    /// </summary>
+    public List<(byte R, byte G, byte B)> LightColors
+    {
+        get
+        {
+            if (!IsOn) return new List<(byte R, byte G, byte B)>();
+
+            var colors = _room.Lights
+                .Where(l => l.IsOn && l.CurrentColor != null)
+                .Select(l => l.CurrentColor!.ToRgb(1.0))
+                .Distinct()
+                .ToList();
+
+            return colors;
+        }
+    }
+
+    /// <summary>
+    /// Gets the background color RGB values when the room is on.
+    /// Returns null if no color is available or room is off.
+    /// </summary>
+    public (byte R, byte G, byte B)? BackgroundColorRgb
+    {
+        get
+        {
+            var colors = LightColors;
+            if (colors.Count == 0) return null;
+            return colors[0];
+        }
+    }
+
+    /// <summary>
+    /// Returns true if black text should be used on the current background.
+    /// Uses the average luminance of all light colors.
+    /// </summary>
+    public bool UseBlackText
+    {
+        get
+        {
+            var colors = LightColors;
+            if (colors.Count == 0) return false;
+
+            // Calculate average luminance
+            double totalLuminance = 0;
+            foreach (var (r, g, b) in colors)
+            {
+                // Simple luminance calculation
+                totalLuminance += (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+            }
+            double avgLuminance = totalLuminance / colors.Count;
+
+            return avgLuminance > 0.5;
+        }
+    }
+
     public RoomCardViewModel(RoomModel room, IHueBridgeService bridgeService)
     {
         _room = room;
@@ -155,6 +212,24 @@ public partial class RoomCardViewModel : ObservableObject
     {
         // Send command to bridge when toggle changes
         _ = _bridgeService.SetRoomOnAsync(RoomId, value);
+
+        // Update computed color properties
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
+    }
+
+    partial void OnBrightnessChanged(double value)
+    {
+        // Update computed color properties when brightness changes
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
+    }
+
+    partial void OnDominantColorChanged(HueColor? value)
+    {
+        // Update computed color properties when color changes
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
     }
 
     [RelayCommand]
@@ -218,6 +293,8 @@ public partial class RoomCardViewModel : ObservableObject
 
         OnPropertyChanged(nameof(BrightnessPercent));
         OnPropertyChanged(nameof(BrightnessDisplayText));
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
     }
 
     private static string GetIconForArchetype(RoomArchetype archetype)

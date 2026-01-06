@@ -117,6 +117,18 @@ public class HueBridgeService : IHueBridgeService
 
     private static LightModel MapLightData(HueApi.Models.Light lightData)
     {
+        // Determine the current color - prefer xy color, fall back to color temperature
+        HueColor? currentColor = null;
+        if (lightData.Color?.Xy != null)
+        {
+            currentColor = new HueColor(lightData.Color.Xy.X, lightData.Color.Xy.Y);
+        }
+        else if (lightData.ColorTemperature?.Mirek != null)
+        {
+            // Derive color from color temperature for white/ambiance bulbs
+            currentColor = HueColor.FromMirek((int)lightData.ColorTemperature.Mirek);
+        }
+
         return new LightModel
         {
             Id = lightData.Id,
@@ -125,9 +137,7 @@ public class HueBridgeService : IHueBridgeService
             Brightness = (lightData.Dimming?.Brightness ?? 0) / 100.0,
             SupportsColor = lightData.Color != null,
             SupportsColorTemperature = lightData.ColorTemperature != null,
-            CurrentColor = lightData.Color?.Xy != null
-                ? new HueColor(lightData.Color.Xy.X, lightData.Color.Xy.Y)
-                : null,
+            CurrentColor = currentColor,
             ColorTemperature = (int?)(lightData.ColorTemperature?.Mirek),
             Archetype = MapLightArchetype(lightData.Metadata?.Archetype)
         };
