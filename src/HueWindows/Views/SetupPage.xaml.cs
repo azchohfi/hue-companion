@@ -1,0 +1,37 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.ViewModels;
+
+namespace HueWindows.Views;
+
+/// <summary>
+/// Page for discovering and connecting to a Hue bridge.
+/// </summary>
+public sealed partial class SetupPage : Page
+{
+    public SetupViewModel ViewModel { get; }
+
+    public SetupPage()
+    {
+        ViewModel = App.Services.GetRequiredService<SetupViewModel>();
+        ViewModel.SetupCompleted += OnSetupCompleted;
+
+        this.InitializeComponent();
+    }
+
+    private void OnSetupCompleted(object? sender, EventArgs e)
+    {
+        var navigationService = App.Services.GetRequiredService<INavigationService>();
+        navigationService.NavigateTo<DashboardPage>();
+    }
+
+    /// <summary>
+    /// Helper method to invert a boolean for visibility binding.
+    /// </summary>
+    public Visibility InvertBool(bool value)
+    {
+        return value ? Visibility.Collapsed : Visibility.Visible;
+    }
+}

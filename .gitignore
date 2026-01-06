@@ -1,0 +1,78 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM64/
+[Aa][Rr][Mm]/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.sln.ide/
+
+# Rider files
+.idea/
+
+# User-specific files
+*.userprefs
+**/Properties/launchSettings.json
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+# Windows Store app package directories and files
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+*.appx
+*.appxbundle
+*.appxupload
+
+# Project-specific
+*.msix
+*.msixbundle
+
+# Roslyn cache
+*.cache
+
+# JetBrains
+*.DotSettings.user
+
+# Test Results
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.xml
+*.coveragexml
+
+# Build server
+.artifactignore
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Application settings
+settings.json
+
+# Claude Code
+.claude/
