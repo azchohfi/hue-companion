@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 
@@ -25,6 +26,14 @@ public sealed partial class SetupPage : Page
     {
         var navigationService = App.Services.GetRequiredService<INavigationService>();
         navigationService.NavigateTo<DashboardPage>();
+    }
+
+    private void ConnectBridge_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is DiscoveredBridge bridge)
+        {
+            ViewModel.SelectBridgeCommand.Execute(bridge);
+        }
     }
 
     /// <summary>

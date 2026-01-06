@@ -57,6 +57,9 @@ public class HueBridgeService : IHueBridgeService
         if (_hueApi == null) return Array.Empty<RoomModel>();
 
         var rooms = await _hueApi.GetRoomsAsync();
+        if (rooms?.Data == null) return Array.Empty<RoomModel>();
+
+        var allLights = await _hueApi.GetLightsAsync();
         var result = new List<RoomModel>();
 
         foreach (var room in rooms.Data)
@@ -68,18 +71,28 @@ public class HueBridgeService : IHueBridgeService
                 Archetype = MapRoomArchetype(room.Metadata?.Archetype),
             };
 
-            // Get lights in this room
+            // Get device IDs that belong to this room
+            var roomDeviceIds = new HashSet<Guid>();
             if (room.Children != null)
             {
                 foreach (var child in room.Children)
                 {
-                    if (child.Rtype == "light")
+                    if (child.Rtype == "device")
                     {
-                        var light = await GetLightAsync(child.Rid);
-                        if (light != null)
-                        {
-                            roomModel.Lights.Add(light);
-                        }
+                        roomDeviceIds.Add(child.Rid);
+                    }
+                }
+            }
+
+            // Get lights whose owner device is in this room
+            if (allLights?.Data != null && roomDeviceIds.Count > 0)
+            {
+                foreach (var light in allLights.Data)
+                {
+                    // Light's owner is a device - check if that device is in this room
+                    if (light.Owner?.Rid != null && roomDeviceIds.Contains(light.Owner.Rid))
+                    {
+                        roomModel.Lights.Add(MapLightData(light));
                     }
                 }
             }
@@ -100,6 +113,24 @@ public class HueBridgeService : IHueBridgeService
         }
 
         return result;
+    }
+
+    private static LightModel MapLightData(HueApi.Models.Light lightData)
+    {
+        return new LightModel
+        {
+            Id = lightData.Id,
+            Name = lightData.Metadata?.Name ?? "Unknown Light",
+            IsOn = lightData.On?.IsOn ?? false,
+            Brightness = (lightData.Dimming?.Brightness ?? 0) / 100.0,
+            SupportsColor = lightData.Color != null,
+            SupportsColorTemperature = lightData.ColorTemperature != null,
+            CurrentColor = lightData.Color?.Xy != null
+                ? new HueColor(lightData.Color.Xy.X, lightData.Color.Xy.Y)
+                : null,
+            ColorTemperature = (int?)(lightData.ColorTemperature?.Mirek),
+            Archetype = MapLightArchetype(lightData.Metadata?.Archetype)
+        };
     }
 
     /// <inheritdoc/>
@@ -169,21 +200,7 @@ public class HueBridgeService : IHueBridgeService
             var light = await _hueApi.GetLightAsync(lightId);
             if (light?.Data == null || light.Data.Count == 0) return null;
 
-            var lightData = light.Data[0];
-            return new LightModel
-            {
-                Id = lightData.Id,
-                Name = lightData.Metadata?.Name ?? "Unknown Light",
-                IsOn = lightData.On?.IsOn ?? false,
-                Brightness = (lightData.Dimming?.Brightness ?? 0) / 100.0,
-                SupportsColor = lightData.Color != null,
-                SupportsColorTemperature = lightData.ColorTemperature != null,
-                CurrentColor = lightData.Color?.Xy != null
-                    ? new HueColor(lightData.Color.Xy.X, lightData.Color.Xy.Y)
-                    : null,
-                ColorTemperature = (int?)(lightData.ColorTemperature?.Mirek),
-                Archetype = MapLightArchetype(lightData.Metadata?.Archetype)
-            };
+            return MapLightData(light.Data[0]);
         }
         catch
         {
