@@ -18,6 +18,16 @@ public interface IHueBridgeService
     event EventHandler<LightStateChangedEventArgs>? LightStateChanged;
 
     /// <summary>
+    /// Event raised when successfully connected to a bridge.
+    /// </summary>
+    event EventHandler? Connected;
+
+    /// <summary>
+    /// Event raised when disconnected from a bridge.
+    /// </summary>
+    event EventHandler? Disconnected;
+
+    /// <summary>
     /// Connects to a Hue bridge.
     /// </summary>
     /// <param name="ipAddress">The IP address of the bridge.</param>
@@ -53,6 +63,35 @@ public interface IHueBridgeService
     /// <param name="roomId">The room ID.</param>
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
     Task SetRoomBrightnessAsync(Guid roomId, double brightness);
+
+    // Zone operations
+
+    /// <summary>
+    /// Gets all zones from the bridge.
+    /// </summary>
+    Task<IReadOnlyList<RoomModel>> GetZonesAsync();
+
+    /// <summary>
+    /// Gets a specific zone by ID.
+    /// </summary>
+    Task<RoomModel?> GetZoneAsync(Guid zoneId);
+
+    /// <summary>
+    /// Sets the on/off state for all lights in a zone.
+    /// </summary>
+    Task SetZoneOnAsync(Guid zoneId, bool isOn);
+
+    /// <summary>
+    /// Sets the brightness for all lights in a zone.
+    /// </summary>
+    /// <param name="zoneId">The zone ID.</param>
+    /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
+    Task SetZoneBrightnessAsync(Guid zoneId, double brightness);
+
+    /// <summary>
+    /// Gets all scenes for a zone.
+    /// </summary>
+    Task<IReadOnlyList<SceneModel>> GetScenesForZoneAsync(Guid zoneId);
 
     // Light operations
 

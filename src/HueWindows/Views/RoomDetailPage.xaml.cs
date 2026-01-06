@@ -3,13 +3,15 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
+using HueWindows.Helpers;
 
 namespace HueWindows.Views;
 
 /// <summary>
-/// Page showing room details with lights and scenes.
+/// Page showing room/zone details with lights and scenes.
 /// </summary>
 public sealed partial class RoomDetailPage : Page
 {
@@ -27,9 +29,14 @@ public sealed partial class RoomDetailPage : Page
     {
         base.OnNavigatedTo(e);
 
-        if (e.Parameter is Guid roomId)
+        // Support both simple Guid (room) and NavigationTag (room or zone)
+        if (e.Parameter is NavigationTag navTag)
         {
-            await ViewModel.LoadRoomAsync(roomId);
+            await ViewModel.LoadRoomAsync(navTag.Id, navTag.Type);
+        }
+        else if (e.Parameter is Guid roomId)
+        {
+            await ViewModel.LoadRoomAsync(roomId, LightGroupType.Room);
         }
     }
 

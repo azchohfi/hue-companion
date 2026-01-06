@@ -19,10 +19,19 @@ public partial class DashboardViewModel : ObservableObject
     private ObservableCollection<RoomCardViewModel> _roomCards = new();
 
     [ObservableProperty]
+    private ObservableCollection<RoomCardViewModel> _zoneCards = new();
+
+    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
     private bool _showEmptyState;
+
+    [ObservableProperty]
+    private bool _hasRooms;
+
+    [ObservableProperty]
+    private bool _hasZones;
 
     [ObservableProperty]
     private string? _errorMessage;
@@ -54,6 +63,7 @@ public partial class DashboardViewModel : ObservableObject
 
         try
         {
+            // Load rooms
             var rooms = await _bridgeService.GetRoomsAsync();
 
             RoomCards.Clear();
@@ -65,7 +75,23 @@ public partial class DashboardViewModel : ObservableObject
                 RoomCards.Add(cardVm);
             }
 
-            ShowEmptyState = RoomCards.Count == 0;
+            HasRooms = RoomCards.Count > 0;
+
+            // Load zones
+            var zones = await _bridgeService.GetZonesAsync();
+
+            ZoneCards.Clear();
+
+            foreach (var zone in zones)
+            {
+                var cardVm = new RoomCardViewModel(zone, _bridgeService);
+                cardVm.RoomTapped += OnRoomTapped;
+                ZoneCards.Add(cardVm);
+            }
+
+            HasZones = ZoneCards.Count > 0;
+
+            ShowEmptyState = RoomCards.Count == 0 && ZoneCards.Count == 0;
         }
         catch (Exception ex)
         {
@@ -95,6 +121,12 @@ public partial class DashboardViewModel : ObservableObject
         foreach (var roomCard in RoomCards)
         {
             roomCard.OnLightStateChanged(e);
+        }
+
+        // Update zone cards when light states change
+        foreach (var zoneCard in ZoneCards)
+        {
+            zoneCard.OnLightStateChanged(e);
         }
     }
 }

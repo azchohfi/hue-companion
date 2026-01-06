@@ -8,14 +8,19 @@ namespace HueWindows.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the room detail page showing lights and scenes.
+/// Works for both rooms and zones.
 /// </summary>
 public partial class RoomDetailViewModel : ObservableObject
 {
     private readonly IHueBridgeService _bridgeService;
-    private Guid _roomId;
+    private Guid _groupId;
+    private LightGroupType _groupType = LightGroupType.Room;
 
     [ObservableProperty]
     private string _roomName = string.Empty;
+
+    [ObservableProperty]
+    private string _groupTypeLabel = "Room";
 
     [ObservableProperty]
     private bool _isOn;
@@ -47,31 +52,40 @@ public partial class RoomDetailViewModel : ObservableObject
         _bridgeService = bridgeService;
     }
 
-    public async Task LoadRoomAsync(Guid roomId)
+    public async Task LoadRoomAsync(Guid groupId, LightGroupType groupType = LightGroupType.Room)
     {
-        _roomId = roomId;
+        _groupId = groupId;
+        _groupType = groupType;
+        GroupTypeLabel = groupType == LightGroupType.Room ? "Room" : "Zone";
         IsLoading = true;
 
         try
         {
-            var room = await _bridgeService.GetRoomAsync(roomId);
-            if (room == null) return;
+            // Load room or zone based on type
+            RoomModel? group = groupType == LightGroupType.Room
+                ? await _bridgeService.GetRoomAsync(groupId)
+                : await _bridgeService.GetZoneAsync(groupId);
 
-            RoomName = room.Name;
-            IsOn = room.IsOn;
-            Brightness = room.Brightness;
+            if (group == null) return;
+
+            RoomName = group.Name;
+            IsOn = group.IsOn;
+            Brightness = group.Brightness;
 
             // Load lights
             Lights.Clear();
-            foreach (var light in room.Lights)
+            foreach (var light in group.Lights)
             {
                 var lightVm = new LightItemViewModel(light, _bridgeService);
                 lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
                 Lights.Add(lightVm);
             }
 
-            // Load scenes
-            var scenes = await _bridgeService.GetScenesForRoomAsync(roomId);
+            // Load scenes (from room or zone)
+            var scenes = groupType == LightGroupType.Room
+                ? await _bridgeService.GetScenesForRoomAsync(groupId)
+                : await _bridgeService.GetScenesForZoneAsync(groupId);
+
             Scenes.Clear();
             foreach (var scene in scenes)
             {
@@ -88,7 +102,10 @@ public partial class RoomDetailViewModel : ObservableObject
 
     partial void OnIsOnChanged(bool value)
     {
-        _ = _bridgeService.SetRoomOnAsync(_roomId, value);
+        if (_groupType == LightGroupType.Room)
+            _ = _bridgeService.SetRoomOnAsync(_groupId, value);
+        else
+            _ = _bridgeService.SetZoneOnAsync(_groupId, value);
     }
 
     [RelayCommand]
@@ -97,7 +114,10 @@ public partial class RoomDetailViewModel : ObservableObject
         Brightness = Math.Clamp(brightness, 0.0, 1.0);
         OnPropertyChanged(nameof(BrightnessPercent));
 
-        await _bridgeService.SetRoomBrightnessAsync(_roomId, Brightness);
+        if (_groupType == LightGroupType.Room)
+            await _bridgeService.SetRoomBrightnessAsync(_groupId, Brightness);
+        else
+            await _bridgeService.SetZoneBrightnessAsync(_groupId, Brightness);
     }
 
     private void OnSceneActivated(object? sender, Guid sceneId)

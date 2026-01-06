@@ -26,9 +26,9 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <TextBlock Text="Rooms"
+                <TextBlock Text="Home"
                            Style="{StaticResource PageHeaderTextStyle}"/>
-                <TextBlock Text="Control your Hue lights by room"
+                <TextBlock Text="Control your Hue lights"
                            Style="{StaticResource PageSubtitleTextStyle}"/>
             </StackPanel>
 
@@ -48,30 +48,61 @@
                     VerticalAlignment="Center"
                     Spacing="16">
             <ProgressRing IsActive="True" Width="48" Height="48"/>
-            <TextBlock Text="Loading rooms..."
+            <TextBlock Text="Loading..."
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
         </StackPanel>
 
-        <!-- Room Cards Grid -->
+        <!-- Room and Zone Cards -->
         <ScrollViewer Grid.Row="1"
                       Visibility="{x:Bind InvertBool(ViewModel.IsLoading), Mode=OneWay}">
-            <ItemsRepeater x:Name="RoomCardsRepeater"
-                           ItemsSource="{x:Bind ViewModel.RoomCards, Mode=OneWay}"
-                           Margin="36,0,36,36">
-                <ItemsRepeater.Layout>
-                    <UniformGridLayout MinItemWidth="300"
-                                       MinItemHeight="130"
-                                       MinRowSpacing="12"
-                                       MinColumnSpacing="12"
-                                       ItemsStretch="Fill"/>
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="vm:RoomCardViewModel">
-                        <controls:RoomCard DataContext="{x:Bind}"/>
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
+            <StackPanel Padding="36,0,36,36" Spacing="24">
+
+                <!-- Rooms Section -->
+                <StackPanel Visibility="{x:Bind ViewModel.HasRooms, Mode=OneWay}">
+                    <TextBlock Text="Rooms"
+                               Style="{StaticResource SubtitleTextBlockStyle}"
+                               Margin="0,0,0,12"/>
+                    <ItemsRepeater x:Name="RoomCardsRepeater"
+                                   ItemsSource="{x:Bind ViewModel.RoomCards, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="300"
+                                               MinItemHeight="130"
+                                               MinRowSpacing="12"
+                                               MinColumnSpacing="12"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RoomCardViewModel">
+                                <controls:RoomCard DataContext="{x:Bind}"/>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Zones Section -->
+                <StackPanel Visibility="{x:Bind ViewModel.HasZones, Mode=OneWay}">
+                    <TextBlock Text="Zones"
+                               Style="{StaticResource SubtitleTextBlockStyle}"
+                               Margin="0,0,0,12"/>
+                    <ItemsRepeater x:Name="ZoneCardsRepeater"
+                                   ItemsSource="{x:Bind ViewModel.ZoneCards, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="300"
+                                               MinItemHeight="130"
+                                               MinRowSpacing="12"
+                                               MinColumnSpacing="12"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RoomCardViewModel">
+                                <controls:RoomCard DataContext="{x:Bind}"/>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+            </StackPanel>
         </ScrollViewer>
 
         <!-- Empty State -->
@@ -85,7 +116,7 @@
             <FontIcon Glyph="&#xE8B9;"
                       Style="{StaticResource EmptyStateIconStyle}"/>
 
-            <TextBlock Text="No rooms found"
+            <TextBlock Text="No rooms or zones found"
                        Style="{StaticResource SubtitleTextBlockStyle}"
                        HorizontalAlignment="Center"/>
 

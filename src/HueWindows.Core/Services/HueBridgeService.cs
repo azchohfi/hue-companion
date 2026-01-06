@@ -21,6 +21,12 @@ public class HueBridgeService : IHueBridgeService
     public event EventHandler<LightStateChangedEventArgs>? LightStateChanged;
 
     /// <inheritdoc/>
+    public event EventHandler? Connected;
+
+    /// <inheritdoc/>
+    public event EventHandler? Disconnected;
+
+    /// <inheritdoc/>
     public async Task<bool> ConnectAsync(string ipAddress, string appKey)
     {
         try
@@ -35,6 +41,7 @@ public class HueBridgeService : IHueBridgeService
                 return false;
             }
 
+            Connected?.Invoke(this, EventArgs.Empty);
             return true;
         }
         catch
@@ -49,6 +56,7 @@ public class HueBridgeService : IHueBridgeService
     {
         StopEventStream();
         _hueApi = null;
+        Disconnected?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc/>
@@ -191,6 +199,145 @@ public class HueBridgeService : IHueBridgeService
             };
             await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<RoomModel>> GetZonesAsync()
+    {
+        if (_hueApi == null) return Array.Empty<RoomModel>();
+
+        var zones = await _hueApi.GetZonesAsync();
+        if (zones?.Data == null) return Array.Empty<RoomModel>();
+
+        var allLights = await _hueApi.GetLightsAsync();
+        var result = new List<RoomModel>();
+
+        foreach (var zone in zones.Data)
+        {
+            var zoneModel = new RoomModel
+            {
+                Id = zone.Id,
+                Name = zone.Metadata?.Name ?? "Unknown Zone",
+                GroupType = LightGroupType.Zone,
+                Archetype = MapRoomArchetype(zone.Metadata?.Archetype),
+            };
+
+            // Get light IDs that belong to this zone
+            var zoneLightIds = new HashSet<Guid>();
+            if (zone.Children != null)
+            {
+                foreach (var child in zone.Children)
+                {
+                    if (child.Rtype == "light")
+                    {
+                        zoneLightIds.Add(child.Rid);
+                    }
+                }
+            }
+
+            // Get lights that are in this zone
+            if (allLights?.Data != null && zoneLightIds.Count > 0)
+            {
+                foreach (var light in allLights.Data)
+                {
+                    if (zoneLightIds.Contains(light.Id))
+                    {
+                        zoneModel.Lights.Add(MapLightData(light));
+                    }
+                }
+            }
+
+            // Calculate zone state from lights
+            if (zoneModel.Lights.Count > 0)
+            {
+                zoneModel.IsOn = zoneModel.Lights.Any(l => l.IsOn);
+                zoneModel.Brightness = zoneModel.Lights.Where(l => l.IsOn).DefaultIfEmpty()
+                    .Average(l => l?.Brightness ?? 0);
+
+                // Get dominant color from first colored light that's on
+                var coloredLight = zoneModel.Lights.FirstOrDefault(l => l.IsOn && l.CurrentColor != null);
+                zoneModel.DominantColor = coloredLight?.CurrentColor;
+            }
+
+            result.Add(zoneModel);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task<RoomModel?> GetZoneAsync(Guid zoneId)
+    {
+        if (_hueApi == null) return null;
+
+        var zones = await GetZonesAsync();
+        return zones.FirstOrDefault(z => z.Id == zoneId);
+    }
+
+    /// <inheritdoc/>
+    public async Task SetZoneOnAsync(Guid zoneId, bool isOn)
+    {
+        if (_hueApi == null) return;
+
+        var zone = await _hueApi.GetZoneAsync(zoneId);
+        if (zone?.Data == null || zone.Data.Count == 0) return;
+
+        // Get the grouped_light service for this zone
+        var groupedLightId = zone.Data[0].Services?
+            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+        if (groupedLightId.HasValue)
+        {
+            var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
+            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task SetZoneBrightnessAsync(Guid zoneId, double brightness)
+    {
+        if (_hueApi == null) return;
+
+        var zone = await _hueApi.GetZoneAsync(zoneId);
+        if (zone?.Data == null || zone.Data.Count == 0) return;
+
+        var groupedLightId = zone.Data[0].Services?
+            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+        if (groupedLightId.HasValue)
+        {
+            var command = new UpdateGroupedLight
+            {
+                On = new HueApi.Models.On { IsOn = brightness > 0 },
+                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
+            };
+            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<SceneModel>> GetScenesForZoneAsync(Guid zoneId)
+    {
+        if (_hueApi == null) return Array.Empty<SceneModel>();
+
+        var scenes = await _hueApi.GetScenesAsync();
+        var result = new List<SceneModel>();
+
+        foreach (var scene in scenes.Data)
+        {
+            // Filter scenes that belong to this zone
+            if (scene.Group?.Rid == zoneId)
+            {
+                result.Add(new SceneModel
+                {
+                    Id = scene.Id,
+                    Name = scene.Metadata?.Name ?? "Unknown Scene",
+                    RoomId = zoneId,
+                });
+            }
+        }
+
+        return result;
     }
 
     /// <inheritdoc/>

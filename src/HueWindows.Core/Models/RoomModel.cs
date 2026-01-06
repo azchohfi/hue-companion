@@ -1,17 +1,31 @@
 namespace HueWindows.Core.Models;
 
 /// <summary>
+/// Distinguishes between rooms and zones in the Hue system.
+/// </summary>
+public enum LightGroupType
+{
+    Room,
+    Zone
+}
+
+/// <summary>
 /// Represents a room/zone containing Hue lights.
 /// </summary>
 public class RoomModel
 {
     /// <summary>
-    /// The unique identifier of the room.
+    /// The unique identifier of the room/zone.
     /// </summary>
     public Guid Id { get; set; }
 
     /// <summary>
-    /// The display name of the room.
+    /// The type of light group (Room or Zone).
+    /// </summary>
+    public LightGroupType GroupType { get; set; } = LightGroupType.Room;
+
+    /// <summary>
+    /// The display name of the room/zone.
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
