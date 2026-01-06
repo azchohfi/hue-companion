@@ -36,9 +36,10 @@
                     Grid.Column="1"
                     Style="{StaticResource NavigationBackButtonNormalStyle}"
                     Width="40" Height="32"
-                    IsEnabled="{x:Bind CanGoBack, Mode=OneWay}"
+                    Visibility="{x:Bind CanGoBack, Mode=OneWay}"
                     Click="BackButton_Click">
-                <FontIcon Glyph="&#xE72B;" FontSize="12"/>
+                <FontIcon Glyph="&#xE72B;" FontSize="12"
+                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
             </Button>
 
             <!-- App Icon -->

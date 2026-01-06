@@ -100,6 +100,26 @@
         <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
+    <!-- Pane Toggle Button Style -->
+    <Style x:Key="PaneToggleButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Navigation Back Button Style -->
+    <Style x:Key="NavigationBackButtonNormalStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
     <!-- Compact Toggle Switch (no labels, premium look) -->
     <Style x:Key="CompactToggleSwitchStyle" TargetType="ToggleSwitch">
         <Setter Property="MinWidth" Value="0"/>
