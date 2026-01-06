@@ -12,10 +12,9 @@
     PointerExited="CardRoot_PointerExited">
 
     <Grid x:Name="CardRoot"
-          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
           BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
           BorderThickness="1"
-          CornerRadius="8"
+          CornerRadius="12"
           Padding="16,14,16,16"
           PointerPressed="CardRoot_PointerPressed"
           PointerMoved="CardRoot_PointerMoved"
@@ -23,35 +22,44 @@
           PointerCaptureLost="CardRoot_PointerCaptureLost"
           Tapped="CardRoot_Tapped">
 
+        <!-- Liquid glass background with subtle gradient -->
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#25FFFFFF" Offset="0"/>
+                <GradientStop Color="#15FFFFFF" Offset="0.5"/>
+                <GradientStop Color="#20FFFFFF" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header: Icon, Name, Toggle -->
+        <!-- Header: Icon and Name -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Width="40" Height="40"
-                    CornerRadius="20"
+                    Width="44" Height="44"
+                    CornerRadius="22"
                     Background="{ThemeResource ControlFillColorSecondaryBrush}">
                 <FontIcon x:Name="RoomIcon"
                           Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
-                          FontSize="18"
+                          FontSize="20"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"/>
             </Border>
 
-            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
                 <TextBlock x:Name="RoomNameText"
                            Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
                            Style="{StaticResource BodyStrongTextBlockStyle}"
+                           FontSize="15"
                            TextTrimming="CharacterEllipsis"/>
                 <TextBlock x:Name="LightCountText"
                            Style="{StaticResource CaptionTextBlockStyle}"
@@ -60,17 +68,10 @@
                     <Run Text=" lights"/>
                 </TextBlock>
             </StackPanel>
-
-            <ToggleSwitch Grid.Column="2"
-                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
-                          OnContent=""
-                          OffContent=""
-                          MinWidth="0"
-                          Margin="8,0,0,0"/>
         </Grid>
 
-        <!-- Center spacer / drag area hint -->
-        <Grid Grid.Row="1" Margin="0,12,0,12">
+        <!-- Center: Drag area hint -->
+        <Grid Grid.Row="1" Margin="0,8,0,8">
             <TextBlock x:Name="DragHintText"
                        Text="Drag to adjust"
                        Style="{StaticResource CaptionTextBlockStyle}"
@@ -80,26 +81,38 @@
                        VerticalAlignment="Center"/>
         </Grid>
 
-        <!-- Brightness Bar and Info -->
+        <!-- Bottom: Toggle and Brightness -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Custom colored toggle container -->
+            <Grid Grid.Column="0" x:Name="ToggleContainer" VerticalAlignment="Center">
+                <ToggleSwitch x:Name="RoomToggle"
+                              Style="{StaticResource CompactToggleSwitchStyle}"
+                              IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}">
+                    <ToggleSwitch.RenderTransform>
+                        <ScaleTransform ScaleX="1.15" ScaleY="1.15"/>
+                    </ToggleSwitch.RenderTransform>
+                </ToggleSwitch>
+            </Grid>
+
             <!-- Brightness Progress Bar -->
-            <ProgressBar Grid.Column="0"
+            <ProgressBar Grid.Column="1"
                          x:Name="BrightnessBar"
                          Value="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"
                          Maximum="100"
                          Height="4"
                          CornerRadius="2"
                          VerticalAlignment="Center"
-                         Margin="0,0,12,0"/>
+                         Margin="8,0,12,0"/>
 
             <!-- Brightness Percentage -->
             <TextBlock x:Name="BrightnessText"
-                       Grid.Column="1"
+                       Grid.Column="2"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        VerticalAlignment="Center"
@@ -119,7 +132,17 @@
             <VisualStateGroup x:Name="HoverStates">
                 <VisualState x:Name="Default"/>
                 <VisualState x:Name="Hover">
-                    <!-- Hover effect is handled in code-behind to preserve custom colors -->
+                    <VisualState.Setters>
+                        <Setter Target="CardRoot.Background">
+                            <Setter.Value>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#35FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#25FFFFFF" Offset="0.5"/>
+                                    <GradientStop Color="#30FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Setter.Value>
+                        </Setter>
+                    </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
 

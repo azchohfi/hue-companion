@@ -34,10 +34,9 @@
             </StackPanel>
 
             <ToggleSwitch Grid.Column="1"
+                          Style="{StaticResource PremiumToggleSwitchStyle}"
                           VerticalAlignment="Top"
-                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
-                          OnContent="On"
-                          OffContent="Off"/>
+                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"/>
         </Grid>
 
         <!-- Room Brightness Card -->
@@ -171,10 +170,8 @@
                                     </StackPanel>
 
                                     <ToggleSwitch Grid.Column="2"
-                                                  IsOn="{x:Bind IsOn, Mode=TwoWay}"
-                                                  OnContent=""
-                                                  OffContent=""
-                                                  MinWidth="0"/>
+                                                  Style="{StaticResource CompactToggleSwitchStyle}"
+                                                  IsOn="{x:Bind IsOn, Mode=TwoWay}"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>

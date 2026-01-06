@@ -28,9 +28,8 @@
             </StackPanel>
 
             <ToggleSwitch Grid.Column="1"
-                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
-                          OnContent="On"
-                          OffContent="Off"/>
+                          Style="{StaticResource PremiumToggleSwitchStyle}"
+                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"/>
         </Grid>
 
         <!-- Content -->

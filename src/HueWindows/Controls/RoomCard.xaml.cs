@@ -27,10 +27,6 @@ public sealed partial class RoomCard : UserControl
     // Vertical pixels per 1% brightness change
     private const double PixelsPerPercent = 3;
 
-    // Store default brushes for restoration when room is off
-    private Brush? _defaultBackgroundBrush;
-    private bool _isHovering;
-
     public RoomCardViewModel? ViewModel => DataContext as RoomCardViewModel;
 
     private bool _isLoaded;
@@ -46,7 +42,7 @@ public sealed partial class RoomCard : UserControl
     {
         _isLoaded = true;
         UpdateOnOffState();
-        UpdateColors();
+        UpdateToggleColor();
     }
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
@@ -56,26 +52,22 @@ public sealed partial class RoomCard : UserControl
             // Subscribe to property changes to update visual states
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
-            // Only update colors if the control is already loaded
+            // Only update if the control is already loaded
             if (_isLoaded)
             {
                 UpdateOnOffState();
-                UpdateColors();
+                UpdateToggleColor();
             }
         }
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(RoomCardViewModel.IsOn))
+        if (e.PropertyName == nameof(RoomCardViewModel.IsOn) ||
+            e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb))
         {
             UpdateOnOffState();
-            UpdateColors();
-        }
-        else if (e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb) ||
-                 e.PropertyName == nameof(RoomCardViewModel.UseBlackText))
-        {
-            UpdateColors();
+            UpdateToggleColor();
         }
     }
 
@@ -86,100 +78,41 @@ public sealed partial class RoomCard : UserControl
         VisualStateManager.GoToState(this, ViewModel.IsOn ? "On" : "Off", true);
     }
 
-    private void UpdateColors()
+    private void UpdateToggleColor()
     {
         try
         {
-            if (ViewModel == null) return;
-
-            // Check if UI is ready
-            if (CardRoot == null || RoomNameText == null)
-            {
-                return;
-            }
-
-            // Store default background brush on first call - use a safe fallback
-            if (_defaultBackgroundBrush == null)
-            {
-                try
-                {
-                    _defaultBackgroundBrush = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"];
-                }
-                catch
-                {
-                    _defaultBackgroundBrush = new SolidColorBrush(Color.FromArgb(255, 40, 40, 40));
-                }
-            }
+            if (ViewModel == null || RoomToggle == null) return;
 
             var lightColors = ViewModel.LightColors;
             if (lightColors.Count > 0 && ViewModel.IsOn)
             {
-                // Create gradient or solid background based on number of colors
-                if (lightColors.Count == 1)
-                {
-                    var (r, g, b) = lightColors[0];
-                    var bgColor = _isHovering
-                        ? Color.FromArgb(210, (byte)Math.Min(255, r + 15), (byte)Math.Min(255, g + 15), (byte)Math.Min(255, b + 15))
-                        : Color.FromArgb(230, r, g, b);
-                    CardRoot.Background = new SolidColorBrush(bgColor);
-                }
-                else
-                {
-                    // Create a horizontal linear gradient with all colors
-                    var gradient = new LinearGradientBrush
-                    {
-                        StartPoint = new Windows.Foundation.Point(0, 0.5),
-                        EndPoint = new Windows.Foundation.Point(1, 0.5)
-                    };
+                // Use the first color for the toggle "on" state
+                var (r, g, b) = lightColors[0];
+                var roomColor = Color.FromArgb(255, r, g, b);
+                var roomColorBrush = new SolidColorBrush(roomColor);
 
-                    byte alpha = _isHovering ? (byte)210 : (byte)230;
-                    for (int i = 0; i < lightColors.Count; i++)
-                    {
-                        var (r, g, b) = lightColors[i];
-                        var color = _isHovering
-                            ? Color.FromArgb(alpha, (byte)Math.Min(255, r + 15), (byte)Math.Min(255, g + 15), (byte)Math.Min(255, b + 15))
-                            : Color.FromArgb(alpha, r, g, b);
+                // Create slightly lighter/darker variants for hover/pressed states
+                var hoverColor = Color.FromArgb(255,
+                    (byte)Math.Min(255, r + 20),
+                    (byte)Math.Min(255, g + 20),
+                    (byte)Math.Min(255, b + 20));
+                var pressedColor = Color.FromArgb(255,
+                    (byte)Math.Max(0, r - 20),
+                    (byte)Math.Max(0, g - 20),
+                    (byte)Math.Max(0, b - 20));
 
-                        double offset = lightColors.Count == 1 ? 0.5 : (double)i / (lightColors.Count - 1);
-                        gradient.GradientStops.Add(new GradientStop { Color = color, Offset = offset });
-                    }
-
-                    CardRoot.Background = gradient;
-                }
-
-                // Update text colors based on contrast
-                if (ViewModel.UseBlackText)
-                {
-                    var blackBrush = new SolidColorBrush(Colors.Black);
-                    var darkGrayBrush = new SolidColorBrush(Color.FromArgb(255, 40, 40, 40));
-
-                    RoomNameText.Foreground = blackBrush;
-                    LightCountText.Foreground = darkGrayBrush;
-                    BrightnessText.Foreground = darkGrayBrush;
-                    RoomIcon.Foreground = blackBrush;
-                }
-                else
-                {
-                    var whiteBrush = new SolidColorBrush(Colors.White);
-                    var lightGrayBrush = new SolidColorBrush(Color.FromArgb(255, 200, 200, 200));
-
-                    RoomNameText.Foreground = whiteBrush;
-                    LightCountText.Foreground = lightGrayBrush;
-                    BrightnessText.Foreground = lightGrayBrush;
-                    RoomIcon.Foreground = whiteBrush;
-                }
+                // Override toggle switch resources for this instance
+                RoomToggle.Resources["ToggleSwitchFillOn"] = roomColorBrush;
+                RoomToggle.Resources["ToggleSwitchFillOnPointerOver"] = new SolidColorBrush(hoverColor);
+                RoomToggle.Resources["ToggleSwitchFillOnPressed"] = new SolidColorBrush(pressedColor);
             }
             else
             {
-                // Restore default theme colors
-                CardRoot.Background = _defaultBackgroundBrush
-                    ?? (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"];
-
-                // Reset text to theme defaults
-                RoomNameText.ClearValue(TextBlock.ForegroundProperty);
-                LightCountText.Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
-                BrightnessText.Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
-                RoomIcon.ClearValue(FontIcon.ForegroundProperty);
+                // Reset to default accent colors
+                RoomToggle.Resources.Remove("ToggleSwitchFillOn");
+                RoomToggle.Resources.Remove("ToggleSwitchFillOnPointerOver");
+                RoomToggle.Resources.Remove("ToggleSwitchFillOnPressed");
             }
         }
         catch
@@ -277,8 +210,7 @@ public sealed partial class RoomCard : UserControl
     {
         if (!_isDragging)
         {
-            _isHovering = true;
-            ApplyHoverEffect(true);
+            VisualStateManager.GoToState(this, "Hover", true);
         }
     }
 
@@ -286,16 +218,7 @@ public sealed partial class RoomCard : UserControl
     {
         if (!_isDragging)
         {
-            _isHovering = false;
-            ApplyHoverEffect(false);
+            VisualStateManager.GoToState(this, "Default", true);
         }
-    }
-
-    private void ApplyHoverEffect(bool isHovering)
-    {
-        if (ViewModel == null || CardRoot == null) return;
-
-        // Just call UpdateColors which handles both normal and hover states
-        UpdateColors();
     }
 }

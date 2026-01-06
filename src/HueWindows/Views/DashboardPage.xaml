@@ -66,8 +66,8 @@
                     <ItemsRepeater x:Name="RoomCardsRepeater"
                                    ItemsSource="{x:Bind ViewModel.RoomCards, Mode=OneWay}">
                         <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="300"
-                                               MinItemHeight="130"
+                            <UniformGridLayout MinItemWidth="200"
+                                               MinItemHeight="120"
                                                MinRowSpacing="12"
                                                MinColumnSpacing="12"
                                                ItemsStretch="Fill"/>
@@ -88,8 +88,8 @@
                     <ItemsRepeater x:Name="ZoneCardsRepeater"
                                    ItemsSource="{x:Bind ViewModel.ZoneCards, Mode=OneWay}">
                         <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="300"
-                                               MinItemHeight="130"
+                            <UniformGridLayout MinItemWidth="200"
+                                               MinItemHeight="120"
                                                MinRowSpacing="12"
                                                MinColumnSpacing="12"
                                                ItemsStretch="Fill"/>
