@@ -22,20 +22,12 @@ This document captures ideas for improving code structure, extensibility, usabil
 
 ---
 
-### 🔴 Implement Real-time Event Stream
+### ✅ ~~Implement Real-time Event Stream~~ (FIXED)
 **Location**: `src/HueWindows.Core/Services/HueBridgeService.cs`
 
-`StartEventStreamAsync()` is stubbed but infrastructure exists:
-- `LightStateChanged` event is defined
-- `RoomCardViewModel.OnLightStateChanged()` handles updates
+~~`StartEventStreamAsync()` is stubbed but infrastructure exists.~~
 
-**Why it matters**: Without this, users who control lights via physical switches, other apps, or voice assistants see stale state until manual refresh.
-
-**Implementation**:
-- Use Hue Bridge SSE (Server-Sent Events) endpoint
-- Parse event stream for light state changes
-- Fire `LightStateChanged` event to update UI
-- Handle reconnection on network failures
+**Solution applied**: Implemented SSE event stream using HueApi's `OnEventStreamMessage` event. Parses light state changes (on/off, brightness, color) from `ExtensionData` and fires `LightStateChanged` events. Stream starts automatically on bridge connection.
 
 ---
 
