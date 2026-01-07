@@ -12,6 +12,7 @@ namespace HueWindows.Controls;
 /// <summary>
 /// Widget-like room card control for the dashboard.
 /// Supports tap to navigate and drag to adjust brightness.
+/// Features Composition-based glow effect when active.
 /// </summary>
 public sealed partial class RoomCard : UserControl
 {
@@ -20,111 +21,149 @@ public sealed partial class RoomCard : UserControl
     private double _cumulativeDeltaY;
     private DateTime _lastBrightnessUpdate = DateTime.MinValue;
     private double _pendingBrightness;
+    private bool _isLoaded;
 
-    // Minimum drag distance before we consider it a drag (vs tap)
+    // Current accent color
+    private Color _accentColor = Colors.White;
+
+    // Constants
     private const double DragThreshold = 10;
-
-    // Vertical pixels per 1% brightness change
     private const double PixelsPerPercent = 3;
-
-    // Minimum time between brightness updates (throttle)
     private const int ThrottleMs = 100;
 
     public RoomCardViewModel? ViewModel => DataContext as RoomCardViewModel;
-
-    private bool _isLoaded;
 
     public RoomCard()
     {
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.SizeChanged += OnSizeChanged;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
-        UpdateOnOffState();
-        UpdateToggleColor();
+        UpdateActiveState();
+    }
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateBrightnessBar();
     }
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
         if (ViewModel != null)
         {
-            // Subscribe to property changes to update visual states
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
-            // Only update if the control is already loaded
             if (_isLoaded)
             {
-                UpdateOnOffState();
-                UpdateToggleColor();
+                UpdateActiveState();
             }
         }
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Only update visual state when on/off changes (not during drag brightness changes)
-        if (e.PropertyName == nameof(RoomCardViewModel.IsOn))
+        if (e.PropertyName == nameof(RoomCardViewModel.IsOn) ||
+            e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb))
         {
-            // Ensure UI updates happen on the UI thread
             if (DispatcherQueue?.HasThreadAccess == true)
             {
-                UpdateOnOffState();
-                UpdateToggleColor();
+                UpdateActiveState();
             }
             else
             {
-                DispatcherQueue?.TryEnqueue(() =>
-                {
-                    UpdateOnOffState();
-                    UpdateToggleColor();
-                });
+                DispatcherQueue?.TryEnqueue(UpdateActiveState);
+            }
+        }
+        else if (e.PropertyName == nameof(RoomCardViewModel.BrightnessPercent))
+        {
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                UpdateBrightnessBar();
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(UpdateBrightnessBar);
             }
         }
     }
 
-    private void UpdateOnOffState()
+    private void UpdateActiveState()
     {
         if (!_isLoaded || ViewModel == null) return;
 
-        VisualStateManager.GoToState(this, ViewModel.IsOn ? "On" : "Off", true);
+        var isActive = ViewModel.IsOn;
+
+        // Get room color
+        var lightColors = ViewModel.LightColors;
+        if (lightColors.Count > 0 && isActive)
+        {
+            var (r, g, b) = lightColors[0];
+            _accentColor = Color.FromArgb(255, r, g, b);
+        }
+        else
+        {
+            _accentColor = Colors.Gray;
+        }
+
+        // Update visual state
+        VisualStateManager.GoToState(this, isActive ? "Active" : "Inactive", true);
+
+        // Update glow
+        UpdateGlowEffect(isActive);
+
+        // Update toggle color
+        UpdateToggleColor(isActive);
+
+        // Update icon color
+        UpdateIconColor(isActive);
+
+        // Update brightness bar
+        UpdateBrightnessBar();
     }
 
-    private void UpdateToggleColor()
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (isActive)
+        {
+            // Simple colored border for the glow effect
+            GlowBorder.BorderBrush = new SolidColorBrush(_accentColor);
+            GlowBorder.Opacity = 0.8;
+        }
+        else
+        {
+            GlowBorder.Opacity = 0;
+        }
+    }
+
+    private void UpdateToggleColor(bool isActive)
     {
         try
         {
-            if (!_isLoaded || ViewModel == null || RoomToggle == null) return;
+            if (RoomToggle == null) return;
 
-            var lightColors = ViewModel.LightColors;
-            if (lightColors.Count > 0 && ViewModel.IsOn)
+            if (isActive)
             {
-                // Use the first color for the toggle "on" state
-                var (r, g, b) = lightColors[0];
-                var roomColor = Color.FromArgb(255, r, g, b);
-                var roomColorBrush = new SolidColorBrush(roomColor);
-
-                // Create slightly lighter/darker variants for hover/pressed states
+                var roomColorBrush = new SolidColorBrush(_accentColor);
                 var hoverColor = Color.FromArgb(255,
-                    (byte)Math.Min(255, r + 20),
-                    (byte)Math.Min(255, g + 20),
-                    (byte)Math.Min(255, b + 20));
+                    (byte)Math.Min(255, _accentColor.R + 20),
+                    (byte)Math.Min(255, _accentColor.G + 20),
+                    (byte)Math.Min(255, _accentColor.B + 20));
                 var pressedColor = Color.FromArgb(255,
-                    (byte)Math.Max(0, r - 20),
-                    (byte)Math.Max(0, g - 20),
-                    (byte)Math.Max(0, b - 20));
+                    (byte)Math.Max(0, _accentColor.R - 20),
+                    (byte)Math.Max(0, _accentColor.G - 20),
+                    (byte)Math.Max(0, _accentColor.B - 20));
 
-                // Override toggle switch resources for this instance
                 RoomToggle.Resources["ToggleSwitchFillOn"] = roomColorBrush;
                 RoomToggle.Resources["ToggleSwitchFillOnPointerOver"] = new SolidColorBrush(hoverColor);
                 RoomToggle.Resources["ToggleSwitchFillOnPressed"] = new SolidColorBrush(pressedColor);
             }
             else
             {
-                // Reset to default accent colors
                 RoomToggle.Resources.Remove("ToggleSwitchFillOn");
                 RoomToggle.Resources.Remove("ToggleSwitchFillOnPointerOver");
                 RoomToggle.Resources.Remove("ToggleSwitchFillOnPressed");
@@ -133,6 +172,44 @@ public sealed partial class RoomCard : UserControl
         catch
         {
             // Silently handle any resource errors
+        }
+    }
+
+    private void UpdateIconColor(bool isActive)
+    {
+        if (RoomIcon == null) return;
+
+        if (isActive)
+        {
+            RoomIcon.Foreground = new SolidColorBrush(_accentColor);
+        }
+        else
+        {
+            RoomIcon.Foreground = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
+        }
+    }
+
+    private void UpdateBrightnessBar()
+    {
+        if (BrightnessFill == null || ViewModel == null) return;
+
+        var parentGrid = BrightnessFill.Parent as Grid;
+        if (parentGrid == null) return;
+
+        var totalWidth = parentGrid.ActualWidth;
+        if (totalWidth <= 0) return;
+
+        var fillWidth = totalWidth * (ViewModel.BrightnessPercent / 100.0);
+        BrightnessFill.Width = fillWidth;
+
+        // Update fill color based on active state
+        if (ViewModel.IsOn)
+        {
+            BrightnessFill.Background = new SolidColorBrush(_accentColor);
+        }
+        else
+        {
+            BrightnessFill.Background = new SolidColorBrush(Color.FromArgb(96, 255, 255, 255));
         }
     }
 
@@ -149,10 +226,8 @@ public sealed partial class RoomCard : UserControl
     {
         if (ViewModel == null) return;
 
-        // Accumulate vertical movement
         _cumulativeDeltaY += e.Delta.Translation.Y;
 
-        // Check if we've moved enough to be considered a drag
         if (Math.Abs(_cumulativeDeltaY) > DragThreshold)
         {
             if (!_isDragging)
@@ -161,12 +236,10 @@ public sealed partial class RoomCard : UserControl
                 VisualStateManager.GoToState(this, "Dragging", true);
             }
 
-            // Calculate brightness change (moving up increases brightness, hence negative deltaY)
             var brightnessChange = -_cumulativeDeltaY / (PixelsPerPercent * 100);
             var newBrightness = Math.Clamp(_startBrightness + brightnessChange, 0.0, 1.0);
             _pendingBrightness = newBrightness;
 
-            // Throttle updates to bridge
             var now = DateTime.UtcNow;
             if ((now - _lastBrightnessUpdate).TotalMilliseconds >= ThrottleMs)
             {
@@ -182,7 +255,6 @@ public sealed partial class RoomCard : UserControl
     {
         if (_isDragging && ViewModel != null)
         {
-            // Send final brightness value
             ViewModel.SetBrightnessCommand.Execute(_pendingBrightness);
         }
 
@@ -192,7 +264,6 @@ public sealed partial class RoomCard : UserControl
 
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Only navigate if we didn't drag
         if (!_isDragging && ViewModel != null)
         {
             ViewModel.TapRoomCommand.Execute(null);
