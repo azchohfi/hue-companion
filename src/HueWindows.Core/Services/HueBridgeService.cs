@@ -333,16 +333,53 @@ public class HueBridgeService : IHueBridgeService
             // Filter scenes that belong to this zone
             if (scene.Group?.Rid == zoneId)
             {
-                result.Add(new SceneModel
+                var sceneModel = new SceneModel
                 {
                     Id = scene.Id,
                     Name = scene.Metadata?.Name ?? "Unknown Scene",
                     RoomId = zoneId,
-                });
+                    PaletteColors = ExtractPaletteColors(scene)
+                };
+                sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
+                result.Add(sceneModel);
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Extracts palette colors from a scene's palette property.
+    /// </summary>
+    private static List<Models.HueColor> ExtractPaletteColors(Scene scene)
+    {
+        var colors = new List<Models.HueColor>();
+
+        // Try to get colors from the palette
+        if (scene.Palette?.Color != null)
+        {
+            foreach (var colorPalette in scene.Palette.Color.Take(4)) // Limit to 4 colors for UI
+            {
+                if (colorPalette.Color?.Xy != null)
+                {
+                    colors.Add(new Models.HueColor(colorPalette.Color.Xy.X, colorPalette.Color.Xy.Y));
+                }
+            }
+        }
+
+        // If no palette colors, try to extract from actions
+        if (colors.Count == 0 && scene.Actions != null)
+        {
+            foreach (var action in scene.Actions.Take(4))
+            {
+                if (action.Action?.Color?.Xy != null)
+                {
+                    colors.Add(new Models.HueColor(action.Action.Color.Xy.X, action.Action.Color.Xy.Y));
+                }
+            }
+        }
+
+        return colors;
     }
 
     /// <inheritdoc/>
@@ -432,13 +469,15 @@ public class HueBridgeService : IHueBridgeService
             // Filter scenes that belong to this room
             if (scene.Group?.Rid == roomId)
             {
-                result.Add(new SceneModel
+                var sceneModel = new SceneModel
                 {
                     Id = scene.Id,
                     Name = scene.Metadata?.Name ?? "Unknown Scene",
                     RoomId = roomId,
-                    // TODO: Extract preview color from scene palette if available
-                });
+                    PaletteColors = ExtractPaletteColors(scene)
+                };
+                sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
+                result.Add(sceneModel);
             }
         }
 

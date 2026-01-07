@@ -226,6 +226,43 @@ public partial class SceneItemViewModel : ObservableObject
     private bool _isActive;
 
     /// <summary>
+    /// The palette colors as RGB tuples for UI binding.
+    /// </summary>
+    public List<(byte R, byte G, byte B)> PaletteColorsRgb { get; }
+
+    /// <summary>
+    /// Whether this scene has palette colors to display.
+    /// </summary>
+    public bool HasPaletteColors => PaletteColorsRgb.Count > 0;
+
+    /// <summary>
+    /// Number of palette colors available.
+    /// </summary>
+    public int ColorCount => PaletteColorsRgb.Count;
+
+    /// <summary>
+    /// First palette color hex string (or empty if none).
+    /// </summary>
+    public string Color1Hex => PaletteColorsRgb.Count > 0 ? ToHex(PaletteColorsRgb[0]) : string.Empty;
+
+    /// <summary>
+    /// Second palette color hex string (or empty if none).
+    /// </summary>
+    public string Color2Hex => PaletteColorsRgb.Count > 1 ? ToHex(PaletteColorsRgb[1]) : string.Empty;
+
+    /// <summary>
+    /// Third palette color hex string (or empty if none).
+    /// </summary>
+    public string Color3Hex => PaletteColorsRgb.Count > 2 ? ToHex(PaletteColorsRgb[2]) : string.Empty;
+
+    /// <summary>
+    /// Fourth palette color hex string (or empty if none).
+    /// </summary>
+    public string Color4Hex => PaletteColorsRgb.Count > 3 ? ToHex(PaletteColorsRgb[3]) : string.Empty;
+
+    private static string ToHex((byte R, byte G, byte B) color) => $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+
+    /// <summary>
     /// Event raised when the scene is activated.
     /// </summary>
     public event EventHandler<Guid>? SceneActivated;
@@ -237,6 +274,11 @@ public partial class SceneItemViewModel : ObservableObject
 
         _name = scene.Name;
         _previewColor = scene.PreviewColor;
+
+        // Convert HueColors to RGB for UI binding
+        PaletteColorsRgb = scene.PaletteColors
+            .Select(c => c.ToRgb(1.0))
+            .ToList();
     }
 
     [RelayCommand]

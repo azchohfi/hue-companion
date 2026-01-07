@@ -5,10 +5,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:HueWindows.Views"
     xmlns:vm="using:HueWindows.Core.ViewModels"
+    xmlns:converters="using:HueWindows.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="Transparent">
+
+    <Page.Resources>
+        <converters:HexToSolidColorBrushConverter x:Key="HexToBrushConverter"/>
+        <converters:HexToVisibilityConverter x:Key="HexToVisibilityConverter"/>
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -97,18 +103,36 @@
                                             VerticalAlignment="Stretch"
                                             HorizontalContentAlignment="Center"
                                             VerticalContentAlignment="Center"
-                                            Padding="8,12"
+                                            Padding="8,10"
                                             CornerRadius="8"
                                             Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                             Command="{x:Bind ActivateCommand}">
-                                        <StackPanel HorizontalAlignment="Center" Spacing="6">
-                                            <FontIcon Glyph="&#xE91B;" FontSize="18"/>
+                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                            <FontIcon Glyph="&#xE91B;" FontSize="16"/>
                                             <TextBlock Text="{x:Bind Name}"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="90"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"/>
+                                            <!-- Color swatches -->
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center"
+                                                        Spacing="3"
+                                                        Visibility="{x:Bind HasPaletteColors}">
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color1Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{x:Bind Color2Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color2Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{x:Bind Color3Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color3Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{x:Bind Color4Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color4Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Button>
                                     <!-- Active indicator border -->

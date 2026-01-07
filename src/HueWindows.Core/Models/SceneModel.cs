@@ -26,6 +26,11 @@ public class SceneModel
     public HueColor? PreviewColor { get; set; }
 
     /// <summary>
+    /// The palette colors for this scene (up to 4 colors for preview swatches).
+    /// </summary>
+    public List<HueColor> PaletteColors { get; set; } = new();
+
+    /// <summary>
     /// Whether this is a dynamic scene.
     /// </summary>
     public bool IsDynamic { get; set; }

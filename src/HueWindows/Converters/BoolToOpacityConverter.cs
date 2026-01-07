@@ -1,5 +1,8 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 namespace HueWindows.Converters;
 
@@ -100,5 +103,57 @@ public class InvertBoolConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, string language)
     {
         return value is true ? false : true;
+    }
+}
+
+/// <summary>
+/// Converts a hex color string (#RRGGBB) to a SolidColorBrush.
+/// Returns transparent if the string is empty or invalid.
+/// </summary>
+public class HexToSolidColorBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string hex && !string.IsNullOrEmpty(hex) && hex.Length == 7 && hex[0] == '#')
+        {
+            try
+            {
+                var r = System.Convert.ToByte(hex.Substring(1, 2), 16);
+                var g = System.Convert.ToByte(hex.Substring(3, 2), 16);
+                var b = System.Convert.ToByte(hex.Substring(5, 2), 16);
+                return new SolidColorBrush(Color.FromArgb(255, r, g, b));
+            }
+            catch
+            {
+                // Fall through to return transparent
+            }
+        }
+        return new SolidColorBrush(Colors.Transparent);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts a hex color string to Visibility.
+/// Returns Visible if the string is a valid hex color, Collapsed otherwise.
+/// </summary>
+public class HexToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string hex && !string.IsNullOrEmpty(hex) && hex.Length == 7 && hex[0] == '#')
+        {
+            return Visibility.Visible;
+        }
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
     }
 }
