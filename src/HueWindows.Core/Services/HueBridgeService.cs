@@ -1,6 +1,7 @@
 using HueApi;
 using HueApi.Models;
 using HueApi.Models.Requests;
+using HueApi.Models.Responses;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 
@@ -42,6 +43,10 @@ public class HueBridgeService : IHueBridgeService
             }
 
             Connected?.Invoke(this, EventArgs.Empty);
+
+            // Start listening for real-time updates
+            await StartEventStreamAsync();
+
             return true;
         }
         catch
@@ -452,17 +457,116 @@ public class HueBridgeService : IHueBridgeService
     /// <inheritdoc/>
     public Task StartEventStreamAsync()
     {
-        // TODO: Implement event stream when HueApi version supports it
-        // For now, we'll rely on polling or manual refresh
+        if (_hueApi == null) return Task.CompletedTask;
+
+        // Stop any existing stream
+        StopEventStream();
+
+        _eventStreamCts = new CancellationTokenSource();
+
+        // Subscribe to the event stream
+        _hueApi.OnEventStreamMessage += OnEventStreamMessage;
+        _hueApi.StartEventStream();
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
     public void StopEventStream()
     {
+        if (_hueApi != null)
+        {
+            _hueApi.OnEventStreamMessage -= OnEventStreamMessage;
+            _hueApi.StopEventStream();
+        }
+
         _eventStreamCts?.Cancel();
         _eventStreamCts?.Dispose();
         _eventStreamCts = null;
+    }
+
+    private void OnEventStreamMessage(string bridgeIp, List<EventStreamResponse> events)
+    {
+        foreach (var eventResponse in events)
+        {
+            foreach (var data in eventResponse.Data)
+            {
+                // Check if this is a light update event
+                if (data.Type == "light")
+                {
+                    var args = ParseLightStateFromEventData(data);
+                    if (args != null)
+                    {
+                        LightStateChanged?.Invoke(this, args);
+                    }
+                }
+            }
+        }
+    }
+
+    private LightStateChangedEventArgs? ParseLightStateFromEventData(HueResource data)
+    {
+        bool? isOn = null;
+        double? brightness = null;
+        HueColor? color = null;
+
+        // Parse ExtensionData for light state properties
+        if (data.ExtensionData != null)
+        {
+            // Parse "on" property
+            if (data.ExtensionData.TryGetValue("on", out var onElement))
+            {
+                if (onElement.TryGetProperty("on", out var onValue))
+                {
+                    isOn = onValue.GetBoolean();
+                }
+            }
+
+            // Parse "dimming" property
+            if (data.ExtensionData.TryGetValue("dimming", out var dimmingElement))
+            {
+                if (dimmingElement.TryGetProperty("brightness", out var brightnessValue))
+                {
+                    brightness = brightnessValue.GetDouble() / 100.0;
+                }
+            }
+
+            // Parse "color" property (xy coordinates)
+            if (data.ExtensionData.TryGetValue("color", out var colorElement))
+            {
+                if (colorElement.TryGetProperty("xy", out var xyElement))
+                {
+                    if (xyElement.TryGetProperty("x", out var xValue) &&
+                        xyElement.TryGetProperty("y", out var yValue))
+                    {
+                        color = new HueColor(xValue.GetDouble(), yValue.GetDouble());
+                    }
+                }
+            }
+
+            // Parse "color_temperature" property (mirek)
+            if (color == null && data.ExtensionData.TryGetValue("color_temperature", out var ctElement))
+            {
+                if (ctElement.TryGetProperty("mirek", out var mirekValue) && mirekValue.ValueKind == System.Text.Json.JsonValueKind.Number)
+                {
+                    color = HueColor.FromMirek(mirekValue.GetInt32());
+                }
+            }
+        }
+
+        // Only create event args if we have some state to report
+        if (isOn == null && brightness == null && color == null)
+        {
+            return null;
+        }
+
+        return new LightStateChangedEventArgs
+        {
+            LightId = data.Id,
+            IsOn = isOn,
+            Brightness = brightness,
+            Color = color
+        };
     }
 
     private static RoomArchetype MapRoomArchetype(string? archetype)
