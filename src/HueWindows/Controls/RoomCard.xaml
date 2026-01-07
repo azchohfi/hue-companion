@@ -14,24 +14,11 @@
     <Grid x:Name="OuterContainer">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ActiveStates">
-                <VisualStateGroup.Transitions>
-                    <VisualTransition GeneratedDuration="0:0:0.3">
-                        <VisualTransition.GeneratedEasingFunction>
-                            <CubicEase EasingMode="EaseOut"/>
-                        </VisualTransition.GeneratedEasingFunction>
-                    </VisualTransition>
-                </VisualStateGroup.Transitions>
-                
-                <VisualState x:Name="Inactive">
-                    <VisualState.Setters>
-                        <Setter Target="OutlineBorder.Opacity" Value="0"/>
-                    </VisualState.Setters>
-                </VisualState>
-                
+                <!-- No transitions - border opacity animated manually in code-behind -->
+                <VisualState x:Name="Inactive"/>
                 <VisualState x:Name="Active">
                     <VisualState.Setters>
                         <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
-                        <Setter Target="OutlineBorder.Opacity" Value="1"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>

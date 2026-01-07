@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
@@ -132,40 +133,66 @@ public sealed partial class RoomCard : UserControl
     private void UpdateBorderEffect(bool isActive)
     {
         if (ViewModel == null) return;
-        
-        if (isActive)
-        {
-            // Calculate Gradient
-            LinearGradientBrush borderBrush;
-            var colors = ViewModel.LightColors;
-            
-            if (colors.Count > 1)
-            {
-                borderBrush = new LinearGradientBrush();
-                borderBrush.StartPoint = new Windows.Foundation.Point(0, 0);
-                borderBrush.EndPoint = new Windows.Foundation.Point(1, 1);
-                
-                for (int i = 0; i < colors.Count; i++)
-                {
-                    var (r, g, b) = colors[i];
-                    var color = Color.FromArgb(255, r, g, b);
-                    borderBrush.GradientStops.Add(new GradientStop 
-                    { 
-                        Color = color, 
-                        Offset = (double)i / (colors.Count - 1) 
-                    });
-                }
-            }
-            else
-            {
-                // Fallback / Single color
-                borderBrush = new LinearGradientBrush();
-                borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 0 });
-                borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 1 });
-            }
 
-            OutlineBorder.BorderBrush = borderBrush;
+        // Build the gradient brush from light colors
+        LinearGradientBrush borderBrush;
+        var colors = ViewModel.LightColors;
+
+        if (colors.Count > 1)
+        {
+            borderBrush = new LinearGradientBrush();
+            borderBrush.StartPoint = new Windows.Foundation.Point(0, 0);
+            borderBrush.EndPoint = new Windows.Foundation.Point(1, 1);
+
+            for (int i = 0; i < colors.Count; i++)
+            {
+                var (r, g, b) = colors[i];
+                var color = Color.FromArgb(255, r, g, b);
+                borderBrush.GradientStops.Add(new GradientStop
+                {
+                    Color = color,
+                    Offset = (double)i / (colors.Count - 1)
+                });
+            }
         }
+        else if (colors.Count == 1)
+        {
+            var (r, g, b) = colors[0];
+            var color = Color.FromArgb(255, r, g, b);
+            borderBrush = new LinearGradientBrush();
+            borderBrush.GradientStops.Add(new GradientStop { Color = color, Offset = 0 });
+            borderBrush.GradientStops.Add(new GradientStop { Color = color, Offset = 1 });
+        }
+        else
+        {
+            // Fallback when no colors available
+            borderBrush = new LinearGradientBrush();
+            borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 0 });
+            borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 1 });
+        }
+
+        // Set the brush FIRST, then animate opacity
+        OutlineBorder.BorderBrush = borderBrush;
+
+        // Animate border opacity
+        var targetOpacity = isActive ? 1.0 : 0.0;
+        AnimateBorderOpacity(targetOpacity);
+    }
+
+    private void AnimateBorderOpacity(double targetOpacity)
+    {
+        var animation = new DoubleAnimation
+        {
+            To = targetOpacity,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, OutlineBorder);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+        storyboard.Begin();
     }
 
     private void UpdateToggleColor(bool isActive)
