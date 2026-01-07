@@ -327,6 +327,7 @@ public partial class RoomCardViewModel : ObservableObject
         OnPropertyChanged(nameof(BrightnessDisplayText));
         OnPropertyChanged(nameof(BackgroundColorRgb));
         OnPropertyChanged(nameof(UseBlackText));
+        OnPropertyChanged(nameof(LightColors));
     }
 
     private static string GetIconForArchetype(RoomArchetype archetype)
