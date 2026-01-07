@@ -14,6 +14,8 @@ public class HueBridgeService : IHueBridgeService
 {
     private LocalHueApi? _hueApi;
     private CancellationTokenSource? _eventStreamCts;
+    private string? _lastIpAddress;
+    private string? _lastAppKey;
 
     /// <inheritdoc/>
     public bool IsConnected => _hueApi != null;
@@ -32,6 +34,10 @@ public class HueBridgeService : IHueBridgeService
     {
         try
         {
+            // Store credentials for potential reconnection
+            _lastIpAddress = ipAddress;
+            _lastAppKey = appKey;
+
             _hueApi = new LocalHueApi(ipAddress, appKey);
 
             // Validate connection by fetching bridge info
@@ -56,6 +62,40 @@ public class HueBridgeService : IHueBridgeService
         }
     }
 
+    /// <summary>
+    /// Ensures the API connection is valid, reconnecting if necessary.
+    /// </summary>
+    private async Task<bool> EnsureConnectedAsync()
+    {
+        if (_hueApi != null)
+        {
+            try
+            {
+                // Quick validation - if this throws, we need to reconnect
+                await _hueApi.GetBridgeAsync();
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                // API was disposed, need to reconnect
+                _hueApi = null;
+            }
+            catch (HttpRequestException)
+            {
+                // Network error, might need to reconnect
+                _hueApi = null;
+            }
+        }
+
+        // Try to reconnect if we have credentials
+        if (_lastIpAddress != null && _lastAppKey != null)
+        {
+            return await ConnectAsync(_lastIpAddress, _lastAppKey);
+        }
+
+        return false;
+    }
+
     /// <inheritdoc/>
     public void Disconnect()
     {
@@ -67,9 +107,9 @@ public class HueBridgeService : IHueBridgeService
     /// <inheritdoc/>
     public async Task<IReadOnlyList<RoomModel>> GetRoomsAsync()
     {
-        if (_hueApi == null) return Array.Empty<RoomModel>();
+        if (!await EnsureConnectedAsync()) return Array.Empty<RoomModel>();
 
-        var rooms = await _hueApi.GetRoomsAsync();
+        var rooms = await _hueApi!.GetRoomsAsync();
         if (rooms?.Data == null) return Array.Empty<RoomModel>();
 
         var allLights = await _hueApi.GetLightsAsync();
@@ -209,9 +249,9 @@ public class HueBridgeService : IHueBridgeService
     /// <inheritdoc/>
     public async Task<IReadOnlyList<RoomModel>> GetZonesAsync()
     {
-        if (_hueApi == null) return Array.Empty<RoomModel>();
+        if (!await EnsureConnectedAsync()) return Array.Empty<RoomModel>();
 
-        var zones = await _hueApi.GetZonesAsync();
+        var zones = await _hueApi!.GetZonesAsync();
         if (zones?.Data == null) return Array.Empty<RoomModel>();
 
         var allLights = await _hueApi.GetLightsAsync();
