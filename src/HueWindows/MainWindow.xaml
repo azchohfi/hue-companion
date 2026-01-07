@@ -61,30 +61,35 @@
             IsPaneToggleButtonVisible="False"
             IsSettingsVisible="True"
             ItemInvoked="NavView_ItemInvoked"
-            PaneDisplayMode="LeftCompact"
-            OpenPaneLength="240"
-            ExpandedModeThresholdWidth="1000"
-            CompactModeThresholdWidth="600"
+            PaneOpened="NavView_PaneOpened"
+            PaneClosed="NavView_PaneClosed"
+            PaneDisplayMode="Left"
+            OpenPaneLength="220"
+            IsPaneOpen="False"
             IsTabStop="False"
             IsTitleBarAutoPaddingEnabled="False">
 
             <NavigationView.MenuItems>
-                <!-- Home -->
-                <NavigationViewItem x:Name="HomeNavItem" Content="Home" Tag="Dashboard">
+                <!-- Dashboard -->
+                <NavigationViewItem x:Name="DashboardNavItem" Content="Dashboard" Tag="Dashboard">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <!-- Rooms Header -->
-                <NavigationViewItemHeader x:Name="RoomsHeader" Content="Rooms"/>
+                <!-- Zones -->
+                <NavigationViewItem x:Name="ZonesNavItem" Content="Zones" Tag="Zones">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
-                <!-- Room items will be dynamically inserted here -->
-
-                <!-- Zones Header -->
-                <NavigationViewItemHeader x:Name="ZonesHeader" Content="Zones"/>
-
-                <!-- Zone items will be dynamically inserted here -->
+                <!-- Rooms -->
+                <NavigationViewItem x:Name="RoomsNavItem" Content="Rooms" Tag="Rooms">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F4;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame" Padding="0"/>
