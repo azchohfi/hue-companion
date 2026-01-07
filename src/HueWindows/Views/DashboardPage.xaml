@@ -110,28 +110,39 @@
                     Visibility="{x:Bind ViewModel.ShowEmptyState, Mode=OneWay}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="12"
-                    MaxWidth="320">
+                    Spacing="16"
+                    MaxWidth="360">
 
-            <FontIcon Glyph="&#xE8B9;"
+            <FontIcon Glyph="&#xE781;"
                       Style="{StaticResource EmptyStateIconStyle}"/>
 
-            <TextBlock Text="No rooms or zones found"
-                       Style="{StaticResource SubtitleTextBlockStyle}"
-                       HorizontalAlignment="Center"/>
+            <StackPanel Spacing="8">
+                <TextBlock Text="No rooms or zones found"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Add rooms in the Philips Hue app first, then refresh here"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       TextAlignment="Center"
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Center"/>
+                <TextBlock Text="Your Hue bridge is connected but doesn't have any rooms configured yet. Create rooms in the Philips Hue app to organize your lights."
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
 
-            <Button Content="Refresh"
-                    Style="{StaticResource AccentButtonStyle}"
-                    HorizontalAlignment="Center"
-                    Margin="0,8,0,0"
-                    Command="{x:Bind ViewModel.RefreshCommand}"/>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8"
+                        Margin="0,8,0,0">
+                <Button Content="Open Hue App"
+                        Click="OpenHueApp_Click"/>
+                <Button Content="Refresh"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Command="{x:Bind ViewModel.RefreshCommand}"/>
+            </StackPanel>
+
+            <HyperlinkButton Content="Learn how to set up rooms"
+                             NavigateUri="https://www.philips-hue.com/en-us/explore-hue/how-to/create-rooms"
+                             HorizontalAlignment="Center"/>
         </StackPanel>
 
         <!-- Error Message -->

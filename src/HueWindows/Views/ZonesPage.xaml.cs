@@ -50,4 +50,16 @@ public sealed partial class ZonesPage : Page
     {
         return !isLoading && !hasItems ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    private async void OpenHueApp_Click(object sender, RoutedEventArgs e)
+    {
+        var launched = await Windows.System.Launcher.LaunchUriAsync(
+            new Uri("philipshue://"));
+
+        if (!launched)
+        {
+            await Windows.System.Launcher.LaunchUriAsync(
+                new Uri("ms-windows-store://pdp/?productid=9WZDNCRFJB54"));
+        }
+    }
 }

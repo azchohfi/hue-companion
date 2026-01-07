@@ -47,4 +47,21 @@ public sealed partial class DashboardPage : Page
     {
         return !string.IsNullOrEmpty(message);
     }
+
+    /// <summary>
+    /// Opens the Philips Hue app from Microsoft Store.
+    /// </summary>
+    private async void OpenHueApp_Click(object sender, RoutedEventArgs e)
+    {
+        // Try to launch Hue app directly, fall back to Store page
+        var launched = await Windows.System.Launcher.LaunchUriAsync(
+            new Uri("philipshue://"));
+
+        if (!launched)
+        {
+            // Fall back to Microsoft Store page for Hue app
+            await Windows.System.Launcher.LaunchUriAsync(
+                new Uri("ms-windows-store://pdp/?productid=9WZDNCRFJB54"));
+        }
+    }
 }
