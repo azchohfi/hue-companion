@@ -83,20 +83,14 @@ public interface IColorService
 
 ## Usability Improvements
 
-### 🔴 Scene Preview Colors
+### ✅ ~~Scene Preview Colors~~ (IMPLEMENTED)
 **Location**: `src/HueWindows.Core/Models/SceneModel.cs`
 
-`SceneModel` has a `Colors` property but it's not populated from the API.
+~~`SceneModel` has a `Colors` property but it's not populated from the API.~~
 
-**Implementation**:
-- Parse scene palette from Hue API response
-- Display color swatches in scene buttons:
-```
-┌─────────────────┐
-│ 🌅 Sunset       │  ← Scene name
-│ ■ ■ ■ ■        │  ← Color palette preview
-└─────────────────┘
-```
+**Solution applied**: Scene palette colors are now parsed from the Hue API `scene.Palette.Color` or falling back to `scene.Actions[].Action.Color`. Up to 4 color swatches are displayed as colored circles below scene names in the UI.
+
+**Note on scene images**: The Hue API exposes a `metadata.image` property with a `public_image` resource ID, but the actual images are hosted on Philips's cloud servers, not accessible via the bridge API. Scene images cannot be reliably retrieved.
 
 ---
 
