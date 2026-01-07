@@ -63,7 +63,7 @@
         <Grid x:Name="CardRoot"
               CornerRadius="16"
               MinHeight="120"
-              ManipulationMode="System"
+              ManipulationMode="TranslateY"
               ManipulationStarted="CardRoot_ManipulationStarted"
               ManipulationDelta="CardRoot_ManipulationDelta"
               ManipulationCompleted="CardRoot_ManipulationCompleted"
@@ -87,8 +87,6 @@
                     BorderThickness="2"
                     IsHitTestVisible="False"
                     Opacity="0"/>
-
-            <!-- Padded Content Wrapper -->
 
             <!-- Padded Content Wrapper -->
             <!-- ZIndex 1 ensures it's above the border -->

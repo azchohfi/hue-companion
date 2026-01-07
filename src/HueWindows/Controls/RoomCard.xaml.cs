@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
-using System.Numerics;
 
 namespace HueWindows.Controls;
 
