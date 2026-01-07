@@ -21,6 +21,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly INavigationService _navigationService;
     private readonly ISettingsService _settingsService;
     private readonly IHueBridgeService _bridgeService;
+    private readonly IPinnedItemsService _pinnedItemsService;
     private readonly List<NavigationViewItem> _roomNavItems = new();
     private readonly List<NavigationViewItem> _zoneNavItems = new();
     private bool _itemsLoaded;
@@ -66,7 +67,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _navigationService = App.Services.GetRequiredService<INavigationService>();
         _settingsService = App.Services.GetRequiredService<ISettingsService>();
         _bridgeService = App.Services.GetRequiredService<IHueBridgeService>();
+        _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
 
+        // Subscribe to pinned items changes
+        _pinnedItemsService.PinnedItemsChanged += OnPinnedItemsChanged;
+        UpdateMyDashboardVisibility();
 
         // Initialize navigation
         _navigationService.Initialize(ContentFrame);
@@ -95,8 +100,17 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
             if (connected)
             {
-                _navigationService.NavigateTo<DashboardPage>();
-                NavView.SelectedItem = DashboardNavItem;
+                // Navigate to My Dashboard if items are pinned, else regular Dashboard
+                if (_pinnedItemsService.HasPinnedItems)
+                {
+                    _navigationService.NavigateTo<MyDashboardPage>();
+                    NavView.SelectedItem = MyDashboardNavItem;
+                }
+                else
+                {
+                    _navigationService.NavigateTo<DashboardPage>();
+                    NavView.SelectedItem = DashboardNavItem;
+                }
             }
             else
             {
@@ -108,6 +122,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             _navigationService.NavigateTo<SetupPage>();
         }
+    }
+
+    private void OnPinnedItemsChanged(object? sender, EventArgs e)
+    {
+        DispatcherQueue.TryEnqueue(UpdateMyDashboardVisibility);
+    }
+
+    private void UpdateMyDashboardVisibility()
+    {
+        MyDashboardNavItem.Visibility = _pinnedItemsService.HasPinnedItems
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
 
@@ -154,6 +180,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (item.Tag)
             {
+                case "MyDashboard":
+                    _navigationService.NavigateTo<MyDashboardPage>();
+                    break;
                 case "Dashboard":
                     _navigationService.NavigateTo<DashboardPage>();
                     break;

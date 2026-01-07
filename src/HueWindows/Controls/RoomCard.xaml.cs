@@ -32,7 +32,7 @@ public sealed partial class RoomCard : UserControl
     private const double PixelsPerPercent = 3;
     private const int ThrottleMs = 100;
 
-    public RoomCardViewModel? ViewModel => DataContext as RoomCardViewModel;
+    public IRoomCardViewModel? ViewModel => DataContext as IRoomCardViewModel;
 
     public RoomCard()
     {

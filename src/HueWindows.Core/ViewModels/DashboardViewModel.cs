@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using System.ComponentModel;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -134,12 +136,24 @@ public partial class DashboardViewModel : ObservableObject
 /// <summary>
 /// ViewModel for an individual room card on the dashboard.
 /// </summary>
-public partial class RoomCardViewModel : ObservableObject
+public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
 {
     private readonly IHueBridgeService _bridgeService;
     private readonly RoomModel _room;
 
     public Guid RoomId => _room.Id;
+
+    /// <summary>
+    /// The item ID for pinning (same as RoomId).
+    /// </summary>
+    public Guid ItemId => _room.Id;
+
+    /// <summary>
+    /// The type of this item for pinning.
+    /// </summary>
+    public PinnedItemType ItemType => _room.GroupType == LightGroupType.Zone
+        ? PinnedItemType.Zone
+        : PinnedItemType.Room;
 
     [ObservableProperty]
     private string _roomName;
@@ -169,6 +183,10 @@ public partial class RoomCardViewModel : ObservableObject
 
     public int BrightnessPercent => (int)(Brightness * 100);
     public string BrightnessDisplayText => $"{BrightnessPercent}%";
+
+    // Explicit ICommand implementations for interface
+    ICommand IRoomCardViewModel.TapRoomCommand => TapRoomCommand;
+    ICommand IRoomCardViewModel.SetBrightnessCommand => SetBrightnessCommand;
 
     /// <summary>
     /// Gets all unique light colors in the room as RGB values for gradient display.

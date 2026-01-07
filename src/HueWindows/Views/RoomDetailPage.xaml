@@ -165,6 +165,17 @@
                                       Padding="16,12"
                                       PointerPressed="LightCard_PointerPressed"
                                       Tag="{x:Bind LightId}">
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Add to Dashboard"
+                                                            Click="AddLightToDashboard_Click"
+                                                            Tag="{x:Bind LightId}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE728;"/>
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>

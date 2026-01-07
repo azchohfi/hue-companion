@@ -70,7 +70,14 @@
             IsTitleBarAutoPaddingEnabled="False">
 
             <NavigationView.MenuItems>
-                <!-- Dashboard -->
+                <!-- My Dashboard (pinned items) - hidden when empty -->
+                <NavigationViewItem x:Name="MyDashboardNavItem" Content="My Dashboard" Tag="MyDashboard" Visibility="Collapsed">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE728;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <!-- Dashboard (all rooms/zones) -->
                 <NavigationViewItem x:Name="DashboardNavItem" Content="Dashboard" Tag="Dashboard">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;"/>

@@ -14,6 +14,11 @@ public class AppSettings
     /// The selected app theme.
     /// </summary>
     public AppTheme Theme { get; set; } = AppTheme.System;
+
+    /// <summary>
+    /// Items pinned to the custom dashboard, in display order.
+    /// </summary>
+    public List<PinnedItem> PinnedDashboardItems { get; set; } = new();
 }
 
 /// <summary>

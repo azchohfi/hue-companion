@@ -74,7 +74,19 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:RoomCardViewModel">
-                                <controls:RoomCard DataContext="{x:Bind}"/>
+                                <controls:RoomCard DataContext="{x:Bind}">
+                                    <controls:RoomCard.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Add to Dashboard"
+                                                            Click="AddToDashboard_Click"
+                                                            Tag="{x:Bind}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE728;"/>
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </controls:RoomCard.ContextFlyout>
+                                </controls:RoomCard>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
@@ -96,7 +108,19 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:RoomCardViewModel">
-                                <controls:RoomCard DataContext="{x:Bind}"/>
+                                <controls:RoomCard DataContext="{x:Bind}">
+                                    <controls:RoomCard.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Add to Dashboard"
+                                                            Click="AddToDashboard_Click"
+                                                            Tag="{x:Bind}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE728;"/>
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </controls:RoomCard.ContextFlyout>
+                                </controls:RoomCard>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

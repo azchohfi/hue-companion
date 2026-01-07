@@ -59,9 +59,11 @@ public partial class App : Application
         services.AddSingleton<IBridgeDiscoveryService, BridgeDiscoveryService>();
         services.AddSingleton<IHueBridgeService, HueBridgeService>();
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();
+        services.AddTransient<CustomDashboardViewModel>();
         services.AddTransient<RoomDetailViewModel>();
         services.AddTransient<LightDetailViewModel>();
         services.AddTransient<SettingsViewModel>();

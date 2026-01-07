@@ -12,10 +12,12 @@ namespace HueWindows.Views;
 public sealed partial class DashboardPage : Page
 {
     public DashboardViewModel ViewModel { get; }
+    private readonly IPinnedItemsService _pinnedItemsService;
 
     public DashboardPage()
     {
         ViewModel = App.Services.GetRequiredService<DashboardViewModel>();
+        _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
         ViewModel.RoomSelected += OnRoomSelected;
 
         this.InitializeComponent();
@@ -62,6 +64,17 @@ public sealed partial class DashboardPage : Page
             // Fall back to Microsoft Store page for Hue app
             await Windows.System.Launcher.LaunchUriAsync(
                 new Uri("ms-windows-store://pdp/?productid=9WZDNCRFJB54"));
+        }
+    }
+
+    /// <summary>
+    /// Handles adding a room or zone to the custom dashboard.
+    /// </summary>
+    private async void AddToDashboard_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is RoomCardViewModel roomCard)
+        {
+            await _pinnedItemsService.PinAsync(roomCard.ItemId, roomCard.ItemType);
         }
     }
 }

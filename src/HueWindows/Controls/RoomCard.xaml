@@ -98,7 +98,7 @@
                             CornerRadius="20"
                             Background="#20FFFFFF">
                         <FontIcon x:Name="RoomIcon"
-                                  Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
+                                  Glyph="{Binding RoomIcon}"
                                   FontSize="18"
                                   Foreground="#80FFFFFF"
                                   HorizontalAlignment="Center"
@@ -107,7 +107,7 @@
 
                     <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                         <TextBlock x:Name="RoomNameText"
-                                   Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
+                                   Text="{Binding RoomName}"
                                    FontWeight="SemiBold"
                                    FontSize="14"
                                    Foreground="#FFFFFFFF"
@@ -116,7 +116,7 @@
                                    FontSize="12"
                                    Foreground="#80FFFFFF"
                                    Margin="0,2,0,0">
-                            <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
+                            <Run Text="{Binding LightCount}"/>
                             <Run Text=" lights"/>
                         </TextBlock>
                     </StackPanel>
@@ -137,7 +137,7 @@
                     <ToggleSwitch x:Name="RoomToggle"
                                   Grid.Column="0"
                                   Style="{StaticResource GradientToggleSwitchStyle}"
-                                  IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
+                                  IsOn="{Binding IsOn, Mode=TwoWay}"
                                   Tapped="RoomToggle_Tapped"
                                   VerticalAlignment="Center"/>
 
@@ -164,7 +164,7 @@
                                VerticalAlignment="Center"
                                MinWidth="36"
                                TextAlignment="Right">
-                        <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
+                        <Run Text="{Binding BrightnessPercent}"/>
                         <Run Text=" %"/>
                     </TextBlock>
                 </Grid>
