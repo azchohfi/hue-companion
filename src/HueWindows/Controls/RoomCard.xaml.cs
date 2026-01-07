@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
 
@@ -146,9 +147,10 @@ public sealed partial class RoomCard : UserControl
         {
             if (RoomToggle == null) return;
 
+            var roomColorBrush = new SolidColorBrush(_accentColor);
+
             if (isActive)
             {
-                var roomColorBrush = new SolidColorBrush(_accentColor);
                 var hoverColor = Color.FromArgb(255,
                     (byte)Math.Min(255, _accentColor.R + 20),
                     (byte)Math.Min(255, _accentColor.G + 20),
@@ -168,11 +170,39 @@ public sealed partial class RoomCard : UserControl
                 RoomToggle.Resources.Remove("ToggleSwitchFillOnPointerOver");
                 RoomToggle.Resources.Remove("ToggleSwitchFillOnPressed");
             }
+
+            // Force immediate visual update by finding and setting the track fill directly
+            // Resources only apply on next state change, so we need to update the actual element
+            RoomToggle.ApplyTemplate();
+            var track = FindDescendant<Rectangle>(RoomToggle, "SwitchKnobBounds");
+            if (track != null && isActive)
+            {
+                track.Fill = roomColorBrush;
+            }
         }
         catch
         {
             // Silently handle any resource errors
         }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent, string name) where T : FrameworkElement
+    {
+        int childCount = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < childCount; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T element && element.Name == name)
+            {
+                return element;
+            }
+            var result = FindDescendant<T>(child, name);
+            if (result != null)
+            {
+                return result;
+            }
+        }
+        return null;
     }
 
     private void UpdateIconColor(bool isActive)
