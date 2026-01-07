@@ -1,12 +1,10 @@
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Core.ViewModels;
-using Windows.Foundation;
 using Windows.UI;
 
 namespace HueWindows.Controls;
@@ -18,9 +16,8 @@ namespace HueWindows.Controls;
 public sealed partial class RoomCard : UserControl
 {
     private bool _isDragging;
-    private Point _dragStartPoint;
     private double _startBrightness;
-    private bool _hasMovedEnough;
+    private double _cumulativeDeltaY;
     private DateTime _lastBrightnessUpdate = DateTime.MinValue;
     private double _pendingBrightness;
 
@@ -139,49 +136,33 @@ public sealed partial class RoomCard : UserControl
         }
     }
 
-    private void CardRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void CardRoot_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
     {
-        // Temporarily disabled for debugging
-        return;
-
         if (ViewModel == null) return;
 
-        var point = e.GetCurrentPoint(CardRoot);
-
-        // Only handle left button / touch
-        if (!point.Properties.IsLeftButtonPressed) return;
-
-        _isDragging = true;
-        _hasMovedEnough = false;
-        _dragStartPoint = point.Position;
+        _isDragging = false;
+        _cumulativeDeltaY = 0;
         _startBrightness = ViewModel.Brightness;
-
-        // Capture pointer for tracking outside control bounds
-        CardRoot.CapturePointer(e.Pointer);
-
-        e.Handled = true;
     }
 
-    private void CardRoot_PointerMoved(object sender, PointerRoutedEventArgs e)
+    private void CardRoot_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
     {
-        if (!_isDragging || ViewModel == null) return;
+        if (ViewModel == null) return;
 
-        var currentPoint = e.GetCurrentPoint(CardRoot).Position;
-
-        // Calculate distance moved
-        var deltaY = _dragStartPoint.Y - currentPoint.Y;
-        var totalDistance = Math.Sqrt(
-            Math.Pow(currentPoint.X - _dragStartPoint.X, 2) +
-            Math.Pow(currentPoint.Y - _dragStartPoint.Y, 2));
+        // Accumulate vertical movement
+        _cumulativeDeltaY += e.Delta.Translation.Y;
 
         // Check if we've moved enough to be considered a drag
-        if (totalDistance > DragThreshold)
+        if (Math.Abs(_cumulativeDeltaY) > DragThreshold)
         {
-            _hasMovedEnough = true;
-            VisualStateManager.GoToState(this, "Dragging", true);
+            if (!_isDragging)
+            {
+                _isDragging = true;
+                VisualStateManager.GoToState(this, "Dragging", true);
+            }
 
-            // Calculate brightness change (moving up increases brightness)
-            var brightnessChange = deltaY / (PixelsPerPercent * 100);
+            // Calculate brightness change (moving up increases brightness, hence negative deltaY)
+            var brightnessChange = -_cumulativeDeltaY / (PixelsPerPercent * 100);
             var newBrightness = Math.Clamp(_startBrightness + brightnessChange, 0.0, 1.0);
             _pendingBrightness = newBrightness;
 
@@ -197,41 +178,22 @@ public sealed partial class RoomCard : UserControl
         e.Handled = true;
     }
 
-    private void CardRoot_PointerReleased(object sender, PointerRoutedEventArgs e)
+    private void CardRoot_ManipulationCompleted(object sender, ManipulationCompletedRoutedEventArgs e)
     {
-        EndDrag(e.Pointer);
-        e.Handled = true;
-    }
-
-    private void CardRoot_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
-    {
-        EndDrag(null);
-    }
-
-    private void EndDrag(Pointer? pointer)
-    {
-        if (!_isDragging) return;
-
-        _isDragging = false;
-
-        if (pointer != null)
+        if (_isDragging && ViewModel != null)
         {
-            CardRoot.ReleasePointerCapture(pointer);
-        }
-
-        // Send final brightness value if we were dragging
-        if (_hasMovedEnough && ViewModel != null)
-        {
+            // Send final brightness value
             ViewModel.SetBrightnessCommand.Execute(_pendingBrightness);
         }
 
+        _isDragging = false;
         VisualStateManager.GoToState(this, "Normal", true);
     }
 
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
         // Only navigate if we didn't drag
-        if (!_hasMovedEnough && ViewModel != null)
+        if (!_isDragging && ViewModel != null)
         {
             ViewModel.TapRoomCommand.Execute(null);
         }

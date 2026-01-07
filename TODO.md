@@ -8,22 +8,17 @@ This document captures ideas for improving code structure, extensibility, usabil
 
 ## Code Structure & Extensibility
 
-### 🔴 Re-enable Drag-to-Brightness Gesture
-**Location**: `src/HueWindows/Controls/RoomCard.xaml.cs:144`
+### ✅ ~~Re-enable Drag-to-Brightness Gesture~~ (FIXED)
+**Location**: `src/HueWindows/Controls/RoomCard.xaml.cs`
 
-The signature drag-to-brightness interaction is disabled due to a crash. This differentiates the app from competitors.
+~~The signature drag-to-brightness interaction is disabled due to a crash.~~
 
-**Fix approach**:
-- Implement proper pointer capture/release lifecycle
-- Add debouncing to prevent rapid state updates
-- Use `CompositionTarget.Rendering` for smooth 60fps updates
-- Add cancellation when pointer leaves control bounds
-- Consider using `GestureRecognizer` instead of raw pointer events
+**Solution applied**: Switched from raw pointer events to `ManipulationDelta` events which handle pointer capture internally. See `TODO-drag-crash.md` for details.
 
-**Related constants** (already defined):
+**Related constants** (defined in RoomCard.xaml.cs):
 - `DragThreshold = 10` pixels
 - `ThrottleMs = 100` milliseconds
-- `PixelsPerPercent = 3` (inline at line 178 - should extract to constant)
+- `PixelsPerPercent = 3`
 
 ---
 

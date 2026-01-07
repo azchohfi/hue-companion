@@ -16,10 +16,10 @@
           BorderThickness="1"
           CornerRadius="12"
           Padding="16,14,16,16"
-          PointerPressed="CardRoot_PointerPressed"
-          PointerMoved="CardRoot_PointerMoved"
-          PointerReleased="CardRoot_PointerReleased"
-          PointerCaptureLost="CardRoot_PointerCaptureLost"
+          ManipulationMode="TranslateY"
+          ManipulationStarted="CardRoot_ManipulationStarted"
+          ManipulationDelta="CardRoot_ManipulationDelta"
+          ManipulationCompleted="CardRoot_ManipulationCompleted"
           Tapped="CardRoot_Tapped">
 
         <!-- Liquid glass background with subtle gradient -->
