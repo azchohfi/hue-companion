@@ -1,5 +1,4 @@
 using Microsoft.UI;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -53,6 +52,8 @@ public sealed partial class RoomCard : UserControl
         UpdateBrightnessBar();
     }
 
+
+
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
         if (ViewModel != null)
@@ -69,7 +70,8 @@ public sealed partial class RoomCard : UserControl
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(RoomCardViewModel.IsOn) ||
-            e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb))
+            e.PropertyName == nameof(RoomCardViewModel.BackgroundColorRgb) ||
+            e.PropertyName == nameof(RoomCardViewModel.LightColors))
         {
             if (DispatcherQueue?.HasThreadAccess == true)
             {
@@ -111,11 +113,11 @@ public sealed partial class RoomCard : UserControl
             _accentColor = Colors.Gray;
         }
 
-        // Update visual state
-        VisualStateManager.GoToState(this, isActive ? "Active" : "Inactive", true);
+        // Update glow and outline (Set properties before animation starts)
+        UpdateBorderEffect(isActive);
 
-        // Update glow
-        UpdateGlowEffect(isActive);
+        // Update visual state (Triggers animation)
+        VisualStateManager.GoToState(this, isActive ? "Active" : "Inactive", true);
 
         // Update toggle color
         UpdateToggleColor(isActive);
@@ -127,17 +129,42 @@ public sealed partial class RoomCard : UserControl
         UpdateBrightnessBar();
     }
 
-    private void UpdateGlowEffect(bool isActive)
+    private void UpdateBorderEffect(bool isActive)
     {
+        if (ViewModel == null) return;
+        
         if (isActive)
         {
-            // Simple colored border for the glow effect
-            GlowBorder.BorderBrush = new SolidColorBrush(_accentColor);
-            GlowBorder.Opacity = 0.8;
-        }
-        else
-        {
-            GlowBorder.Opacity = 0;
+            // Calculate Gradient
+            LinearGradientBrush borderBrush;
+            var colors = ViewModel.LightColors;
+            
+            if (colors.Count > 1)
+            {
+                borderBrush = new LinearGradientBrush();
+                borderBrush.StartPoint = new Windows.Foundation.Point(0, 0);
+                borderBrush.EndPoint = new Windows.Foundation.Point(1, 1);
+                
+                for (int i = 0; i < colors.Count; i++)
+                {
+                    var (r, g, b) = colors[i];
+                    var color = Color.FromArgb(255, r, g, b);
+                    borderBrush.GradientStops.Add(new GradientStop 
+                    { 
+                        Color = color, 
+                        Offset = (double)i / (colors.Count - 1) 
+                    });
+                }
+            }
+            else
+            {
+                // Fallback / Single color
+                borderBrush = new LinearGradientBrush();
+                borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 0 });
+                borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 1 });
+            }
+
+            OutlineBorder.BorderBrush = borderBrush;
         }
     }
 
@@ -147,38 +174,44 @@ public sealed partial class RoomCard : UserControl
         {
             if (RoomToggle == null) return;
 
-            var roomColorBrush = new SolidColorBrush(_accentColor);
-
-            if (isActive)
+            Brush fillBrush;
+            
+            if (isActive && ViewModel != null && ViewModel.LightColors.Count > 1)
             {
-                var hoverColor = Color.FromArgb(255,
-                    (byte)Math.Min(255, _accentColor.R + 20),
-                    (byte)Math.Min(255, _accentColor.G + 20),
-                    (byte)Math.Min(255, _accentColor.B + 20));
-                var pressedColor = Color.FromArgb(255,
-                    (byte)Math.Max(0, _accentColor.R - 20),
-                    (byte)Math.Max(0, _accentColor.G - 20),
-                    (byte)Math.Max(0, _accentColor.B - 20));
-
-                RoomToggle.Resources["ToggleSwitchFillOn"] = roomColorBrush;
-                RoomToggle.Resources["ToggleSwitchFillOnPointerOver"] = new SolidColorBrush(hoverColor);
-                RoomToggle.Resources["ToggleSwitchFillOnPressed"] = new SolidColorBrush(pressedColor);
+                 // Create gradient for toggle
+                var gradient = new LinearGradientBrush();
+                gradient.StartPoint = new Windows.Foundation.Point(0, 0);
+                gradient.EndPoint = new Windows.Foundation.Point(1, 0); // Horizontal for toggle
+                
+                var colors = ViewModel.LightColors;
+                for (int i = 0; i < colors.Count; i++)
+                {
+                    var (r, g, b) = colors[i];
+                    var color = Color.FromArgb(255, r, g, b);
+                    gradient.GradientStops.Add(new GradientStop 
+                    { 
+                        Color = color, 
+                        Offset = (double)i / (colors.Count - 1) 
+                    });
+                }
+                fillBrush = gradient;
             }
             else
             {
-                RoomToggle.Resources.Remove("ToggleSwitchFillOn");
-                RoomToggle.Resources.Remove("ToggleSwitchFillOnPointerOver");
-                RoomToggle.Resources.Remove("ToggleSwitchFillOnPressed");
+                fillBrush = new SolidColorBrush(_accentColor);
             }
 
-            // Force immediate visual update by finding and setting the track fill directly
-            // Resources only apply on next state change, so we need to update the actual element
-            RoomToggle.ApplyTemplate();
-            var track = FindDescendant<Rectangle>(RoomToggle, "SwitchKnobBounds");
-            if (track != null && isActive)
+            if (isActive)
             {
-                track.Fill = roomColorBrush;
+                // New logic: Just set background and let the template bind to it
+                RoomToggle.Background = fillBrush;
             }
+            else
+            {
+                RoomToggle.Background = new SolidColorBrush(Colors.Transparent);
+            }
+            
+            // Note: FindDescendant/ApplyTemplate no longer needed with new style
         }
         catch
         {
@@ -186,24 +219,7 @@ public sealed partial class RoomCard : UserControl
         }
     }
 
-    private static T? FindDescendant<T>(DependencyObject parent, string name) where T : FrameworkElement
-    {
-        int childCount = VisualTreeHelper.GetChildrenCount(parent);
-        for (int i = 0; i < childCount; i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is T element && element.Name == name)
-            {
-                return element;
-            }
-            var result = FindDescendant<T>(child, name);
-            if (result != null)
-            {
-                return result;
-            }
-        }
-        return null;
-    }
+
 
     private void UpdateIconColor(bool isActive)
     {
@@ -292,14 +308,47 @@ public sealed partial class RoomCard : UserControl
         VisualStateManager.GoToState(this, "Normal", true);
     }
 
+    private void RoomToggle_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.IsOn = !ViewModel.IsOn;
+        }
+        e.Handled = true;
+    }
+
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
+        // Prevent navigation if clicking the toggle
+        if (e.OriginalSource is DependencyObject obj && IsDescendantOf(obj, RoomToggle))
+        {
+            return;
+        }
+
         if (!_isDragging && ViewModel != null)
         {
             ViewModel.TapRoomCommand.Execute(null);
         }
 
         e.Handled = true;
+    }
+
+    private bool IsDescendantOf(DependencyObject? current, DependencyObject target)
+    {
+        while (current != null)
+        {
+            if (current == target) return true;
+            try 
+            {
+                current = VisualTreeHelper.GetParent(current);
+            }
+            catch
+            {
+                // In some cases (like popups) GetParent might fail or return null
+                return false;
+            }
+        }
+        return false;
     }
 
     private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)

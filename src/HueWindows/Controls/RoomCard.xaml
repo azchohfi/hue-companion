@@ -12,10 +12,56 @@
     PointerExited="CardRoot_PointerExited">
 
     <Grid x:Name="OuterContainer">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="ActiveStates">
+                <VisualStateGroup.Transitions>
+                    <VisualTransition GeneratedDuration="0:0:0.3">
+                        <VisualTransition.GeneratedEasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </VisualTransition.GeneratedEasingFunction>
+                    </VisualTransition>
+                </VisualStateGroup.Transitions>
+                
+                <VisualState x:Name="Inactive">
+                    <VisualState.Setters>
+                        <Setter Target="OutlineBorder.Opacity" Value="0"/>
+                    </VisualState.Setters>
+                </VisualState>
+                
+                <VisualState x:Name="Active">
+                    <VisualState.Setters>
+                        <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
+                        <Setter Target="OutlineBorder.Opacity" Value="1"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+
+            <VisualStateGroup x:Name="HoverStates">
+                <VisualState x:Name="Default"/>
+                <VisualState x:Name="Hover">
+                    <VisualState.Setters>
+                        <Setter Target="CardRoot.Background">
+                            <Setter.Value>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#FF222226" Offset="0"/>
+                                    <GradientStop Color="#FF2D2D30" Offset="0.5"/>
+                                    <GradientStop Color="#FF262629" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Setter.Value>
+                        </Setter>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+
+            <VisualStateGroup x:Name="DragStates">
+                <VisualState x:Name="Normal"/>
+                <VisualState x:Name="Dragging"/>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <!-- Main card container -->
         <Grid x:Name="CardRoot"
               CornerRadius="16"
-              Padding="16"
               MinHeight="120"
               ManipulationMode="TranslateY"
               ManipulationStarted="CardRoot_ManipulationStarted"
@@ -30,137 +76,116 @@
                     <GradientStop Color="#FF252528" Offset="0.5"/>
                     <GradientStop Color="#FF1E1E22" Offset="1"/>
                 </LinearGradientBrush>
+
             </Grid.Background>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <!-- Solid Outline Border - Moved here for valid XAML structure (after properties) -->
+            <Border x:Name="OutlineBorder"
+                    Canvas.ZIndex="0"
+                    Grid.RowSpan="3"
+                    CornerRadius="16"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
 
-            <!-- Header: Icon and Name -->
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- Padded Content Wrapper -->
+            <!-- ZIndex 1 ensures it's above the border -->
+            <Grid Margin="16" Canvas.ZIndex="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Icon container with circular background -->
-                <Border x:Name="IconContainer"
-                        Grid.Column="0"
-                        Width="40" Height="40"
-                        CornerRadius="20"
-                        Background="#20FFFFFF">
-                    <FontIcon x:Name="RoomIcon"
-                              Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
-                              FontSize="18"
-                              Foreground="#80FFFFFF"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                </Border>
+                <!-- Header: Icon and Name -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="RoomNameText"
-                               Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
-                               FontWeight="SemiBold"
-                               FontSize="14"
-                               Foreground="#FFFFFFFF"
-                               TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="LightCountText"
-                               FontSize="12"
-                               Foreground="#80FFFFFF"
-                               Margin="0,2,0,0">
-                        <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
-                        <Run Text=" lights"/>
-                    </TextBlock>
-                </StackPanel>
-            </Grid>
+                    <!-- Icon container with circular background -->
+                    <Border x:Name="IconContainer"
+                            Grid.Column="0"
+                            Width="40" Height="40"
+                            CornerRadius="20"
+                            Background="#20FFFFFF">
+                        <FontIcon x:Name="RoomIcon"
+                                  Glyph="{x:Bind ViewModel.RoomIcon, Mode=OneWay}"
+                                  FontSize="18"
+                                  Foreground="#80FFFFFF"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                    </Border>
 
-            <!-- Middle spacer for drag gesture -->
-            <Grid Grid.Row="1"/>
-
-            <!-- Bottom: Toggle and Brightness -->
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Toggle switch -->
-                <ToggleSwitch x:Name="RoomToggle"
-                              Grid.Column="0"
-                              Style="{StaticResource CompactToggleSwitchStyle}"
-                              IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
-                              VerticalAlignment="Center"/>
-
-                <!-- Brightness bar -->
-                <Grid Grid.Column="1"
-                      VerticalAlignment="Center"
-                      Margin="8,0,12,0"
-                      Height="4">
-                    <!-- Track background -->
-                    <Border Background="#30FFFFFF"
-                            CornerRadius="2"/>
-                    <!-- Fill indicator -->
-                    <Border x:Name="BrightnessFill"
-                            Background="#60FFFFFF"
-                            CornerRadius="2"
-                            HorizontalAlignment="Left"/>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="RoomNameText"
+                                   Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Foreground="#FFFFFFFF"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="LightCountText"
+                                   FontSize="12"
+                                   Foreground="#80FFFFFF"
+                                   Margin="0,2,0,0">
+                            <Run Text="{x:Bind ViewModel.LightCount, Mode=OneWay}"/>
+                            <Run Text=" lights"/>
+                        </TextBlock>
+                    </StackPanel>
                 </Grid>
 
-                <!-- Brightness percentage -->
-                <TextBlock x:Name="BrightnessText"
-                           Grid.Column="2"
-                           FontSize="12"
-                           Foreground="#60FFFFFF"
-                           VerticalAlignment="Center"
-                           MinWidth="36"
-                           TextAlignment="Right">
-                    <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
-                    <Run Text=" %"/>
-                </TextBlock>
+                <!-- Middle spacer for drag gesture -->
+                <Grid Grid.Row="1"/>
+
+                <!-- Bottom: Toggle and Brightness -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Toggle switch -->
+                    <ToggleSwitch x:Name="RoomToggle"
+                                  Grid.Column="0"
+                                  Style="{StaticResource GradientToggleSwitchStyle}"
+                                  IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
+                                  Tapped="RoomToggle_Tapped"
+                                  VerticalAlignment="Center"/>
+
+                    <!-- Brightness bar -->
+                    <Grid Grid.Column="1"
+                          VerticalAlignment="Center"
+                          Margin="8,0,12,0"
+                          Height="4">
+                        <!-- Track background -->
+                        <Border Background="#30FFFFFF"
+                                CornerRadius="2"/>
+                        <!-- Fill indicator -->
+                        <Border x:Name="BrightnessFill"
+                                Background="#60FFFFFF"
+                                CornerRadius="2"
+                                HorizontalAlignment="Left"/>
+                    </Grid>
+
+                    <!-- Brightness percentage -->
+                    <TextBlock x:Name="BrightnessText"
+                               Grid.Column="2"
+                               FontSize="12"
+                               Foreground="#60FFFFFF"
+                               VerticalAlignment="Center"
+                               MinWidth="36"
+                               TextAlignment="Right">
+                        <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
+                        <Run Text=" %"/>
+                    </TextBlock>
+                </Grid>
             </Grid>
+            
 
-            <VisualStateManager.VisualStateGroups>
-                <VisualStateGroup x:Name="ActiveStates">
-                    <VisualState x:Name="Inactive"/>
-                    <VisualState x:Name="Active">
-                        <VisualState.Setters>
-                            <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
-                        </VisualState.Setters>
-                    </VisualState>
-                </VisualStateGroup>
-
-                <VisualStateGroup x:Name="HoverStates">
-                    <VisualState x:Name="Default"/>
-                    <VisualState x:Name="Hover">
-                        <VisualState.Setters>
-                            <Setter Target="CardRoot.Background">
-                                <Setter.Value>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                        <GradientStop Color="#FF222226" Offset="0"/>
-                                        <GradientStop Color="#FF2D2D30" Offset="0.5"/>
-                                        <GradientStop Color="#FF262629" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Setter.Value>
-                            </Setter>
-                        </VisualState.Setters>
-                    </VisualState>
-                </VisualStateGroup>
-
-                <VisualStateGroup x:Name="DragStates">
-                    <VisualState x:Name="Normal"/>
-                    <VisualState x:Name="Dragging"/>
-                </VisualStateGroup>
-            </VisualStateManager.VisualStateGroups>
         </Grid>
 
-        <!-- Glow border overlay - renders on top of card -->
-        <Border x:Name="GlowBorder"
-                CornerRadius="16"
-                BorderThickness="2"
-                Opacity="0"
-                IsHitTestVisible="False"/>
+
     </Grid>
 </UserControl>

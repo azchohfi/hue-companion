@@ -128,6 +128,84 @@
         <Setter Property="Margin" Value="0"/>
     </Style>
 
+    <!-- Custom Gradient Toggle Switch (Animated, No Pink, Readable Knob) -->
+    <Style x:Key="GradientToggleSwitchStyle" TargetType="ToggleSwitch">
+        <Setter Property="MinWidth" Value="40"/>
+        <Setter Property="MinHeight" Value="20"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <!-- Default Gradient Background (overridden by local value) -->
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleSwitch">
+                    <Grid x:Name="LayoutRoot" Background="Transparent">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver"/>
+                                <VisualState x:Name="Pressed"/>
+                                <VisualState x:Name="Disabled"/>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="ToggleStates">
+                                <VisualState x:Name="Dragging"/>
+                                <VisualState x:Name="Off"/>
+                                <VisualState x:Name="On">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="OnTrack" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetName="KnobTranslateTransform" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <!-- Track Area -->
+                        <Grid x:Name="SwitchKnobBounds" Width="40" Height="20" Background="Transparent">
+                            
+                            <!-- Off State Track -->
+                            <Border x:Name="OffTrack" 
+                                    Background="#20FFFFFF" 
+                                    BorderBrush="#20FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="10" />
+
+                            <!-- On State Track (Gradient) -->
+                            <Border x:Name="OnTrack" 
+                                    Background="{TemplateBinding Background}" 
+                                    CornerRadius="10" 
+                                    Opacity="0"/>
+                            
+                            <!-- Knob -->
+                            <Grid x:Name="SwitchKnob" Width="16" Height="16" HorizontalAlignment="Left" Margin="2,0,0,0" VerticalAlignment="Center">
+                                <Grid.RenderTransform>
+                                    <TranslateTransform x:Name="KnobTranslateTransform" X="0" Y="0"/>
+                                </Grid.RenderTransform>
+                                
+                                <!-- Shadow/Glow behind knob -->
+                                <Ellipse Fill="#40000000" Margin="1,1,-1,-1" Opacity="0.5"/>
+                                
+                                <!-- Main Knob -->
+                                <Ellipse x:Name="KnobEllipse" Fill="White" />
+                                
+                                <!-- Stronger Border -->
+                                <Ellipse Stroke="#30000000" StrokeThickness="1" />
+                            </Grid>
+                        </Grid>
+                        
+                        <!-- Required ContentPresenter (Hidden) -->
+                        <ContentPresenter x:Name="ContentPresenter" Opacity="0" IsHitTestVisible="False"/>
+                        
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
     <!-- Standard Toggle Switch (with labels, premium look) -->
     <Style x:Key="PremiumToggleSwitchStyle" TargetType="ToggleSwitch">
         <Setter Property="OnContent" Value="On"/>
