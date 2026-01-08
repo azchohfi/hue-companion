@@ -248,9 +248,32 @@ public sealed partial class RoomCard : UserControl
     {
         if (RoomIcon == null) return;
 
-        if (isActive)
+        if (isActive && ViewModel != null)
         {
-            RoomIcon.Foreground = new SolidColorBrush(_accentColor);
+            var colors = ViewModel.LightColors;
+            if (colors.Count > 1)
+            {
+                // Create gradient for icon matching toggle/border
+                var gradient = new LinearGradientBrush();
+                gradient.StartPoint = new Windows.Foundation.Point(0, 0);
+                gradient.EndPoint = new Windows.Foundation.Point(1, 1);
+
+                for (int i = 0; i < colors.Count; i++)
+                {
+                    var (r, g, b) = colors[i];
+                    var color = Color.FromArgb(255, r, g, b);
+                    gradient.GradientStops.Add(new GradientStop
+                    {
+                        Color = color,
+                        Offset = (double)i / (colors.Count - 1)
+                    });
+                }
+                RoomIcon.Foreground = gradient;
+            }
+            else
+            {
+                RoomIcon.Foreground = new SolidColorBrush(_accentColor);
+            }
         }
         else
         {

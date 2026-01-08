@@ -15,12 +15,9 @@
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ActiveStates">
                 <!-- No transitions - border opacity animated manually in code-behind -->
+                <!-- Icon foreground is set in code-behind via UpdateIconColor() to match room's light colors -->
                 <VisualState x:Name="Inactive"/>
-                <VisualState x:Name="Active">
-                    <VisualState.Setters>
-                        <Setter Target="RoomIcon.Foreground" Value="{ThemeResource AccentFillColorDefaultBrush}"/>
-                    </VisualState.Setters>
-                </VisualState>
+                <VisualState x:Name="Active"/>
             </VisualStateGroup>
 
             <VisualStateGroup x:Name="HoverStates">
