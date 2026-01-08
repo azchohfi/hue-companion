@@ -104,9 +104,12 @@ public partial class LightDetailViewModel : ObservableObject
         await _bridgeService.SetLightBrightnessAsync(_lightId, Brightness);
 
         // Auto-turn on if brightness > 0
+        // Set field directly to update UI without triggering OnIsOnChanged (which would send redundant API call)
         if (Brightness > 0 && !IsOn)
         {
+#pragma warning disable MVVMTK0034
             _isOn = true;
+#pragma warning restore MVVMTK0034
             OnPropertyChanged(nameof(IsOn));
         }
     }
