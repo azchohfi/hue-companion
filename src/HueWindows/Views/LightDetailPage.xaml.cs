@@ -105,4 +105,9 @@ public sealed partial class LightDetailPage : Page
     /// Helper to invert a boolean.
     /// </summary>
     public bool InvertBool(bool value) => !value;
+
+    /// <summary>
+    /// Helper to check if error message exists.
+    /// </summary>
+    public bool HasErrorMessage(string? message) => !string.IsNullOrEmpty(message);
 }

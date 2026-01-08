@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
+using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
 
@@ -26,11 +27,6 @@ public sealed partial class RoomCard : UserControl
 
     // Current accent color
     private Color _accentColor = Colors.White;
-
-    // Constants
-    private const double DragThreshold = 10;
-    private const double PixelsPerPercent = 3;
-    private const int ThrottleMs = 100;
 
     public IRoomCardViewModel? ViewModel => DataContext as IRoomCardViewModel;
 
@@ -184,7 +180,7 @@ public sealed partial class RoomCard : UserControl
         var animation = new DoubleAnimation
         {
             To = targetOpacity,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
@@ -258,7 +254,7 @@ public sealed partial class RoomCard : UserControl
         }
         else
         {
-            RoomIcon.Foreground = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
+            RoomIcon.Foreground = new SolidColorBrush(Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255));
         }
     }
 
@@ -282,7 +278,7 @@ public sealed partial class RoomCard : UserControl
         }
         else
         {
-            BrightnessFill.Background = new SolidColorBrush(Color.FromArgb(96, 255, 255, 255));
+            BrightnessFill.Background = new SolidColorBrush(Color.FromArgb(AppConstants.Colors.InactiveBrightnessBarAlpha, 255, 255, 255));
         }
     }
 
@@ -301,7 +297,7 @@ public sealed partial class RoomCard : UserControl
 
         _cumulativeDeltaY += e.Delta.Translation.Y;
 
-        if (Math.Abs(_cumulativeDeltaY) > DragThreshold)
+        if (Math.Abs(_cumulativeDeltaY) > AppConstants.BrightnessDrag.DragThreshold)
         {
             if (!_isDragging)
             {
@@ -309,12 +305,12 @@ public sealed partial class RoomCard : UserControl
                 VisualStateManager.GoToState(this, "Dragging", true);
             }
 
-            var brightnessChange = -_cumulativeDeltaY / (PixelsPerPercent * 100);
+            var brightnessChange = -_cumulativeDeltaY / (AppConstants.BrightnessDrag.PixelsPerPercent * 100);
             var newBrightness = Math.Clamp(_startBrightness + brightnessChange, 0.0, 1.0);
             _pendingBrightness = newBrightness;
 
             var now = DateTime.UtcNow;
-            if ((now - _lastBrightnessUpdate).TotalMilliseconds >= ThrottleMs)
+            if ((now - _lastBrightnessUpdate).TotalMilliseconds >= AppConstants.BrightnessDrag.ThrottleMs)
             {
                 _lastBrightnessUpdate = now;
                 ViewModel.SetBrightnessCommand.Execute(newBrightness);

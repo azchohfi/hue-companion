@@ -3,6 +3,7 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using HueWindows.Constants;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Helpers;
@@ -61,7 +62,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         var hwnd = WindowNative.GetWindowHandle(this);
         var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-        appWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
+        appWindow.Resize(new Windows.Graphics.SizeInt32(AppConstants.Layout.DefaultWindowWidth, AppConstants.Layout.DefaultWindowHeight));
 
         // Get services
         _navigationService = App.Services.GetRequiredService<INavigationService>();
@@ -96,9 +97,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             // Auto-connect to the saved bridge
             var bridge = _settingsService.Settings.ConfiguredBridge!;
-            var connected = await _bridgeService.ConnectAsync(bridge.IpAddress!, bridge.AppKey!);
+            var connectResult = await _bridgeService.ConnectAsync(bridge.IpAddress!, bridge.AppKey!);
 
-            if (connected)
+            if (connectResult.IsSuccess)
             {
                 // Navigate to My Dashboard if items are pinned, else regular Dashboard
                 if (_pinnedItemsService.HasPinnedItems)
@@ -115,6 +116,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             else
             {
                 // Connection failed, go to setup to re-pair
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Connection failed: {connectResult.Error}");
                 _navigationService.NavigateTo<SetupPage>();
             }
         }
@@ -217,32 +219,39 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task LoadChildNavigationItemsAsync()
     {
-        try
+        // Load zones as children of ZonesNavItem
+        var zonesResult = await _bridgeService.GetZonesAsync();
+        if (zonesResult.IsSuccess)
         {
-            // Load zones as children of ZonesNavItem
-            var zones = await _bridgeService.GetZonesAsync();
-            foreach (var zone in zones)
+            foreach (var zone in zonesResult.Value!)
             {
                 var navItem = CreateNavItemForGroup(zone);
                 ZonesNavItem.MenuItems.Add(navItem);
                 _zoneNavItems.Add(navItem);
             }
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error loading zones: {zonesResult.Error}");
+        }
 
-            // Load rooms as children of RoomsNavItem
-            var rooms = await _bridgeService.GetRoomsAsync();
-            foreach (var room in rooms)
+        // Load rooms as children of RoomsNavItem
+        var roomsResult = await _bridgeService.GetRoomsAsync();
+        if (roomsResult.IsSuccess)
+        {
+            foreach (var room in roomsResult.Value!)
             {
                 var navItem = CreateNavItemForGroup(room);
                 RoomsNavItem.MenuItems.Add(navItem);
                 _roomNavItems.Add(navItem);
             }
-
-            _itemsLoaded = true;
         }
-        catch (Exception ex)
+        else
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error loading nav items: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error loading rooms: {roomsResult.Error}");
         }
+
+        _itemsLoaded = true;
     }
 
     private NavigationViewItem CreateNavItemForGroup(RoomModel group)

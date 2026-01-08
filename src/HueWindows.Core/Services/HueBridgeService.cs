@@ -30,7 +30,7 @@ public class HueBridgeService : IHueBridgeService
     public event EventHandler? Disconnected;
 
     /// <inheritdoc/>
-    public async Task<bool> ConnectAsync(string ipAddress, string appKey)
+    public async Task<Result> ConnectAsync(string ipAddress, string appKey)
     {
         try
         {
@@ -45,7 +45,7 @@ public class HueBridgeService : IHueBridgeService
             if (bridge?.Data == null || bridge.Data.Count == 0)
             {
                 _hueApi = null;
-                return false;
+                return Result.Failure("Could not retrieve bridge information. Please check the IP address and app key.");
             }
 
             Connected?.Invoke(this, EventArgs.Empty);
@@ -53,12 +53,17 @@ public class HueBridgeService : IHueBridgeService
             // Start listening for real-time updates
             await StartEventStreamAsync();
 
-            return true;
+            return Result.Success();
         }
-        catch
+        catch (HttpRequestException ex)
         {
             _hueApi = null;
-            return false;
+            return Result.Failure($"Network error: Could not reach the bridge at {ipAddress}. {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            _hueApi = null;
+            return Result.Failure($"Connection failed: {ex.Message}");
         }
     }
 
@@ -105,67 +110,80 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<RoomModel>> GetRoomsAsync()
+    public async Task<Result<IReadOnlyList<RoomModel>>> GetRoomsAsync()
     {
-        if (!await EnsureConnectedAsync()) return Array.Empty<RoomModel>();
+        if (!await EnsureConnectedAsync())
+            return Result<IReadOnlyList<RoomModel>>.Failure("Not connected to bridge. Please check your connection.");
 
-        var rooms = await _hueApi!.GetRoomsAsync();
-        if (rooms?.Data == null) return Array.Empty<RoomModel>();
-
-        var allLights = await _hueApi.GetLightsAsync();
-        var result = new List<RoomModel>();
-
-        foreach (var room in rooms.Data)
+        try
         {
-            var roomModel = new RoomModel
-            {
-                Id = room.Id,
-                Name = room.Metadata?.Name ?? "Unknown Room",
-                Archetype = MapRoomArchetype(room.Metadata?.Archetype),
-            };
+            var rooms = await _hueApi!.GetRoomsAsync();
+            if (rooms?.Data == null)
+                return Result<IReadOnlyList<RoomModel>>.Failure("Failed to retrieve rooms from the bridge.");
 
-            // Get device IDs that belong to this room
-            var roomDeviceIds = new HashSet<Guid>();
-            if (room.Children != null)
+            var allLights = await _hueApi.GetLightsAsync();
+            var result = new List<RoomModel>();
+
+            foreach (var room in rooms.Data)
             {
-                foreach (var child in room.Children)
+                var roomModel = new RoomModel
                 {
-                    if (child.Rtype == "device")
+                    Id = room.Id,
+                    Name = room.Metadata?.Name ?? "Unknown Room",
+                    Archetype = MapRoomArchetype(room.Metadata?.Archetype),
+                };
+
+                // Get device IDs that belong to this room
+                var roomDeviceIds = new HashSet<Guid>();
+                if (room.Children != null)
+                {
+                    foreach (var child in room.Children)
                     {
-                        roomDeviceIds.Add(child.Rid);
+                        if (child.Rtype == "device")
+                        {
+                            roomDeviceIds.Add(child.Rid);
+                        }
                     }
                 }
-            }
 
-            // Get lights whose owner device is in this room
-            if (allLights?.Data != null && roomDeviceIds.Count > 0)
-            {
-                foreach (var light in allLights.Data)
+                // Get lights whose owner device is in this room
+                if (allLights?.Data != null && roomDeviceIds.Count > 0)
                 {
-                    // Light's owner is a device - check if that device is in this room
-                    if (light.Owner?.Rid != null && roomDeviceIds.Contains(light.Owner.Rid))
+                    foreach (var light in allLights.Data)
                     {
-                        roomModel.Lights.Add(MapLightData(light));
+                        // Light's owner is a device - check if that device is in this room
+                        if (light.Owner?.Rid != null && roomDeviceIds.Contains(light.Owner.Rid))
+                        {
+                            roomModel.Lights.Add(MapLightData(light));
+                        }
                     }
                 }
+
+                // Calculate room state from lights
+                if (roomModel.Lights.Count > 0)
+                {
+                    roomModel.IsOn = roomModel.Lights.Any(l => l.IsOn);
+                    roomModel.Brightness = roomModel.Lights.Where(l => l.IsOn).DefaultIfEmpty()
+                        .Average(l => l?.Brightness ?? 0);
+
+                    // Get dominant color from first colored light that's on
+                    var coloredLight = roomModel.Lights.FirstOrDefault(l => l.IsOn && l.CurrentColor != null);
+                    roomModel.DominantColor = coloredLight?.CurrentColor;
+                }
+
+                result.Add(roomModel);
             }
 
-            // Calculate room state from lights
-            if (roomModel.Lights.Count > 0)
-            {
-                roomModel.IsOn = roomModel.Lights.Any(l => l.IsOn);
-                roomModel.Brightness = roomModel.Lights.Where(l => l.IsOn).DefaultIfEmpty()
-                    .Average(l => l?.Brightness ?? 0);
-
-                // Get dominant color from first colored light that's on
-                var coloredLight = roomModel.Lights.FirstOrDefault(l => l.IsOn && l.CurrentColor != null);
-                roomModel.DominantColor = coloredLight?.CurrentColor;
-            }
-
-            result.Add(roomModel);
+            return Result<IReadOnlyList<RoomModel>>.Success(result);
         }
-
-        return result;
+        catch (HttpRequestException ex)
+        {
+            return Result<IReadOnlyList<RoomModel>>.Failure($"Network error while fetching rooms: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<RoomModel>>.Failure($"Failed to load rooms: {ex.Message}");
+        }
     }
 
     private static LightModel MapLightData(HueApi.Models.Light lightData)
@@ -197,12 +215,17 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<RoomModel?> GetRoomAsync(Guid roomId)
+    public async Task<Result<RoomModel>> GetRoomAsync(Guid roomId)
     {
-        if (_hueApi == null) return null;
+        var roomsResult = await GetRoomsAsync();
+        if (roomsResult.IsFailure)
+            return Result<RoomModel>.Failure(roomsResult.Error!);
 
-        var rooms = await GetRoomsAsync();
-        return rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = roomsResult.Value!.FirstOrDefault(r => r.Id == roomId);
+        if (room == null)
+            return Result<RoomModel>.Failure($"Room with ID {roomId} not found.");
+
+        return Result<RoomModel>.Success(room);
     }
 
     /// <inheritdoc/>
@@ -247,76 +270,94 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<RoomModel>> GetZonesAsync()
+    public async Task<Result<IReadOnlyList<RoomModel>>> GetZonesAsync()
     {
-        if (!await EnsureConnectedAsync()) return Array.Empty<RoomModel>();
+        if (!await EnsureConnectedAsync())
+            return Result<IReadOnlyList<RoomModel>>.Failure("Not connected to bridge. Please check your connection.");
 
-        var zones = await _hueApi!.GetZonesAsync();
-        if (zones?.Data == null) return Array.Empty<RoomModel>();
-
-        var allLights = await _hueApi.GetLightsAsync();
-        var result = new List<RoomModel>();
-
-        foreach (var zone in zones.Data)
+        try
         {
-            var zoneModel = new RoomModel
-            {
-                Id = zone.Id,
-                Name = zone.Metadata?.Name ?? "Unknown Zone",
-                GroupType = LightGroupType.Zone,
-                Archetype = MapRoomArchetype(zone.Metadata?.Archetype),
-            };
+            var zones = await _hueApi!.GetZonesAsync();
+            if (zones?.Data == null)
+                return Result<IReadOnlyList<RoomModel>>.Failure("Failed to retrieve zones from the bridge.");
 
-            // Get light IDs that belong to this zone
-            var zoneLightIds = new HashSet<Guid>();
-            if (zone.Children != null)
+            var allLights = await _hueApi.GetLightsAsync();
+            var result = new List<RoomModel>();
+
+            foreach (var zone in zones.Data)
             {
-                foreach (var child in zone.Children)
+                var zoneModel = new RoomModel
                 {
-                    if (child.Rtype == "light")
+                    Id = zone.Id,
+                    Name = zone.Metadata?.Name ?? "Unknown Zone",
+                    GroupType = LightGroupType.Zone,
+                    Archetype = MapRoomArchetype(zone.Metadata?.Archetype),
+                };
+
+                // Get light IDs that belong to this zone
+                var zoneLightIds = new HashSet<Guid>();
+                if (zone.Children != null)
+                {
+                    foreach (var child in zone.Children)
                     {
-                        zoneLightIds.Add(child.Rid);
+                        if (child.Rtype == "light")
+                        {
+                            zoneLightIds.Add(child.Rid);
+                        }
                     }
                 }
-            }
 
-            // Get lights that are in this zone
-            if (allLights?.Data != null && zoneLightIds.Count > 0)
-            {
-                foreach (var light in allLights.Data)
+                // Get lights that are in this zone
+                if (allLights?.Data != null && zoneLightIds.Count > 0)
                 {
-                    if (zoneLightIds.Contains(light.Id))
+                    foreach (var light in allLights.Data)
                     {
-                        zoneModel.Lights.Add(MapLightData(light));
+                        if (zoneLightIds.Contains(light.Id))
+                        {
+                            zoneModel.Lights.Add(MapLightData(light));
+                        }
                     }
                 }
+
+                // Calculate zone state from lights
+                if (zoneModel.Lights.Count > 0)
+                {
+                    zoneModel.IsOn = zoneModel.Lights.Any(l => l.IsOn);
+                    zoneModel.Brightness = zoneModel.Lights.Where(l => l.IsOn).DefaultIfEmpty()
+                        .Average(l => l?.Brightness ?? 0);
+
+                    // Get dominant color from first colored light that's on
+                    var coloredLight = zoneModel.Lights.FirstOrDefault(l => l.IsOn && l.CurrentColor != null);
+                    zoneModel.DominantColor = coloredLight?.CurrentColor;
+                }
+
+                result.Add(zoneModel);
             }
 
-            // Calculate zone state from lights
-            if (zoneModel.Lights.Count > 0)
-            {
-                zoneModel.IsOn = zoneModel.Lights.Any(l => l.IsOn);
-                zoneModel.Brightness = zoneModel.Lights.Where(l => l.IsOn).DefaultIfEmpty()
-                    .Average(l => l?.Brightness ?? 0);
-
-                // Get dominant color from first colored light that's on
-                var coloredLight = zoneModel.Lights.FirstOrDefault(l => l.IsOn && l.CurrentColor != null);
-                zoneModel.DominantColor = coloredLight?.CurrentColor;
-            }
-
-            result.Add(zoneModel);
+            return Result<IReadOnlyList<RoomModel>>.Success(result);
         }
-
-        return result;
+        catch (HttpRequestException ex)
+        {
+            return Result<IReadOnlyList<RoomModel>>.Failure($"Network error while fetching zones: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<RoomModel>>.Failure($"Failed to load zones: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
-    public async Task<RoomModel?> GetZoneAsync(Guid zoneId)
+    public async Task<Result<RoomModel>> GetZoneAsync(Guid zoneId)
     {
-        if (_hueApi == null) return null;
+        var zonesResult = await GetZonesAsync();
+        if (zonesResult.IsFailure)
+            return Result<RoomModel>.Failure(zonesResult.Error!);
 
-        var zones = await GetZonesAsync();
-        return zones.FirstOrDefault(z => z.Id == zoneId);
+        var zone = zonesResult.Value!.FirstOrDefault(z => z.Id == zoneId);
+        if (zone == null)
+            return Result<RoomModel>.Failure($"Zone with ID {zoneId} not found.");
+
+        return Result<RoomModel>.Success(zone);
     }
 
     /// <inheritdoc/>
@@ -361,31 +402,39 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<SceneModel>> GetScenesForZoneAsync(Guid zoneId)
+    public async Task<Result<IReadOnlyList<SceneModel>>> GetScenesForZoneAsync(Guid zoneId)
     {
-        if (_hueApi == null) return Array.Empty<SceneModel>();
+        if (_hueApi == null)
+            return Result<IReadOnlyList<SceneModel>>.Failure("Not connected to bridge.");
 
-        var scenes = await _hueApi.GetScenesAsync();
-        var result = new List<SceneModel>();
-
-        foreach (var scene in scenes.Data)
+        try
         {
-            // Filter scenes that belong to this zone
-            if (scene.Group?.Rid == zoneId)
-            {
-                var sceneModel = new SceneModel
-                {
-                    Id = scene.Id,
-                    Name = scene.Metadata?.Name ?? "Unknown Scene",
-                    RoomId = zoneId,
-                    PaletteColors = ExtractPaletteColors(scene)
-                };
-                sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
-                result.Add(sceneModel);
-            }
-        }
+            var scenes = await _hueApi.GetScenesAsync();
+            var result = new List<SceneModel>();
 
-        return result;
+            foreach (var scene in scenes.Data)
+            {
+                // Filter scenes that belong to this zone
+                if (scene.Group?.Rid == zoneId)
+                {
+                    var sceneModel = new SceneModel
+                    {
+                        Id = scene.Id,
+                        Name = scene.Metadata?.Name ?? "Unknown Scene",
+                        RoomId = zoneId,
+                        PaletteColors = ExtractPaletteColors(scene)
+                    };
+                    sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
+                    result.Add(sceneModel);
+                }
+            }
+
+            return Result<IReadOnlyList<SceneModel>>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<SceneModel>>.Failure($"Failed to load scenes: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -423,27 +472,32 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<LightModel>> GetLightsInRoomAsync(Guid roomId)
+    public async Task<Result<IReadOnlyList<LightModel>>> GetLightsInRoomAsync(Guid roomId)
     {
-        var room = await GetRoomAsync(roomId);
-        return room?.Lights ?? new List<LightModel>();
+        var roomResult = await GetRoomAsync(roomId);
+        if (roomResult.IsFailure)
+            return Result<IReadOnlyList<LightModel>>.Failure(roomResult.Error!);
+
+        return Result<IReadOnlyList<LightModel>>.Success(roomResult.Value!.Lights);
     }
 
     /// <inheritdoc/>
-    public async Task<LightModel?> GetLightAsync(Guid lightId)
+    public async Task<Result<LightModel>> GetLightAsync(Guid lightId)
     {
-        if (_hueApi == null) return null;
+        if (_hueApi == null)
+            return Result<LightModel>.Failure("Not connected to bridge.");
 
         try
         {
             var light = await _hueApi.GetLightAsync(lightId);
-            if (light?.Data == null || light.Data.Count == 0) return null;
+            if (light?.Data == null || light.Data.Count == 0)
+                return Result<LightModel>.Failure($"Light with ID {lightId} not found.");
 
-            return MapLightData(light.Data[0]);
+            return Result<LightModel>.Success(MapLightData(light.Data[0]));
         }
-        catch
+        catch (Exception ex)
         {
-            return null;
+            return Result<LightModel>.Failure($"Failed to load light: {ex.Message}");
         }
     }
 
@@ -497,31 +551,39 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<SceneModel>> GetScenesForRoomAsync(Guid roomId)
+    public async Task<Result<IReadOnlyList<SceneModel>>> GetScenesForRoomAsync(Guid roomId)
     {
-        if (_hueApi == null) return Array.Empty<SceneModel>();
+        if (_hueApi == null)
+            return Result<IReadOnlyList<SceneModel>>.Failure("Not connected to bridge.");
 
-        var scenes = await _hueApi.GetScenesAsync();
-        var result = new List<SceneModel>();
-
-        foreach (var scene in scenes.Data)
+        try
         {
-            // Filter scenes that belong to this room
-            if (scene.Group?.Rid == roomId)
-            {
-                var sceneModel = new SceneModel
-                {
-                    Id = scene.Id,
-                    Name = scene.Metadata?.Name ?? "Unknown Scene",
-                    RoomId = roomId,
-                    PaletteColors = ExtractPaletteColors(scene)
-                };
-                sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
-                result.Add(sceneModel);
-            }
-        }
+            var scenes = await _hueApi.GetScenesAsync();
+            var result = new List<SceneModel>();
 
-        return result;
+            foreach (var scene in scenes.Data)
+            {
+                // Filter scenes that belong to this room
+                if (scene.Group?.Rid == roomId)
+                {
+                    var sceneModel = new SceneModel
+                    {
+                        Id = scene.Id,
+                        Name = scene.Metadata?.Name ?? "Unknown Scene",
+                        RoomId = roomId,
+                        PaletteColors = ExtractPaletteColors(scene)
+                    };
+                    sceneModel.PreviewColor = sceneModel.PaletteColors.FirstOrDefault();
+                    result.Add(sceneModel);
+                }
+            }
+
+            return Result<IReadOnlyList<SceneModel>>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<SceneModel>>.Failure($"Failed to load scenes: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>

@@ -63,47 +63,52 @@ public partial class DashboardViewModel : ObservableObject
         ErrorMessage = null;
         ShowEmptyState = false;
 
-        try
+        // Load rooms
+        var roomsResult = await _bridgeService.GetRoomsAsync();
+
+        RoomCards.Clear();
+
+        if (roomsResult.IsSuccess)
         {
-            // Load rooms
-            var rooms = await _bridgeService.GetRoomsAsync();
-
-            RoomCards.Clear();
-
-            foreach (var room in rooms)
+            foreach (var room in roomsResult.Value!)
             {
                 var cardVm = new RoomCardViewModel(room, _bridgeService);
                 cardVm.RoomTapped += OnRoomTapped;
                 RoomCards.Add(cardVm);
             }
+        }
+        else
+        {
+            ErrorMessage = roomsResult.Error;
+        }
 
-            HasRooms = RoomCards.Count > 0;
+        HasRooms = RoomCards.Count > 0;
 
-            // Load zones
-            var zones = await _bridgeService.GetZonesAsync();
+        // Load zones
+        var zonesResult = await _bridgeService.GetZonesAsync();
 
-            ZoneCards.Clear();
+        ZoneCards.Clear();
 
-            foreach (var zone in zones)
+        if (zonesResult.IsSuccess)
+        {
+            foreach (var zone in zonesResult.Value!)
             {
                 var cardVm = new RoomCardViewModel(zone, _bridgeService);
                 cardVm.RoomTapped += OnRoomTapped;
                 ZoneCards.Add(cardVm);
             }
-
-            HasZones = ZoneCards.Count > 0;
-
-            ShowEmptyState = RoomCards.Count == 0 && ZoneCards.Count == 0;
         }
-        catch (Exception ex)
+        else if (ErrorMessage == null)
         {
-            ErrorMessage = $"Failed to load rooms: {ex.Message}";
-            ShowEmptyState = true;
+            // Only set error if we don't already have one from rooms
+            ErrorMessage = zonesResult.Error;
         }
-        finally
-        {
-            IsLoading = false;
-        }
+
+        HasZones = ZoneCards.Count > 0;
+
+        ShowEmptyState = RoomCards.Count == 0 && ZoneCards.Count == 0;
+
+        IsLoading = false;
     }
 
     [RelayCommand]

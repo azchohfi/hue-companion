@@ -139,5 +139,14 @@
               Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}">
             <ProgressRing IsActive="True" Width="48" Height="48"/>
         </Grid>
+
+        <!-- Error Message -->
+        <InfoBar Grid.Row="1"
+                 Title="Error"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                 IsOpen="{x:Bind HasErrorMessage(ViewModel.ErrorMessage), Mode=OneWay}"
+                 Severity="Error"
+                 VerticalAlignment="Bottom"
+                 Margin="24,0,24,24"/>
     </Grid>
 </Page>

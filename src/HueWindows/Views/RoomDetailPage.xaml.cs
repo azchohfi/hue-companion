@@ -76,6 +76,14 @@ public sealed partial class RoomDetailPage : Page
     }
 
     /// <summary>
+    /// Helper to check if error message exists.
+    /// </summary>
+    public bool HasErrorMessage(string? message)
+    {
+        return !string.IsNullOrEmpty(message);
+    }
+
+    /// <summary>
     /// Handles adding a light to the custom dashboard.
     /// </summary>
     private async void AddLightToDashboard_Click(object sender, RoutedEventArgs e)

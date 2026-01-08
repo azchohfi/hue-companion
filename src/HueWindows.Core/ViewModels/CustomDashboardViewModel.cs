@@ -54,68 +54,69 @@ public partial class CustomDashboardViewModel : ObservableObject
         ErrorMessage = null;
         ShowEmptyState = false;
 
-        try
+        var pinnedItems = _pinnedItemsService.PinnedItems;
+
+        if (pinnedItems.Count == 0)
         {
-            var pinnedItems = _pinnedItemsService.PinnedItems;
-
-            if (pinnedItems.Count == 0)
-            {
-                PinnedCards.Clear();
-                ShowEmptyState = true;
-                return;
-            }
-
-            // Fetch all rooms and zones for lookup
-            var rooms = await _bridgeService.GetRoomsAsync();
-            var zones = await _bridgeService.GetZonesAsync();
-            var allGroups = rooms.Concat(zones).ToDictionary(r => r.Id);
-
-            // Fetch all lights for lookup (lights can be in any room)
-            var allLights = rooms.SelectMany(r => r.Lights)
-                .Concat(zones.SelectMany(z => z.Lights))
-                .GroupBy(l => l.Id)
-                .Select(g => g.First())
-                .ToDictionary(l => l.Id);
-
             PinnedCards.Clear();
+            ShowEmptyState = true;
+            IsLoading = false;
+            return;
+        }
 
-            foreach (var pinned in pinnedItems.OrderBy(p => p.Order))
+        // Fetch all rooms and zones for lookup
+        var roomsResult = await _bridgeService.GetRoomsAsync();
+        var zonesResult = await _bridgeService.GetZonesAsync();
+
+        if (roomsResult.IsFailure && zonesResult.IsFailure)
+        {
+            ErrorMessage = roomsResult.Error;
+            ShowEmptyState = true;
+            IsLoading = false;
+            return;
+        }
+
+        var rooms = roomsResult.GetValueOrDefault(Array.Empty<RoomModel>())!;
+        var zones = zonesResult.GetValueOrDefault(Array.Empty<RoomModel>())!;
+        var allGroups = rooms.Concat(zones).ToDictionary(r => r.Id);
+
+        // Fetch all lights for lookup (lights can be in any room)
+        var allLights = rooms.SelectMany(r => r.Lights)
+            .Concat(zones.SelectMany(z => z.Lights))
+            .GroupBy(l => l.Id)
+            .Select(g => g.First())
+            .ToDictionary(l => l.Id);
+
+        PinnedCards.Clear();
+
+        foreach (var pinned in pinnedItems.OrderBy(p => p.Order))
+        {
+            DashboardCardViewModel? cardVm = null;
+
+            if (pinned.Type == PinnedItemType.Room || pinned.Type == PinnedItemType.Zone)
             {
-                DashboardCardViewModel? cardVm = null;
-
-                if (pinned.Type == PinnedItemType.Room || pinned.Type == PinnedItemType.Zone)
+                if (allGroups.TryGetValue(pinned.Id, out var group))
                 {
-                    if (allGroups.TryGetValue(pinned.Id, out var group))
-                    {
-                        cardVm = new DashboardCardViewModel(group, _bridgeService, _pinnedItemsService);
-                    }
+                    cardVm = new DashboardCardViewModel(group, _bridgeService, _pinnedItemsService);
                 }
-                else if (pinned.Type == PinnedItemType.Light)
+            }
+            else if (pinned.Type == PinnedItemType.Light)
+            {
+                if (allLights.TryGetValue(pinned.Id, out var light))
                 {
-                    if (allLights.TryGetValue(pinned.Id, out var light))
-                    {
-                        cardVm = new DashboardCardViewModel(light, _bridgeService, _pinnedItemsService);
-                    }
-                }
-
-                if (cardVm != null)
-                {
-                    cardVm.CardTapped += OnCardTapped;
-                    PinnedCards.Add(cardVm);
+                    cardVm = new DashboardCardViewModel(light, _bridgeService, _pinnedItemsService);
                 }
             }
 
-            ShowEmptyState = PinnedCards.Count == 0;
+            if (cardVm != null)
+            {
+                cardVm.CardTapped += OnCardTapped;
+                PinnedCards.Add(cardVm);
+            }
         }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Failed to load dashboard: {ex.Message}";
-            ShowEmptyState = true;
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+
+        ShowEmptyState = PinnedCards.Count == 0;
+        IsLoading = false;
     }
 
     [RelayCommand]

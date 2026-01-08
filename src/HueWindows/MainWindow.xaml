@@ -87,7 +87,7 @@
                 <!-- Zones -->
                 <NavigationViewItem x:Name="ZonesNavItem" Content="Zones" Tag="Zones">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8F1;"/>
+                        <FontIcon Glyph="&#xEC26;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 

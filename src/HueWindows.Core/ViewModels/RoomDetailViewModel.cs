@@ -52,52 +52,60 @@ public partial class RoomDetailViewModel : ObservableObject
         _bridgeService = bridgeService;
     }
 
+    [ObservableProperty]
+    private string? _errorMessage;
+
     public async Task LoadRoomAsync(Guid groupId, LightGroupType groupType = LightGroupType.Room)
     {
         _groupId = groupId;
         _groupType = groupType;
         GroupTypeLabel = groupType == LightGroupType.Room ? "Room" : "Zone";
         IsLoading = true;
+        ErrorMessage = null;
 
-        try
+        // Load room or zone based on type
+        var groupResult = groupType == LightGroupType.Room
+            ? await _bridgeService.GetRoomAsync(groupId)
+            : await _bridgeService.GetZoneAsync(groupId);
+
+        if (groupResult.IsFailure)
         {
-            // Load room or zone based on type
-            RoomModel? group = groupType == LightGroupType.Room
-                ? await _bridgeService.GetRoomAsync(groupId)
-                : await _bridgeService.GetZoneAsync(groupId);
+            ErrorMessage = groupResult.Error;
+            IsLoading = false;
+            return;
+        }
 
-            if (group == null) return;
+        var group = groupResult.Value!;
+        RoomName = group.Name;
+        IsOn = group.IsOn;
+        Brightness = group.Brightness;
 
-            RoomName = group.Name;
-            IsOn = group.IsOn;
-            Brightness = group.Brightness;
+        // Load lights
+        Lights.Clear();
+        foreach (var light in group.Lights)
+        {
+            var lightVm = new LightItemViewModel(light, _bridgeService);
+            lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
+            Lights.Add(lightVm);
+        }
 
-            // Load lights
-            Lights.Clear();
-            foreach (var light in group.Lights)
-            {
-                var lightVm = new LightItemViewModel(light, _bridgeService);
-                lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
-                Lights.Add(lightVm);
-            }
+        // Load scenes (from room or zone)
+        var scenesResult = groupType == LightGroupType.Room
+            ? await _bridgeService.GetScenesForRoomAsync(groupId)
+            : await _bridgeService.GetScenesForZoneAsync(groupId);
 
-            // Load scenes (from room or zone)
-            var scenes = groupType == LightGroupType.Room
-                ? await _bridgeService.GetScenesForRoomAsync(groupId)
-                : await _bridgeService.GetScenesForZoneAsync(groupId);
-
-            Scenes.Clear();
-            foreach (var scene in scenes)
+        Scenes.Clear();
+        if (scenesResult.IsSuccess)
+        {
+            foreach (var scene in scenesResult.Value!)
             {
                 var sceneVm = new SceneItemViewModel(scene, _bridgeService);
                 sceneVm.SceneActivated += OnSceneActivated;
                 Scenes.Add(sceneVm);
             }
         }
-        finally
-        {
-            IsLoading = false;
-        }
+
+        IsLoading = false;
     }
 
     partial void OnIsOnChanged(bool value)

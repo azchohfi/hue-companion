@@ -149,11 +149,11 @@ public partial class SetupViewModel : ObservableObject
             await _settingsService.SaveAsync();
 
             // Connect to the bridge
-            var connected = await _bridgeService.ConnectAsync(
+            var connectResult = await _bridgeService.ConnectAsync(
                 SelectedBridge.IpAddress,
                 result.AppKey);
 
-            if (connected)
+            if (connectResult.IsSuccess)
             {
                 StatusMessage = "Connected successfully!";
                 RegistrationSuccess = true;
@@ -167,7 +167,7 @@ public partial class SetupViewModel : ObservableObject
             }
             else
             {
-                StatusMessage = "Failed to connect to bridge after registration.";
+                StatusMessage = connectResult.Error ?? "Failed to connect to bridge after registration.";
                 ShowLinkButtonPrompt = true;
             }
         }

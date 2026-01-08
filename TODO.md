@@ -4,16 +4,16 @@ This document captures ideas for improving code structure, extensibility, usabil
 
 **Priority Legend**: 🔴 High | 🟡 Medium | 🟢 Low
 
+**Current Focus**: Code quality foundation first, then user-facing polish.
+
 ---
 
-## Code Structure & Extensibility
+## Completed ✅
 
-### ✅ ~~Re-enable Drag-to-Brightness Gesture~~ (FIXED)
+### ~~Re-enable Drag-to-Brightness Gesture~~
 **Location**: `src/HueWindows/Controls/RoomCard.xaml.cs`
 
-~~The signature drag-to-brightness interaction is disabled due to a crash.~~
-
-**Solution applied**: Switched from raw pointer events to `ManipulationDelta` events which handle pointer capture internally. See `TODO-drag-crash.md` for details.
+**Solution applied**: Switched from raw pointer events to `ManipulationDelta` events which handle pointer capture internally.
 
 **Related constants** (defined in RoomCard.xaml.cs):
 - `DragThreshold = 10` pixels
@@ -22,46 +22,56 @@ This document captures ideas for improving code structure, extensibility, usabil
 
 ---
 
-### ✅ ~~Implement Real-time Event Stream~~ (FIXED)
+### ~~Implement Real-time Event Stream~~
 **Location**: `src/HueWindows.Core/Services/HueBridgeService.cs`
-
-~~`StartEventStreamAsync()` is stubbed but infrastructure exists.~~
 
 **Solution applied**: Implemented SSE event stream using HueApi's `OnEventStreamMessage` event. Parses light state changes (on/off, brightness, color) from `ExtensionData` and fires `LightStateChanged` events. Stream starts automatically on bridge connection.
 
 ---
 
-### 🟡 Add Result Pattern to Services
-**Current behavior**: Services return `null` or empty collections on failure, hiding error context.
+### ~~Scene Preview Colors~~
+**Location**: `src/HueWindows.Core/Models/SceneModel.cs`
 
-```csharp
-// Current
-public async Task<IEnumerable<RoomModel>> GetRoomsAsync()
-    => /* returns empty on error */
+**Solution applied**: Scene palette colors are now parsed from the Hue API `scene.Palette.Color` or falling back to `scene.Actions[].Action.Color`. Up to 4 color swatches are displayed as colored circles below scene names in the UI.
 
-// Recommended
-public async Task<Result<IEnumerable<RoomModel>>> GetRoomsAsync()
-    => /* returns Result<T> with error message */
-```
-
-**Benefits**:
-- Better error messages in UI
-- Distinguishes "no rooms" from "failed to load"
-- Enables retry logic with context
+**Note**: Scene images from `metadata.image` are hosted on Philips's cloud servers, not accessible via bridge API.
 
 ---
 
-### 🟡 Extract Remaining Magic Numbers
-**Locations to audit**:
-- Color adjustment `±20` in `RoomCard.xaml.cs:UpdateToggleColor()`
-- Animation durations scattered in XAML
-- Layout thresholds (600px compact, 1000px expanded)
-
-**Recommendation**: Create `src/HueWindows/Constants/AppConstants.cs`
+### ~~Custom Dashboard with Pinning~~
+**Solution applied**: Dashboard now supports pinning rooms, zones, and individual lights. Pinned items appear at the top of the dashboard.
 
 ---
 
-### 🟢 Extract Color Logic to Dedicated Service
+## Code Quality Foundation 🔴
+
+### ✅ ~~Add Result Pattern to Services~~
+**Solution applied**: Created `Result<T>` type in `src/HueWindows.Core/Models/Result.cs`. Updated `IHueBridgeService` and `HueBridgeService` to return `Result<T>` for all query methods. ViewModels now properly handle and display error messages.
+
+**Changed methods**:
+- `ConnectAsync` → Returns `Result` with connection error details
+- `GetRoomsAsync`, `GetZonesAsync` → Returns `Result<IReadOnlyList<RoomModel>>`
+- `GetRoomAsync`, `GetZoneAsync` → Returns `Result<RoomModel>`
+- `GetLightAsync` → Returns `Result<LightModel>`
+- `GetScenesForRoomAsync`, `GetScenesForZoneAsync` → Returns `Result<IReadOnlyList<SceneModel>>`
+- `GetLightsInRoomAsync` → Returns `Result<IReadOnlyList<LightModel>>`
+
+---
+
+### ✅ ~~Extract Remaining Magic Numbers~~
+**Solution applied**: Created `src/HueWindows/Constants/AppConstants.cs` with organized constant groups:
+- `Animation` - StandardDurationMs (300), FastDurationMs, SlowDurationMs
+- `BrightnessDrag` - DragThreshold (10), PixelsPerPercent (3), ThrottleMs (100)
+- `Colors` - InactiveIconAlpha (128), InactiveBrightnessBarAlpha (96)
+- `Layout` - DefaultWindowWidth (1200), DefaultWindowHeight (800), SetupMaxWidth, SettingsMaxWidth
+
+Updated `RoomCard.xaml.cs` and `MainWindow.xaml.cs` to use centralized constants.
+
+---
+
+## Architecture & Polish 🟡
+
+### 🟡 Extract Color Logic to Dedicated Service
 **Current location**: `src/HueWindows.Core/Models/HueColor.cs`
 
 Complex color math (CIE xy ↔ RGB, gamma correction, luminance) could be:
@@ -79,25 +89,36 @@ public interface IColorService
 }
 ```
 
+### 🟡 Offline Caching Layer
+```
+IHueBridgeService
+    ↓
+CachedHueBridgeService (decorator)
+    ↓  ↓
+    │  SQLite/JSON cache
+    ↓
+HueBridgeService (network)
+```
+
+**Benefits**:
+- View last-known state when offline
+- Queue changes for when connection restores
+- Faster initial load from cache
+- Graceful degradation
+
 ---
 
-## Usability Improvements
+## Usability Improvements 🟡
 
-### ✅ ~~Scene Preview Colors~~ (IMPLEMENTED)
-**Location**: `src/HueWindows.Core/Models/SceneModel.cs`
+### ✅ ~~Improve Empty States~~
+**Solution applied**:
+- DashboardPage already had good empty state with actionable buttons ("Open Hue App", "Refresh", help link)
+- MyDashboardPage already had good empty state with navigation button
+- Added `ErrorMessage` property to `RoomDetailViewModel` and `LightDetailViewModel`
+- Added InfoBar error displays to `RoomDetailPage.xaml` and `LightDetailPage.xaml`
+- Error messages now show specific, actionable information from the Result pattern
 
-~~`SceneModel` has a `Colors` property but it's not populated from the API.~~
-
-**Solution applied**: Scene palette colors are now parsed from the Hue API `scene.Palette.Color` or falling back to `scene.Actions[].Action.Color`. Up to 4 color swatches are displayed as colored circles below scene names in the UI.
-
-**Note on scene images**: The Hue API exposes a `metadata.image` property with a `public_image` resource ID, but the actual images are hosted on Philips's cloud servers, not accessible via the bridge API. Scene images cannot be reliably retrieved.
-
----
-
-### 🔴 Improve Empty States
-**Current**: Generic "No rooms found" message
-
-**Recommended**: Actionable empty states with context
+**Previously**: Generic "No rooms found" message
 ```
 No rooms found
 
@@ -112,7 +133,7 @@ Your Hue bridge is connected but has no rooms configured.
 
 ---
 
-### 🟡 Add Transition Animations
+### 🟢 Add Transition Animations
 **Current**: No page transitions (instant swap)
 
 **Recommended Connected Animations**:
@@ -134,8 +155,8 @@ Your Hue bridge is connected but has no rooms configured.
 
 ---
 
-### 🟡 Haptic/Visual Feedback for Brightness Gestures
-When drag-to-brightness is re-enabled:
+### 🟢 Haptic/Visual Feedback for Brightness Gestures
+Enhancements for drag-to-brightness:
 - Subtle scale animation on drag start (1.0 → 1.02)
 - Progress ring visualization around the card
 - Haptic feedback at 0% and 100% bounds (if supported)
@@ -151,10 +172,10 @@ Add swipe gestures or long-press context menu:
 
 ---
 
-## Product Delight Features
+## Product Delight Features 🟢
 
-### 🔴 Global Hotkey + Quick Access Overlay
-**Priority**: High impact, medium effort
+### 🟢 Global Hotkey + Quick Access Overlay
+*Pinning infrastructure now exists - overlay is additive*
 
 System-wide hotkey (e.g., `Win+Shift+H`) opens an always-on-top overlay with pinned rooms and scenes for instant control without switching apps.
 
@@ -299,7 +320,7 @@ Power users expect keyboard control:
 
 ---
 
-### 🟡 Smart Suggestions
+### 🟢 Smart Suggestions
 Time-of-day and usage pattern suggestions:
 
 ```
@@ -316,7 +337,7 @@ Time-of-day and usage pattern suggestions:
 
 ---
 
-### 🟡 Undo Support
+### 🟢 Undo Support
 Track state changes and allow undo:
 
 ```
@@ -362,26 +383,7 @@ In `LightDetailPage`, add color presets:
 
 ---
 
-## Architecture Enhancements
-
-### 🟡 Offline Caching Layer
-```
-IHueBridgeService
-    ↓
-CachedHueBridgeService (decorator)
-    ↓  ↓
-    │  SQLite/JSON cache
-    ↓
-HueBridgeService (network)
-```
-
-**Benefits**:
-- View last-known state when offline
-- Queue changes for when connection restores
-- Faster initial load from cache
-- Graceful degradation
-
----
+## Architecture Enhancements 🟢
 
 ### 🟢 Multi-Bridge Support
 For users with multiple homes/locations:
@@ -403,7 +405,7 @@ public interface IBridgeManager
 
 ---
 
-## Performance Optimizations
+## Performance Optimizations 🟢
 
 ### 🟢 Virtualization for Large Light Counts
 Current `ItemsRepeater` works for ~50 items. For 100+ lights:
@@ -420,8 +422,12 @@ Cache common color temperature → RGB conversions
 
 ## Quick Wins Checklist
 
+**Code Quality (do first):**
 - [ ] Extract `PixelsPerPercent = 3` to constant
 - [ ] Extract color adjustment `±20` to constant
+- [ ] Extract animation durations to constants
+
+**Polish (do later):**
 - [ ] Add keyboard shortcut hints to tooltips
 - [ ] Improve error message copy with actions
 - [ ] Add "What's New" on version update

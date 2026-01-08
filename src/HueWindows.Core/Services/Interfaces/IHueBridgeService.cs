@@ -32,8 +32,8 @@ public interface IHueBridgeService
     /// </summary>
     /// <param name="ipAddress">The IP address of the bridge.</param>
     /// <param name="appKey">The application key for authentication.</param>
-    /// <returns>True if connection successful.</returns>
-    Task<bool> ConnectAsync(string ipAddress, string appKey);
+    /// <returns>Result indicating success or failure with error message.</returns>
+    Task<Result> ConnectAsync(string ipAddress, string appKey);
 
     /// <summary>
     /// Disconnects from the current bridge.
@@ -45,12 +45,12 @@ public interface IHueBridgeService
     /// <summary>
     /// Gets all rooms from the bridge.
     /// </summary>
-    Task<IReadOnlyList<RoomModel>> GetRoomsAsync();
+    Task<Result<IReadOnlyList<RoomModel>>> GetRoomsAsync();
 
     /// <summary>
     /// Gets a specific room by ID.
     /// </summary>
-    Task<RoomModel?> GetRoomAsync(Guid roomId);
+    Task<Result<RoomModel>> GetRoomAsync(Guid roomId);
 
     /// <summary>
     /// Sets the on/off state for all lights in a room.
@@ -69,12 +69,12 @@ public interface IHueBridgeService
     /// <summary>
     /// Gets all zones from the bridge.
     /// </summary>
-    Task<IReadOnlyList<RoomModel>> GetZonesAsync();
+    Task<Result<IReadOnlyList<RoomModel>>> GetZonesAsync();
 
     /// <summary>
     /// Gets a specific zone by ID.
     /// </summary>
-    Task<RoomModel?> GetZoneAsync(Guid zoneId);
+    Task<Result<RoomModel>> GetZoneAsync(Guid zoneId);
 
     /// <summary>
     /// Sets the on/off state for all lights in a zone.
@@ -91,19 +91,19 @@ public interface IHueBridgeService
     /// <summary>
     /// Gets all scenes for a zone.
     /// </summary>
-    Task<IReadOnlyList<SceneModel>> GetScenesForZoneAsync(Guid zoneId);
+    Task<Result<IReadOnlyList<SceneModel>>> GetScenesForZoneAsync(Guid zoneId);
 
     // Light operations
 
     /// <summary>
     /// Gets all lights in a room.
     /// </summary>
-    Task<IReadOnlyList<LightModel>> GetLightsInRoomAsync(Guid roomId);
+    Task<Result<IReadOnlyList<LightModel>>> GetLightsInRoomAsync(Guid roomId);
 
     /// <summary>
     /// Gets a specific light by ID.
     /// </summary>
-    Task<LightModel?> GetLightAsync(Guid lightId);
+    Task<Result<LightModel>> GetLightAsync(Guid lightId);
 
     /// <summary>
     /// Sets the on/off state for a light.
@@ -134,7 +134,7 @@ public interface IHueBridgeService
     /// <summary>
     /// Gets all scenes for a room.
     /// </summary>
-    Task<IReadOnlyList<SceneModel>> GetScenesForRoomAsync(Guid roomId);
+    Task<Result<IReadOnlyList<SceneModel>>> GetScenesForRoomAsync(Guid roomId);
 
     /// <summary>
     /// Activates a scene.

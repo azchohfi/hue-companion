@@ -40,6 +40,9 @@ public partial class LightDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _isColorMode = true; // true = color, false = temperature
 
+    [ObservableProperty]
+    private string? _errorMessage;
+
     public int BrightnessPercent => (int)(Brightness * 100);
 
     /// <summary>
@@ -57,31 +60,34 @@ public partial class LightDetailViewModel : ObservableObject
     {
         _lightId = lightId;
         IsLoading = true;
+        ErrorMessage = null;
 
-        try
+        var lightResult = await _bridgeService.GetLightAsync(lightId);
+
+        if (lightResult.IsFailure)
         {
-            var light = await _bridgeService.GetLightAsync(lightId);
-            if (light == null) return;
-
-            LightName = light.Name;
-            IsOn = light.IsOn;
-            Brightness = light.Brightness;
-            SupportsColor = light.SupportsColor;
-            SupportsColorTemperature = light.SupportsColorTemperature;
-            CurrentColor = light.CurrentColor;
-
-            if (light.ColorTemperature.HasValue)
-            {
-                ColorTemperature = light.ColorTemperature.Value;
-            }
-
-            // Default to color mode if supported, otherwise temperature
-            IsColorMode = SupportsColor;
-        }
-        finally
-        {
+            ErrorMessage = lightResult.Error;
             IsLoading = false;
+            return;
         }
+
+        var light = lightResult.Value!;
+        LightName = light.Name;
+        IsOn = light.IsOn;
+        Brightness = light.Brightness;
+        SupportsColor = light.SupportsColor;
+        SupportsColorTemperature = light.SupportsColorTemperature;
+        CurrentColor = light.CurrentColor;
+
+        if (light.ColorTemperature.HasValue)
+        {
+            ColorTemperature = light.ColorTemperature.Value;
+        }
+
+        // Default to color mode if supported, otherwise temperature
+        IsColorMode = SupportsColor;
+
+        IsLoading = false;
     }
 
     partial void OnIsOnChanged(bool value)
