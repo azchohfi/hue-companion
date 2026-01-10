@@ -1,12 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
+using HueWindows.Constants;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
+using Windows.UI;
 using PinnedItemType = HueWindows.Core.Models.PinnedItemType;
 
 namespace HueWindows.Views;
@@ -18,14 +23,240 @@ public sealed partial class RoomDetailPage : Page
 {
     public RoomDetailViewModel ViewModel { get; }
     private readonly IPinnedItemsService _pinnedItemsService;
+    private bool _isLoaded;
+    private Color _accentColor = Colors.White;
+    private SolidColorBrush? _roomIconBrush;
+    private SolidColorBrush? _brightnessIconBrush;
+    private SolidColorBrush? _toggleBrush;
+    private Color _currentRoomIconColor = Colors.Gray;
+    private Color _currentBrightnessIconColor = Colors.Gray;
+    private Color _currentToggleColor = Colors.Transparent;
+    private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
 
     public RoomDetailPage()
     {
         ViewModel = App.Services.GetRequiredService<RoomDetailViewModel>();
         _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
         ViewModel.LightSelected += OnLightSelected;
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
+    }
+
+    private void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = true;
+        UpdateHeaderActiveState();
+    }
+
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(RoomDetailViewModel.IsOn) ||
+            e.PropertyName == nameof(RoomDetailViewModel.LightColors))
+        {
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                UpdateHeaderActiveState();
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(UpdateHeaderActiveState);
+            }
+        }
+    }
+
+    private void UpdateHeaderActiveState()
+    {
+        if (!_isLoaded) return;
+
+        var isActive = ViewModel.IsOn;
+        var colors = ViewModel.LightColors;
+
+        // Get primary accent color
+        if (colors.Count > 0 && isActive)
+        {
+            var (r, g, b) = colors[0];
+            _accentColor = Color.FromArgb(255, r, g, b);
+        }
+        else
+        {
+            _accentColor = Colors.Gray;
+        }
+
+        UpdateBorderEffect(isActive, colors);
+        UpdateToggleColor(isActive, colors);
+        UpdateRoomIconColor(isActive, colors);
+        UpdateBrightnessIconColor(isActive, colors);
+    }
+
+    private void UpdateBorderEffect(bool isActive, List<(byte R, byte G, byte B)> colors)
+    {
+        if (!isActive)
+        {
+            // Fade out all borders
+            AnimateBorderOpacity(HeaderOutlineBorder, 0.0);
+            AnimateBorderOpacity(HeaderOutlineBorder2, 0.0);
+            AnimateBorderOpacity(BrightnessOutlineBorder, 0.0);
+            AnimateBorderOpacity(BrightnessOutlineBorder2, 0.0);
+            return;
+        }
+
+        // Cross-fade between two borders for smooth color transitions
+        var newHeaderBorder = _useFirstBorder ? HeaderOutlineBorder : HeaderOutlineBorder2;
+        var oldHeaderBorder = _useFirstBorder ? HeaderOutlineBorder2 : HeaderOutlineBorder;
+        var newBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder : BrightnessOutlineBorder2;
+        var oldBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder2 : BrightnessOutlineBorder;
+
+        // Set new gradient on the incoming borders
+        var newBrush = CreateGradientBrush(colors);
+        newHeaderBorder.BorderBrush = newBrush;
+        newBrightnessBorder.BorderBrush = CloneGradientBrush(newBrush);
+
+        // Cross-fade: fade in new, fade out old
+        AnimateBorderOpacity(newHeaderBorder, 1.0);
+        AnimateBorderOpacity(oldHeaderBorder, 0.0);
+        AnimateBorderOpacity(newBrightnessBorder, 1.0);
+        AnimateBorderOpacity(oldBrightnessBorder, 0.0);
+
+        // Toggle for next update
+        _useFirstBorder = !_useFirstBorder;
+    }
+
+    private LinearGradientBrush CreateGradientBrush(List<(byte R, byte G, byte B)> colors)
+    {
+        var brush = new LinearGradientBrush();
+        brush.StartPoint = new Windows.Foundation.Point(0, 0);
+        brush.EndPoint = new Windows.Foundation.Point(1, 1);
+
+        if (colors.Count > 1)
+        {
+            for (int i = 0; i < colors.Count; i++)
+            {
+                var (r, g, b) = colors[i];
+                brush.GradientStops.Add(new GradientStop
+                {
+                    Color = Color.FromArgb(255, r, g, b),
+                    Offset = (double)i / (colors.Count - 1)
+                });
+            }
+        }
+        else if (colors.Count == 1)
+        {
+            var (r, g, b) = colors[0];
+            var color = Color.FromArgb(255, r, g, b);
+            brush.GradientStops.Add(new GradientStop { Color = color, Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = color, Offset = 1 });
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 1 });
+        }
+
+        return brush;
+    }
+
+    private LinearGradientBrush CloneGradientBrush(LinearGradientBrush source)
+    {
+        var clone = new LinearGradientBrush();
+        clone.StartPoint = source.StartPoint;
+        clone.EndPoint = source.EndPoint;
+        foreach (var stop in source.GradientStops)
+        {
+            clone.GradientStops.Add(new GradientStop { Color = stop.Color, Offset = stop.Offset });
+        }
+        return clone;
+    }
+
+    private void AnimateBorderOpacity(Border border, double targetOpacity)
+    {
+        var animation = new DoubleAnimation
+        {
+            To = targetOpacity,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, border);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+        storyboard.Begin();
+    }
+
+    private void UpdateToggleColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    {
+        if (RoomToggle == null) return;
+
+        var targetColor = isActive
+            ? (colors.Count > 0 ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B) : _accentColor)
+            : Colors.Transparent;
+
+        // Use solid color with animation for simplicity
+        if (_toggleBrush == null)
+        {
+            _toggleBrush = new SolidColorBrush(_currentToggleColor);
+            RoomToggle.Background = _toggleBrush;
+        }
+
+        AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+        _currentToggleColor = targetColor;
+    }
+
+    private void UpdateRoomIconColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    {
+        if (RoomIcon == null) return;
+
+        var targetColor = isActive
+            ? (colors.Count > 0 ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B) : _accentColor)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        // For simplicity, use solid color with animation (gradient icons are complex to animate)
+        if (_roomIconBrush == null)
+        {
+            _roomIconBrush = new SolidColorBrush(_currentRoomIconColor);
+            RoomIcon.Foreground = _roomIconBrush;
+        }
+
+        AnimateSolidBrushColor(_roomIconBrush, _currentRoomIconColor, targetColor);
+        _currentRoomIconColor = targetColor;
+    }
+
+    private void UpdateBrightnessIconColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    {
+        if (BrightnessIcon == null) return;
+
+        var targetColor = isActive
+            ? (colors.Count > 0 ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B) : _accentColor)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        // For simplicity, use solid color with animation
+        if (_brightnessIconBrush == null)
+        {
+            _brightnessIconBrush = new SolidColorBrush(_currentBrightnessIconColor);
+            BrightnessIcon.Foreground = _brightnessIconBrush;
+        }
+
+        AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+        _currentBrightnessIconColor = targetColor;
+    }
+
+    private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
+    {
+        var animation = new ColorAnimation
+        {
+            From = from,
+            To = to,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            EnableDependentAnimation = true
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, brush);
+        Storyboard.SetTargetProperty(animation, "Color");
+        storyboard.Begin();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -41,6 +272,12 @@ public sealed partial class RoomDetailPage : Page
         {
             await ViewModel.LoadRoomAsync(roomId, LightGroupType.Room);
         }
+
+        // Update colors after room data is loaded
+        if (_isLoaded)
+        {
+            UpdateHeaderActiveState();
+        }
     }
 
     private void OnLightSelected(object? sender, Guid lightId)
@@ -55,15 +292,6 @@ public sealed partial class RoomDetailPage : Page
         if (Math.Abs(e.NewValue - e.OldValue) > 0.5)
         {
             ViewModel.SetBrightnessCommand.Execute(e.NewValue / 100.0);
-        }
-    }
-
-    private void LightCard_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        if (sender is FrameworkElement element && element.Tag is Guid lightId)
-        {
-            var navigationService = App.Services.GetRequiredService<INavigationService>();
-            navigationService.NavigateTo<LightDetailPage>(lightId);
         }
     }
 
@@ -86,11 +314,16 @@ public sealed partial class RoomDetailPage : Page
     /// <summary>
     /// Handles adding a light to the custom dashboard.
     /// </summary>
-    private async void AddLightToDashboard_Click(object sender, RoutedEventArgs e)
+    private async void OnLightAddToDashboardRequested(object? sender, Guid lightId)
     {
-        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is Guid lightId)
+        await _pinnedItemsService.PinAsync(lightId, PinnedItemType.Light);
+    }
+
+    private void LightsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (args.Element is Controls.LightCard lightCard)
         {
-            await _pinnedItemsService.PinAsync(lightId, PinnedItemType.Light);
+            lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
         }
     }
 }

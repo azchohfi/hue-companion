@@ -47,6 +47,16 @@ public partial class RoomDetailViewModel : ObservableObject
 
     public int BrightnessPercent => (int)(Brightness * 100);
 
+    /// <summary>
+    /// Gets all unique light colors in the room as RGB values for gradient display.
+    /// </summary>
+    public List<(byte R, byte G, byte B)> LightColors => IsOn
+        ? Lights.Where(l => l.IsOn && l.CurrentColorRgb.HasValue)
+                .Select(l => l.CurrentColorRgb!.Value)
+                .Distinct()
+                .ToList()
+        : new();
+
     public RoomDetailViewModel(IHueBridgeService bridgeService)
     {
         _bridgeService = bridgeService;
@@ -86,6 +96,7 @@ public partial class RoomDetailViewModel : ObservableObject
         {
             var lightVm = new LightItemViewModel(light, _bridgeService);
             lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
+            lightVm.PropertyChanged += OnLightPropertyChanged;
             Lights.Add(lightVm);
         }
 
@@ -110,6 +121,7 @@ public partial class RoomDetailViewModel : ObservableObject
 
     partial void OnIsOnChanged(bool value)
     {
+        OnPropertyChanged(nameof(LightColors));
         if (_groupType == LightGroupType.Room)
             _ = _bridgeService.SetRoomOnAsync(_groupId, value);
         else
@@ -128,7 +140,7 @@ public partial class RoomDetailViewModel : ObservableObject
             await _bridgeService.SetZoneBrightnessAsync(_groupId, Brightness);
     }
 
-    private void OnSceneActivated(object? sender, Guid sceneId)
+    private async void OnSceneActivated(object? sender, Guid sceneId)
     {
         // Update active scene visual state
         foreach (var scene in Scenes)
@@ -139,6 +151,47 @@ public partial class RoomDetailViewModel : ObservableObject
         if (sender is SceneItemViewModel activeScene)
         {
             ActiveScene = activeScene;
+        }
+
+        // Refresh light colors after scene activation (brief delay for bridge to update)
+        await Task.Delay(500);
+        await RefreshLightColorsAsync();
+    }
+
+    /// <summary>
+    /// Refreshes light colors from the bridge without reloading the entire room.
+    /// </summary>
+    private async Task RefreshLightColorsAsync()
+    {
+        var groupResult = _groupType == LightGroupType.Room
+            ? await _bridgeService.GetRoomAsync(_groupId)
+            : await _bridgeService.GetZoneAsync(_groupId);
+
+        if (groupResult.IsFailure) return;
+
+        var group = groupResult.Value!;
+
+        // Update existing light viewmodels with fresh color data
+        foreach (var lightVm in Lights)
+        {
+            var freshLight = group.Lights.FirstOrDefault(l => l.Id == lightVm.LightId);
+            if (freshLight != null)
+            {
+                lightVm.UpdateFromBridge(freshLight.IsOn, freshLight.Brightness, freshLight.CurrentColor);
+            }
+        }
+
+        // Update room state
+        IsOn = group.IsOn;
+        Brightness = group.Brightness;
+    }
+
+    private void OnLightPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LightItemViewModel.IsOn) ||
+            e.PropertyName == nameof(LightItemViewModel.CurrentColorRgb))
+        {
+            OnPropertyChanged(nameof(LightColors));
         }
     }
 }
@@ -180,6 +233,19 @@ public partial class LightItemViewModel : ObservableObject
     /// </summary>
     public double IconOpacity => IsOn ? 1.0 : 0.4;
 
+    /// <summary>
+    /// Gets the current light color as RGB tuple for UI binding.
+    /// Returns null if light is off or has no color.
+    /// </summary>
+    public (byte R, byte G, byte B)? CurrentColorRgb
+    {
+        get
+        {
+            if (!IsOn || CurrentColor == null) return null;
+            return CurrentColor.ToRgb(1.0);
+        }
+    }
+
     public LightItemViewModel(LightModel light, IHueBridgeService bridgeService)
     {
         _light = light;
@@ -195,7 +261,39 @@ public partial class LightItemViewModel : ObservableObject
     partial void OnIsOnChanged(bool value)
     {
         OnPropertyChanged(nameof(IconOpacity));
+        OnPropertyChanged(nameof(CurrentColorRgb));
         _ = _bridgeService.SetLightOnAsync(LightId, value);
+    }
+
+    partial void OnCurrentColorChanged(HueColor? value)
+    {
+        OnPropertyChanged(nameof(CurrentColorRgb));
+    }
+
+    /// <summary>
+    /// Updates light state from bridge data without triggering API calls.
+    /// </summary>
+    public void UpdateFromBridge(bool isOn, double brightness, HueColor? color)
+    {
+        // Use SetProperty to update fields directly and notify, avoiding OnXxxChanged partial methods
+        // that would trigger API calls
+        if (_isOn != isOn)
+        {
+            _isOn = isOn;
+            OnPropertyChanged(nameof(IsOn));
+            OnPropertyChanged(nameof(IconOpacity));
+            OnPropertyChanged(nameof(CurrentColorRgb));
+        }
+
+        if (Math.Abs(_brightness - brightness) > 0.001)
+        {
+            _brightness = brightness;
+            OnPropertyChanged(nameof(Brightness));
+            OnPropertyChanged(nameof(BrightnessPercent));
+        }
+
+        // Color can use the property setter since it doesn't trigger API calls
+        CurrentColor = color;
     }
 
     [RelayCommand]
