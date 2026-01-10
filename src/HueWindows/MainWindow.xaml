@@ -94,7 +94,7 @@
                 <!-- Rooms -->
                 <NavigationViewItem x:Name="RoomsNavItem" Content="Rooms" Tag="Rooms">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7F4;"/>
+                        <FontIcon Glyph="&#xEBC6;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
