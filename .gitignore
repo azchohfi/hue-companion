@@ -76,3 +76,8 @@ settings.json
 
 # Claude Code
 .claude/
+tmpclaude-*
+
+# Screenshot validation
+screenshots/
+tools/screenshot-mcp/node_modules/

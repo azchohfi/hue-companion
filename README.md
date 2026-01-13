@@ -69,6 +69,11 @@ hue-windows/
 │   │
 │   └── HueWindows.Tests/           # Unit tests
 │
+├── tools/                          # Development tooling
+│   ├── Capture-AppScreenshot.ps1   # Screenshot capture script
+│   └── screenshot-mcp/             # MCP server for Claude integration
+│
+├── screenshots/                    # Captured app screenshots (gitignored)
 └── Directory.Build.props           # Shared build settings
 ```
 
@@ -88,6 +93,59 @@ hue-windows/
 3. Select your bridge from the list
 4. Press the link button on your Hue bridge when prompted
 5. The app will connect and display your rooms
+
+## Screenshot Validation (Claude Code Integration)
+
+This project includes tooling for visual UI validation with Claude Code. The system captures app screenshots that Claude can analyze for UI feedback during development.
+
+### Components
+
+- **`tools/Capture-AppScreenshot.ps1`** - PowerShell script that builds, launches, and captures the app window
+- **`tools/screenshot-mcp/`** - MCP server that exposes screenshot tools to Claude
+- **`.mcp.json`** - MCP server configuration for Claude Code
+
+### Manual Screenshot Capture
+
+```powershell
+# Full build + capture
+.\tools\Capture-AppScreenshot.ps1
+
+# Quick capture (skip build, use existing executable)
+.\tools\Capture-AppScreenshot.ps1 -SkipBuild
+
+# Keep app running after capture
+.\tools\Capture-AppScreenshot.ps1 -SkipBuild -KeepRunning
+
+# Custom wait time before capture
+.\tools\Capture-AppScreenshot.ps1 -WaitSeconds 10
+```
+
+Screenshots are saved to `screenshots/hue-{timestamp}.png` and the path is copied to clipboard.
+
+### Claude Code MCP Integration
+
+When running Claude Code in this repository, the MCP server provides these tools:
+
+| Tool | Description |
+|------|-------------|
+| `capture_screenshot` | Build and capture a new screenshot |
+| `get_latest_screenshot` | View the most recent screenshot |
+| `list_screenshots` | List all available screenshots |
+| `get_screenshot` | Get a specific screenshot by filename |
+
+**Usage in Claude Code:**
+- "Capture a screenshot of the app"
+- "Show me the latest screenshot"
+- "What does the current UI look like?"
+
+### Setup (First Time)
+
+```powershell
+cd tools/screenshot-mcp
+npm install
+```
+
+The MCP server is automatically enabled via `.mcp.json` when running Claude Code in this repository.
 
 ## License
 
