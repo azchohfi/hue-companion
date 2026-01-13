@@ -93,6 +93,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private async void NavigateToInitialPage()
     {
         var hasBridge = await _settingsService.HasConfiguredBridgeAsync();
+
+        // Get navigation target from command-line args
+        var cmdArgs = App.CommandLineArgs;
+        var navTarget = cmdArgs.IsValid ? NavigationTarget.FromCommandLineArgs(cmdArgs) : null;
+
         if (hasBridge)
         {
             // Auto-connect to the saved bridge
@@ -101,16 +106,30 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
             if (connectResult.IsSuccess)
             {
-                // Navigate to My Dashboard if items are pinned, else regular Dashboard
-                if (_pinnedItemsService.HasPinnedItems)
+                if (navTarget != null)
                 {
-                    _navigationService.NavigateTo<MyDashboardPage>();
-                    NavView.SelectedItem = MyDashboardNavItem;
+                    // Command-line navigation takes precedence
+                    NavigateToTarget(navTarget);
                 }
                 else
                 {
-                    _navigationService.NavigateTo<DashboardPage>();
-                    NavView.SelectedItem = DashboardNavItem;
+                    // Default navigation behavior
+                    if (_pinnedItemsService.HasPinnedItems)
+                    {
+                        _navigationService.NavigateTo<MyDashboardPage>();
+                        NavView.SelectedItem = MyDashboardNavItem;
+                    }
+                    else
+                    {
+                        _navigationService.NavigateTo<DashboardPage>();
+                        NavView.SelectedItem = DashboardNavItem;
+                    }
+                }
+
+                // Set up screenshot mode timer if enabled
+                if (cmdArgs.ScreenshotMode)
+                {
+                    SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
                 }
             }
             else
@@ -122,8 +141,58 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            _navigationService.NavigateTo<SetupPage>();
+            // No bridge configured - can still navigate to setup/settings if requested
+            if (navTarget != null && (navTarget.PageType == typeof(SetupPage) || navTarget.PageType == typeof(SettingsPage)))
+            {
+                NavigateToTarget(navTarget);
+
+                if (cmdArgs.ScreenshotMode)
+                {
+                    SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
+                }
+            }
+            else
+            {
+                _navigationService.NavigateTo<SetupPage>();
+            }
         }
+    }
+
+    private void NavigateToTarget(NavigationTarget target)
+    {
+        _navigationService.NavigateTo(target.PageType, target.Parameter);
+        UpdateNavViewSelection(target);
+    }
+
+    private void UpdateNavViewSelection(NavigationTarget target)
+    {
+        if (target.PageType == typeof(DashboardPage))
+            NavView.SelectedItem = DashboardNavItem;
+        else if (target.PageType == typeof(MyDashboardPage))
+            NavView.SelectedItem = MyDashboardNavItem;
+        else if (target.PageType == typeof(RoomsPage))
+            NavView.SelectedItem = RoomsNavItem;
+        else if (target.PageType == typeof(ZonesPage))
+            NavView.SelectedItem = ZonesNavItem;
+        else if (target.PageType == typeof(SettingsPage))
+            NavView.SelectedItem = NavView.SettingsItem;
+        // For room/zone/light detail pages, don't set selection (they're drill-down pages)
+    }
+
+    private void SetupScreenshotModeTimer(int delayMs)
+    {
+        var timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(delayMs)
+        };
+
+        timer.Tick += (s, e) =>
+        {
+            timer.Stop();
+            Application.Current.Exit();
+        };
+
+        timer.Start();
     }
 
     private void OnPinnedItemsChanged(object? sender, EventArgs e)

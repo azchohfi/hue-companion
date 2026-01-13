@@ -33,4 +33,11 @@ public interface INavigationService
     /// Navigates back to the previous page.
     /// </summary>
     void GoBack();
+
+    /// <summary>
+    /// Navigates to a page by type.
+    /// </summary>
+    /// <param name="pageType">The type of page to navigate to.</param>
+    /// <param name="parameter">Optional parameter to pass to the page.</param>
+    void NavigateTo(Type pageType, object? parameter = null);
 }

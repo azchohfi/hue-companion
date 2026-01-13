@@ -24,6 +24,11 @@ public partial class App : Application
     public static MainWindow MainWindow { get; private set; } = null!;
 
     /// <summary>
+    /// Gets the parsed command-line arguments.
+    /// </summary>
+    public static CommandLineArgs CommandLineArgs { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -38,6 +43,14 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Parse command-line arguments
+        CommandLineArgs = CommandLineParser.Parse(Environment.GetCommandLineArgs());
+
+        if (!CommandLineArgs.IsValid)
+        {
+            System.Diagnostics.Debug.WriteLine($"[App] Invalid command-line args: {CommandLineArgs.ErrorMessage}");
+        }
+
         // Load settings
         var settingsService = Services.GetRequiredService<ISettingsService>();
         await settingsService.LoadAsync();

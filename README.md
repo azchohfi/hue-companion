@@ -14,6 +14,47 @@ A modern Windows 11 app for controlling Philips Hue smart lights, built with Win
 - **Dark/Light Theme** - Follows system theme or manual selection
 - **Mica Backdrop** - Modern Windows 11 visual style with premium styling
 
+## Command-Line Deep Linking
+
+Launch the app directly to specific pages using command-line arguments. Useful for automation and screenshot capture.
+
+### Usage
+
+```bash
+# Navigate to specific pages
+HueWindows.exe --page dashboard
+HueWindows.exe --page settings
+HueWindows.exe --page room --id "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+HueWindows.exe --page light --id "12345678-90ab-cdef-1234-567890abcdef"
+
+# Screenshot mode (auto-close after delay)
+HueWindows.exe --page dashboard --screenshot
+HueWindows.exe --page room --id "..." --screenshot --delay 8000
+```
+
+### Supported Pages
+
+| Page | Requires `--id` | Description |
+|------|-----------------|-------------|
+| `dashboard` | No | Main dashboard with all rooms |
+| `mydashboard` | No | Pinned items dashboard |
+| `rooms` | No | Rooms list |
+| `zones` | No | Zones list |
+| `room` | Yes | Room detail page |
+| `zone` | Yes | Zone detail page |
+| `light` | Yes | Individual light control |
+| `settings` | No | App settings |
+| `setup` | No | Bridge setup |
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--page <name>` | `-p` | Target page to navigate to |
+| `--id <guid>` | | ID for pages that require it |
+| `--screenshot` | `-s` | Auto-close app after delay |
+| `--delay <ms>` | | Delay before auto-close (default: 5000ms) |
+
 ## Requirements
 
 - Windows 10 version 1809 (build 17763) or later

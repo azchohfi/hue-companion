@@ -42,4 +42,17 @@ public class NavigationService : INavigationService
             _frame.GoBack();
         }
     }
+
+    /// <inheritdoc/>
+    public void NavigateTo(Type pageType, object? parameter = null)
+    {
+        if (parameter != null)
+        {
+            _frame?.Navigate(pageType, parameter);
+        }
+        else
+        {
+            _frame?.Navigate(pageType);
+        }
+    }
 }
