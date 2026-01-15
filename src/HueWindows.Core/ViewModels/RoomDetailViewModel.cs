@@ -122,6 +122,9 @@ public partial class RoomDetailViewModel : ObservableObject
         }
 
         IsLoading = false;
+
+        // Notify SupportsColor after lights are loaded so binding updates
+        OnPropertyChanged(nameof(SupportsColor));
     }
 
     partial void OnIsOnChanged(bool value)

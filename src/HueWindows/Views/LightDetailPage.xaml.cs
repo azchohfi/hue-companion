@@ -29,13 +29,11 @@ public sealed partial class LightDetailPage : Page
     private SolidColorBrush? _colorIconBrush;
     private SolidColorBrush? _temperatureIconBrush;
     private SolidColorBrush? _toggleBrush;
-    private SolidColorBrush? _colorButtonBrush;
     private Color _currentLightIconColor = Colors.Gray;
     private Color _currentBrightnessIconColor = Colors.Gray;
     private Color _currentColorIconColor = Colors.Gray;
     private Color _currentTemperatureIconColor = Colors.Gray;
     private Color _currentToggleColor = Colors.Transparent;
-    private Color _currentColorButtonColor = Colors.Gray;
     private bool _useFirstBorder = true;
     private DispatcherTimer? _brightnessDebounceTimer;
     private DispatcherTimer? _temperatureDebounceTimer;
@@ -109,7 +107,6 @@ public sealed partial class LightDetailPage : Page
         UpdateBrightnessIconColor(isActive);
         UpdateColorIconColor(isActive);
         UpdateTemperatureIconColor(isActive);
-        UpdateColorButtonColor(isActive);
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -234,24 +231,6 @@ public sealed partial class LightDetailPage : Page
 
         AnimateSolidBrushColor(_temperatureIconBrush, _currentTemperatureIconColor, targetColor);
         _currentTemperatureIconColor = targetColor;
-    }
-
-    private void UpdateColorButtonColor(bool isActive)
-    {
-        if (ColorButtonContent == null) return;
-
-        var targetColor = isActive
-            ? _accentColor
-            : Color.FromArgb(64, 255, 255, 255);
-
-        if (_colorButtonBrush == null)
-        {
-            _colorButtonBrush = new SolidColorBrush(_currentColorButtonColor);
-            ColorButtonContent.Background = _colorButtonBrush;
-        }
-
-        AnimateSolidBrushColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
-        _currentColorButtonColor = targetColor;
     }
 
     private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
@@ -442,18 +421,4 @@ public sealed partial class LightDetailPage : Page
     /// Helper to check if error message exists.
     /// </summary>
     public bool HasErrorMessage(string? message) => !string.IsNullOrEmpty(message);
-
-    private void ColorSplitButton_Click(SplitButton sender, SplitButtonClickEventArgs args)
-    {
-        if (ViewModel.CurrentColor != null)
-        {
-            var rgb = ViewModel.CurrentColor.ToRgb(1.0);
-            ColorFlyout.InitialColor = Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
-        }
-    }
-
-    private void ColorFlyout_ColorChanged(object sender, Color color)
-    {
-        ViewModel.SetColorFromRgbCommand.Execute((color.R, color.G, color.B));
-    }
 }

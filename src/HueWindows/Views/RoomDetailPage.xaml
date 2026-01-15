@@ -86,7 +86,6 @@
                                  Style="{StaticResource ColorSplitButtonStyle}"
                                  VerticalAlignment="Center"
                                  Margin="0,0,16,0"
-                                 Click="ColorSplitButton_Click"
                                  Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}">
                         <Border x:Name="ColorButtonContent" Width="40" Height="40" CornerRadius="6"
                                 Background="#40FFFFFF">
@@ -95,7 +94,8 @@
                         <SplitButton.Flyout>
                             <Flyout x:Name="ColorPickerFlyout"
                                     Placement="Bottom"
-                                    ShouldConstrainToRootBounds="False">
+                                    ShouldConstrainToRootBounds="False"
+                                    Opening="ColorPickerFlyout_Opening">
                                 <Flyout.FlyoutPresenterStyle>
                                     <Style TargetType="FlyoutPresenter">
                                         <Setter Property="Background" Value="Transparent"/>

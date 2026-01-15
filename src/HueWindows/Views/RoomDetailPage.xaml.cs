@@ -396,9 +396,9 @@ public sealed partial class RoomDetailPage : Page
         }
     }
 
-    private void ColorSplitButton_Click(SplitButton sender, SplitButtonClickEventArgs args)
+    private void ColorPickerFlyout_Opening(object sender, object e)
     {
-        // Set initial color before flyout opens
+        // Set initial color when flyout opens
         var colors = ViewModel.LightColors;
         if (colors.Count > 0)
         {
