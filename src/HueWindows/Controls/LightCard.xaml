@@ -34,7 +34,7 @@
         <!-- Main card container -->
         <Grid x:Name="CardRoot"
               CornerRadius="8"
-              PointerPressed="CardRoot_PointerPressed">
+              Tapped="CardRoot_Tapped">
 
             <!-- Dark gradient background -->
             <Grid.Background>

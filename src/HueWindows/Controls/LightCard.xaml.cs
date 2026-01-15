@@ -191,20 +191,43 @@ public sealed partial class LightCard : UserControl
         _currentIconColor = targetColor;
     }
 
-    private void CardRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Check if this is a left click (not right-click for context menu)
-        var props = e.GetCurrentPoint(this).Properties;
-        if (props.IsLeftButtonPressed)
+        // Prevent navigation if clicking the toggle
+        if (e.OriginalSource is DependencyObject obj && IsDescendantOf(obj, LightToggle))
         {
-            ViewModel?.TapLightCommand.Execute(null);
+            return;
         }
+
+        ViewModel?.TapLightCommand.Execute(null);
+        e.Handled = true;
     }
 
     private void LightToggle_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Prevent navigation when toggle is tapped
+        // Explicitly toggle - the binding handles the state change
+        if (ViewModel != null)
+        {
+            ViewModel.IsOn = !ViewModel.IsOn;
+        }
         e.Handled = true;
+    }
+
+    private bool IsDescendantOf(DependencyObject? current, DependencyObject target)
+    {
+        while (current != null)
+        {
+            if (current == target) return true;
+            try
+            {
+                current = VisualTreeHelper.GetParent(current);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        return false;
     }
 
     private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)
