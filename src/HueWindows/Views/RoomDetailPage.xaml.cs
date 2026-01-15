@@ -29,9 +29,11 @@ public sealed partial class RoomDetailPage : Page
     private SolidColorBrush? _roomIconBrush;
     private SolidColorBrush? _brightnessIconBrush;
     private SolidColorBrush? _toggleBrush;
+    private SolidColorBrush? _colorButtonBrush;
     private Color _currentRoomIconColor = Colors.Gray;
     private Color _currentBrightnessIconColor = Colors.Gray;
     private Color _currentToggleColor = Colors.Transparent;
+    private Color _currentColorButtonColor = Colors.Gray;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
     private bool _isUpdatingSlider; // Prevent feedback loops when animating slider
     private DispatcherTimer? _brightnessDebounceTimer; // Debounce brightness changes
@@ -102,6 +104,7 @@ public sealed partial class RoomDetailPage : Page
         UpdateToggleColor(isActive, colors);
         UpdateRoomIconColor(isActive, colors);
         UpdateBrightnessIconColor(isActive, colors);
+        UpdateColorButtonColor(isActive, colors);
     }
 
     private void UpdateBorderEffect(bool isActive, List<(byte R, byte G, byte B)> colors)
@@ -234,6 +237,24 @@ public sealed partial class RoomDetailPage : Page
 
         AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
         _currentBrightnessIconColor = targetColor;
+    }
+
+    private void UpdateColorButtonColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    {
+        if (ColorButtonContent == null) return;
+
+        var targetColor = isActive && colors.Count > 0
+            ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B)
+            : Color.FromArgb(64, 255, 255, 255); // #40FFFFFF when inactive
+
+        if (_colorButtonBrush == null)
+        {
+            _colorButtonBrush = new SolidColorBrush(_currentColorButtonColor);
+            ColorButtonContent.Background = _colorButtonBrush;
+        }
+
+        AnimateSolidBrushColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
+        _currentColorButtonColor = targetColor;
     }
 
     private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
@@ -375,21 +396,15 @@ public sealed partial class RoomDetailPage : Page
         }
     }
 
-    private void HeaderIconContainer_Tapped(object sender, TappedRoutedEventArgs e)
+    private void ColorSplitButton_Click(SplitButton sender, SplitButtonClickEventArgs args)
     {
-        // Check if any lights support color
-        if (!ViewModel.Lights.Any(l => l.SupportsColor)) return;
-
-        // Set initial color from first light color
+        // Set initial color before flyout opens
         var colors = ViewModel.LightColors;
         if (colors.Count > 0)
         {
             var (r, g, b) = colors[0];
             ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
         }
-
-        FlyoutBase.ShowAttachedFlyout(HeaderIconContainer);
-        e.Handled = true;
     }
 
     private void ColorFlyout_ColorChanged(object sender, Color color)
