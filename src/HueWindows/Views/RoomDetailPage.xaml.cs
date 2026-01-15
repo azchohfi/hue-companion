@@ -108,30 +108,22 @@ public sealed partial class RoomDetailPage : Page
     {
         if (!isActive)
         {
-            // Fade out all borders
-            AnimateBorderOpacity(HeaderOutlineBorder, 0.0);
-            AnimateBorderOpacity(HeaderOutlineBorder2, 0.0);
-            AnimateBorderOpacity(BrightnessOutlineBorder, 0.0);
-            AnimateBorderOpacity(BrightnessOutlineBorder2, 0.0);
+            // Fade out borders
+            AnimateBorderOpacity(OutlineBorder, 0.0);
+            AnimateBorderOpacity(OutlineBorder2, 0.0);
             return;
         }
 
         // Cross-fade between two borders for smooth color transitions
-        var newHeaderBorder = _useFirstBorder ? HeaderOutlineBorder : HeaderOutlineBorder2;
-        var oldHeaderBorder = _useFirstBorder ? HeaderOutlineBorder2 : HeaderOutlineBorder;
-        var newBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder : BrightnessOutlineBorder2;
-        var oldBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder2 : BrightnessOutlineBorder;
+        var newBorder = _useFirstBorder ? OutlineBorder : OutlineBorder2;
+        var oldBorder = _useFirstBorder ? OutlineBorder2 : OutlineBorder;
 
-        // Set new gradient on the incoming borders
-        var newBrush = CreateGradientBrush(colors);
-        newHeaderBorder.BorderBrush = newBrush;
-        newBrightnessBorder.BorderBrush = CloneGradientBrush(newBrush);
+        // Set new gradient on the incoming border
+        newBorder.BorderBrush = CreateGradientBrush(colors);
 
         // Cross-fade: fade in new, fade out old
-        AnimateBorderOpacity(newHeaderBorder, 1.0);
-        AnimateBorderOpacity(oldHeaderBorder, 0.0);
-        AnimateBorderOpacity(newBrightnessBorder, 1.0);
-        AnimateBorderOpacity(oldBrightnessBorder, 0.0);
+        AnimateBorderOpacity(newBorder, 1.0);
+        AnimateBorderOpacity(oldBorder, 0.0);
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
@@ -169,18 +161,6 @@ public sealed partial class RoomDetailPage : Page
         }
 
         return brush;
-    }
-
-    private LinearGradientBrush CloneGradientBrush(LinearGradientBrush source)
-    {
-        var clone = new LinearGradientBrush();
-        clone.StartPoint = source.StartPoint;
-        clone.EndPoint = source.EndPoint;
-        foreach (var stop in source.GradientStops)
-        {
-            clone.GradientStops.Add(new GradientStop { Color = stop.Color, Offset = stop.Offset });
-        }
-        return clone;
     }
 
     private void AnimateBorderOpacity(Border border, double targetOpacity)

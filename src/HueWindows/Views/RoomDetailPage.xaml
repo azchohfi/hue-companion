@@ -23,11 +23,10 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header with Room Controls -->
+        <!-- Header with Room Controls and Brightness -->
         <Grid x:Name="HeaderContainer" Grid.Row="0" Margin="36,32,36,24"
               CornerRadius="16">
             <!-- Dark gradient background -->
@@ -40,125 +39,110 @@
             </Grid.Background>
 
             <!-- Outline borders for room colors - two for cross-fade -->
-            <Border x:Name="HeaderOutlineBorder"
+            <Border x:Name="OutlineBorder"
                     Canvas.ZIndex="0"
                     CornerRadius="16"
                     BorderThickness="2"
                     IsHitTestVisible="False"
                     Opacity="0"/>
-            <Border x:Name="HeaderOutlineBorder2"
+            <Border x:Name="OutlineBorder2"
                     Canvas.ZIndex="0"
                     CornerRadius="16"
                     BorderThickness="2"
                     IsHitTestVisible="False"
                     Opacity="0"/>
 
-            <Grid Canvas.ZIndex="1" Margin="24,20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Canvas.ZIndex="1" Margin="24,20" Spacing="20">
+                <!-- Header: Icon, Name, Toggle -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Room icon -->
-                <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                        Background="#20FFFFFF" Margin="0,0,16,0"
-                        Tapped="HeaderIconContainer_Tapped">
-                    <FlyoutBase.AttachedFlyout>
-                        <Flyout x:Name="ColorPickerFlyout"
-                                Placement="Bottom"
-                                ShouldConstrainToRootBounds="False">
-                            <Flyout.FlyoutPresenterStyle>
-                                <Style TargetType="FlyoutPresenter">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="CornerRadius" Value="12"/>
-                                </Style>
-                            </Flyout.FlyoutPresenterStyle>
-                            <controls:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
-                    <FontIcon x:Name="RoomIcon"
-                              Glyph="&#xE781;"
-                              FontSize="22"
-                              Foreground="#80FFFFFF"/>
-                </Border>
+                    <!-- Room icon with color picker flyout -->
+                    <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
+                            Background="#20FFFFFF" Margin="0,0,16,0"
+                            Tapped="HeaderIconContainer_Tapped">
+                        <FlyoutBase.AttachedFlyout>
+                            <Flyout x:Name="ColorPickerFlyout"
+                                    Placement="Bottom"
+                                    ShouldConstrainToRootBounds="False">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="CornerRadius" Value="12"/>
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <controls:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
+                            </Flyout>
+                        </FlyoutBase.AttachedFlyout>
+                        <FontIcon x:Name="RoomIcon"
+                                  Glyph="&#xE781;"
+                                  FontSize="22"
+                                  Foreground="#80FFFFFF"/>
+                    </Border>
 
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
-                               Style="{StaticResource PageHeaderTextStyle}"/>
-                    <TextBlock Style="{StaticResource PageSubtitleTextStyle}">
-                        <Run Text="{x:Bind ViewModel.Lights.Count, Mode=OneWay}"/>
-                        <Run Text=" lights"/>
-                    </TextBlock>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.RoomName, Mode=OneWay}"
+                                   Style="{StaticResource PageHeaderTextStyle}"/>
+                        <TextBlock Style="{StaticResource PageSubtitleTextStyle}">
+                            <Run Text="{x:Bind ViewModel.Lights.Count, Mode=OneWay}"/>
+                            <Run Text=" lights"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <ToggleSwitch x:Name="RoomToggle"
+                                  Grid.Column="2"
+                                  Style="{StaticResource GradientToggleSwitchStyle}"
+                                  VerticalAlignment="Center"
+                                  IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
+                                  Tapped="RoomToggle_Tapped"/>
+                </Grid>
+
+                <!-- Divider -->
+                <Border Height="1" Background="#20FFFFFF"/>
+
+                <!-- Brightness Section -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon x:Name="BrightnessIcon" Glyph="&#xE706;" FontSize="18"
+                                  Foreground="#80FFFFFF"/>
+                        <TextBlock Text="Brightness" Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Slider x:Name="BrightnessSlider"
+                                Grid.Column="0"
+                                Minimum="0"
+                                Maximum="100"
+                                ValueChanged="BrightnessSlider_ValueChanged"
+                                VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   Margin="16,0,0,0"
+                                   MinWidth="40"
+                                   TextAlignment="Right"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}">
+                            <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
+                            <Run Text="%"/>
+                        </TextBlock>
+                    </Grid>
                 </StackPanel>
-
-                <ToggleSwitch x:Name="RoomToggle"
-                              Grid.Column="2"
-                              Style="{StaticResource GradientToggleSwitchStyle}"
-                              VerticalAlignment="Center"
-                              IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
-                              Tapped="RoomToggle_Tapped"/>
-            </Grid>
-        </Grid>
-
-        <!-- Room Brightness Card -->
-        <Grid x:Name="BrightnessContainer" Grid.Row="1" Margin="36,0,36,24"
-              CornerRadius="8">
-            <!-- Dark gradient background -->
-            <Grid.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                    <GradientStop Color="#FF252528" Offset="0.5"/>
-                    <GradientStop Color="#FF1E1E22" Offset="1"/>
-                </LinearGradientBrush>
-            </Grid.Background>
-
-            <!-- Outline borders for room colors - two for cross-fade -->
-            <Border x:Name="BrightnessOutlineBorder"
-                    Canvas.ZIndex="0"
-                    CornerRadius="8"
-                    BorderThickness="2"
-                    IsHitTestVisible="False"
-                    Opacity="0"/>
-            <Border x:Name="BrightnessOutlineBorder2"
-                    Canvas.ZIndex="0"
-                    CornerRadius="8"
-                    BorderThickness="2"
-                    IsHitTestVisible="False"
-                    Opacity="0"/>
-
-            <Grid Canvas.ZIndex="1" Margin="20,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <FontIcon x:Name="BrightnessIcon" Grid.Column="0" Glyph="&#xE706;" FontSize="20" Margin="0,0,16,0"
-                          Foreground="#80FFFFFF"/>
-
-                <Slider x:Name="BrightnessSlider"
-                        Grid.Column="1"
-                        Minimum="0"
-                        Maximum="100"
-                        ValueChanged="BrightnessSlider_ValueChanged"
-                        VerticalAlignment="Center"/>
-
-                <TextBlock Grid.Column="2"
-                           VerticalAlignment="Center"
-                           Margin="16,0,0,0"
-                           MinWidth="40"
-                           TextAlignment="Right"
-                           Style="{StaticResource BodyStrongTextBlockStyle}">
-                    <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
-                    <Run Text="%"/>
-                </TextBlock>
-            </Grid>
+            </StackPanel>
         </Grid>
 
         <!-- Content Area -->
-        <ScrollViewer Grid.Row="2">
+        <ScrollViewer Grid.Row="1">
             <StackPanel Padding="36,0,36,36" Spacing="28">
 
                 <!-- Scenes Section -->
@@ -248,14 +232,14 @@
         </ScrollViewer>
 
         <!-- Loading Overlay -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="2"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}">
             <ProgressRing IsActive="True" Width="48" Height="48"/>
         </Grid>
 
         <!-- Error Message -->
-        <InfoBar Grid.Row="2"
+        <InfoBar Grid.Row="1"
                  Title="Error"
                  Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                  IsOpen="{x:Bind HasErrorMessage(ViewModel.ErrorMessage), Mode=OneWay}"
