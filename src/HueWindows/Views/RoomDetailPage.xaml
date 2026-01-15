@@ -128,9 +128,6 @@
                         Minimum="0"
                         Maximum="100"
                         ValueChanged="BrightnessSlider_ValueChanged"
-                        PointerPressed="BrightnessSlider_PointerPressed"
-                        PointerReleased="BrightnessSlider_PointerReleased"
-                        PointerCaptureLost="BrightnessSlider_PointerCaptureLost"
                         VerticalAlignment="Center"/>
 
                 <TextBlock Grid.Column="2"
@@ -157,7 +154,7 @@
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="110"
-                                               MinItemHeight="72"
+                                               MinItemHeight="88"
                                                MinRowSpacing="8"
                                                MinColumnSpacing="8"
                                                ItemsStretch="Fill"/>

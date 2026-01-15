@@ -33,7 +33,8 @@ public sealed partial class RoomDetailPage : Page
     private Color _currentToggleColor = Colors.Transparent;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
     private bool _isUpdatingSlider; // Prevent feedback loops when animating slider
-    private bool _isUserDraggingSlider; // Track when user is actively dragging
+    private DispatcherTimer? _brightnessDebounceTimer; // Debounce brightness changes
+    private double _pendingBrightness; // Pending brightness value to send
 
     public RoomDetailPage()
     {
@@ -313,42 +314,35 @@ public sealed partial class RoomDetailPage : Page
         e.Handled = true;
     }
 
-    private void BrightnessSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        _isUserDraggingSlider = true;
-    }
-
-    private void BrightnessSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        _isUserDraggingSlider = false;
-    }
-
-    private void BrightnessSlider_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
-    {
-        _isUserDraggingSlider = false;
-    }
-
     private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
         // Skip if we're programmatically animating the slider
         if (_isUpdatingSlider) return;
 
-        // Only fire command if value actually changed from user interaction
-        if (Math.Abs(e.NewValue - e.OldValue) > 0.5)
+        // Debounce: only send command after user stops dragging for 150ms
+        _pendingBrightness = e.NewValue / 100.0;
+
+        if (_brightnessDebounceTimer == null)
         {
-            ViewModel.SetBrightnessCommand.Execute(e.NewValue / 100.0);
+            _brightnessDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _brightnessDebounceTimer.Tick += (s, args) =>
+            {
+                _brightnessDebounceTimer.Stop();
+                ViewModel.SetBrightnessCommand.Execute(_pendingBrightness);
+            };
         }
+
+        // Reset timer on each change
+        _brightnessDebounceTimer.Stop();
+        _brightnessDebounceTimer.Start();
     }
 
     private void AnimateSliderToValue(double targetValue)
     {
         if (BrightnessSlider == null) return;
-
-        // Skip animation if user is actively dragging
-        if (_isUserDraggingSlider)
-        {
-            return;
-        }
 
         _isUpdatingSlider = true;
 
