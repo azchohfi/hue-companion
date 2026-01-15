@@ -48,6 +48,11 @@ public partial class RoomDetailViewModel : ObservableObject
     public int BrightnessPercent => (int)(Brightness * 100);
 
     /// <summary>
+    /// Gets whether any light in the room supports color.
+    /// </summary>
+    public bool SupportsColor => Lights.Any(l => l.SupportsColor);
+
+    /// <summary>
     /// Gets all unique light colors in the room as RGB values for gradient display.
     /// </summary>
     public List<(byte R, byte G, byte B)> LightColors => IsOn
