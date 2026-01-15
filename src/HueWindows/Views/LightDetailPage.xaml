@@ -41,19 +41,43 @@
                 <!-- All controls in a single StackPanel -->
                 <StackPanel Canvas.ZIndex="1" Margin="24,20" Spacing="24">
 
-                    <!-- Header: Icon, Name, Toggle -->
+                    <!-- Header: Icon, Name, Color Button, Toggle -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Light icon with color picker flyout -->
+                        <!-- Light icon (no longer tappable for color) -->
                         <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                                Background="#20FFFFFF" Margin="0,0,16,0"
-                                Tapped="HeaderIconContainer_Tapped">
-                            <FlyoutBase.AttachedFlyout>
+                                Background="#20FFFFFF" Margin="0,0,16,0">
+                            <FontIcon x:Name="LightIcon"
+                                      Glyph="&#xE781;"
+                                      FontSize="22"
+                                      Foreground="#80FFFFFF"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind ViewModel.LightName, Mode=OneWay}"
+                                       Style="{StaticResource PageHeaderTextStyle}"/>
+                        </StackPanel>
+
+                        <!-- Color SplitButton -->
+                        <SplitButton x:Name="ColorSplitButton"
+                                     Grid.Column="2"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,16,0"
+                                     Padding="0"
+                                     CornerRadius="8"
+                                     Click="ColorSplitButton_Click"
+                                     Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}">
+                            <Border x:Name="ColorButtonContent" Width="40" Height="40" CornerRadius="6"
+                                    Background="#40FFFFFF">
+                                <FontIcon Glyph="&#xE790;" FontSize="18" Foreground="White"/>
+                            </Border>
+                            <SplitButton.Flyout>
                                 <Flyout x:Name="ColorPickerFlyout"
                                         Placement="Bottom"
                                         ShouldConstrainToRootBounds="False">
@@ -66,20 +90,11 @@
                                     </Flyout.FlyoutPresenterStyle>
                                     <controls:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
                                 </Flyout>
-                            </FlyoutBase.AttachedFlyout>
-                            <FontIcon x:Name="LightIcon"
-                                      Glyph="&#xE781;"
-                                      FontSize="22"
-                                      Foreground="#80FFFFFF"/>
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{x:Bind ViewModel.LightName, Mode=OneWay}"
-                                       Style="{StaticResource PageHeaderTextStyle}"/>
-                        </StackPanel>
+                            </SplitButton.Flyout>
+                        </SplitButton>
 
                         <ToggleSwitch x:Name="LightToggle"
-                                      Grid.Column="2"
+                                      Grid.Column="3"
                                       Style="{StaticResource GradientToggleSwitchStyle}"
                                       VerticalAlignment="Center"
                                       IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
