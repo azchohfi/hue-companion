@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -392,5 +393,27 @@ public sealed partial class RoomDetailPage : Page
         {
             lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
         }
+    }
+
+    private void HeaderIconContainer_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        // Check if any lights support color
+        if (!ViewModel.Lights.Any(l => l.SupportsColor)) return;
+
+        // Set initial color from first light color
+        var colors = ViewModel.LightColors;
+        if (colors.Count > 0)
+        {
+            var (r, g, b) = colors[0];
+            ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
+        }
+
+        FlyoutBase.ShowAttachedFlyout(HeaderIconContainer);
+        e.Handled = true;
+    }
+
+    private void ColorFlyout_ColorChanged(object sender, Color color)
+    {
+        ViewModel.SetRoomColorFromRgbCommand.Execute((color.R, color.G, color.B));
     }
 }

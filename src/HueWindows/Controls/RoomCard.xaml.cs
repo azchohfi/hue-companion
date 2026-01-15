@@ -1,6 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
@@ -316,5 +317,26 @@ public sealed partial class RoomCard : UserControl
         {
             VisualStateManager.GoToState(this, "Default", true);
         }
+    }
+
+    private void IconContainer_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (ViewModel?.SupportsColor != true) return;
+
+        // Set initial color from first light color
+        var colors = ViewModel.LightColors;
+        if (colors.Count > 0)
+        {
+            var (r, g, b) = colors[0];
+            ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
+        }
+
+        FlyoutBase.ShowAttachedFlyout(IconContainer);
+        e.Handled = true;
+    }
+
+    private void ColorFlyout_ColorChanged(object sender, Color color)
+    {
+        ViewModel?.SetColorCommand?.Execute((color.R, color.G, color.B));
     }
 }

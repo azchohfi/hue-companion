@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -25,9 +26,13 @@ public sealed partial class LightDetailPage : Page
     private Color _accentColor = Colors.White;
     private SolidColorBrush? _lightIconBrush;
     private SolidColorBrush? _brightnessIconBrush;
+    private SolidColorBrush? _colorIconBrush;
+    private SolidColorBrush? _temperatureIconBrush;
     private SolidColorBrush? _toggleBrush;
     private Color _currentLightIconColor = Colors.Gray;
     private Color _currentBrightnessIconColor = Colors.Gray;
+    private Color _currentColorIconColor = Colors.Gray;
+    private Color _currentTemperatureIconColor = Colors.Gray;
     private Color _currentToggleColor = Colors.Transparent;
     private bool _useFirstBorder = true;
     private DispatcherTimer? _brightnessDebounceTimer;
@@ -100,6 +105,8 @@ public sealed partial class LightDetailPage : Page
         UpdateToggleColor(isActive);
         UpdateLightIconColor(isActive);
         UpdateBrightnessIconColor(isActive);
+        UpdateColorIconColor(isActive);
+        UpdateTemperatureIconColor(isActive);
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -110,6 +117,10 @@ public sealed partial class LightDetailPage : Page
             AnimateBorderOpacity(HeaderOutlineBorder2, 0.0);
             AnimateBorderOpacity(BrightnessOutlineBorder, 0.0);
             AnimateBorderOpacity(BrightnessOutlineBorder2, 0.0);
+            AnimateBorderOpacity(ColorOutlineBorder, 0.0);
+            AnimateBorderOpacity(ColorOutlineBorder2, 0.0);
+            AnimateBorderOpacity(TemperatureOutlineBorder, 0.0);
+            AnimateBorderOpacity(TemperatureOutlineBorder2, 0.0);
             return;
         }
 
@@ -117,15 +128,25 @@ public sealed partial class LightDetailPage : Page
         var oldHeaderBorder = _useFirstBorder ? HeaderOutlineBorder2 : HeaderOutlineBorder;
         var newBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder : BrightnessOutlineBorder2;
         var oldBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder2 : BrightnessOutlineBorder;
+        var newColorBorder = _useFirstBorder ? ColorOutlineBorder : ColorOutlineBorder2;
+        var oldColorBorder = _useFirstBorder ? ColorOutlineBorder2 : ColorOutlineBorder;
+        var newTempBorder = _useFirstBorder ? TemperatureOutlineBorder : TemperatureOutlineBorder2;
+        var oldTempBorder = _useFirstBorder ? TemperatureOutlineBorder2 : TemperatureOutlineBorder;
 
         var brush = new SolidColorBrush(_accentColor);
         newHeaderBorder.BorderBrush = brush;
         newBrightnessBorder.BorderBrush = new SolidColorBrush(_accentColor);
+        newColorBorder.BorderBrush = new SolidColorBrush(_accentColor);
+        newTempBorder.BorderBrush = new SolidColorBrush(_accentColor);
 
         AnimateBorderOpacity(newHeaderBorder, 1.0);
         AnimateBorderOpacity(oldHeaderBorder, 0.0);
         AnimateBorderOpacity(newBrightnessBorder, 1.0);
         AnimateBorderOpacity(oldBrightnessBorder, 0.0);
+        AnimateBorderOpacity(newColorBorder, 1.0);
+        AnimateBorderOpacity(oldColorBorder, 0.0);
+        AnimateBorderOpacity(newTempBorder, 1.0);
+        AnimateBorderOpacity(oldTempBorder, 0.0);
 
         _useFirstBorder = !_useFirstBorder;
     }
@@ -196,6 +217,42 @@ public sealed partial class LightDetailPage : Page
 
         AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
         _currentBrightnessIconColor = targetColor;
+    }
+
+    private void UpdateColorIconColor(bool isActive)
+    {
+        if (ColorIcon == null) return;
+
+        var targetColor = isActive
+            ? _accentColor
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        if (_colorIconBrush == null)
+        {
+            _colorIconBrush = new SolidColorBrush(_currentColorIconColor);
+            ColorIcon.Foreground = _colorIconBrush;
+        }
+
+        AnimateSolidBrushColor(_colorIconBrush, _currentColorIconColor, targetColor);
+        _currentColorIconColor = targetColor;
+    }
+
+    private void UpdateTemperatureIconColor(bool isActive)
+    {
+        if (TemperatureIcon == null) return;
+
+        var targetColor = isActive
+            ? _accentColor
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        if (_temperatureIconBrush == null)
+        {
+            _temperatureIconBrush = new SolidColorBrush(_currentTemperatureIconColor);
+            TemperatureIcon.Foreground = _temperatureIconBrush;
+        }
+
+        AnimateSolidBrushColor(_temperatureIconBrush, _currentTemperatureIconColor, targetColor);
+        _currentTemperatureIconColor = targetColor;
     }
 
     private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
@@ -386,4 +443,24 @@ public sealed partial class LightDetailPage : Page
     /// Helper to check if error message exists.
     /// </summary>
     public bool HasErrorMessage(string? message) => !string.IsNullOrEmpty(message);
+
+    private void HeaderIconContainer_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (!ViewModel.SupportsColor) return;
+
+        // Set initial color from current light color
+        if (ViewModel.CurrentColor != null)
+        {
+            var rgb = ViewModel.CurrentColor.ToRgb(1.0);
+            ColorFlyout.InitialColor = Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
+        }
+
+        FlyoutBase.ShowAttachedFlyout(HeaderIconContainer);
+        e.Handled = true;
+    }
+
+    private void ColorFlyout_ColorChanged(object sender, Color color)
+    {
+        ViewModel.SetColorFromRgbCommand.Execute((color.R, color.G, color.B));
+    }
 }

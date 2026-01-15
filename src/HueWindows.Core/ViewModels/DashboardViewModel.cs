@@ -192,6 +192,12 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
     // Explicit ICommand implementations for interface
     ICommand IRoomCardViewModel.TapRoomCommand => TapRoomCommand;
     ICommand IRoomCardViewModel.SetBrightnessCommand => SetBrightnessCommand;
+    ICommand? IRoomCardViewModel.SetColorCommand => SetColorCommand;
+
+    /// <summary>
+    /// Whether any light in this room supports color.
+    /// </summary>
+    public bool SupportsColor => _room.Lights.Any(l => l.SupportsColor);
 
     /// <summary>
     /// Gets all unique light colors in the room as RGB values for gradient display.
@@ -310,6 +316,30 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
             OnPropertyChanged(nameof(IsOn));
         }
 #pragma warning restore MVVMTK0034
+    }
+
+    [RelayCommand]
+    private async Task SetColorAsync((byte R, byte G, byte B) rgb)
+    {
+        if (!SupportsColor) return;
+
+        var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
+
+        if (_room.GroupType == LightGroupType.Zone)
+            await _bridgeService.SetZoneColorAsync(RoomId, color);
+        else
+            await _bridgeService.SetRoomColorAsync(RoomId, color);
+
+        // Update local light models
+        foreach (var light in _room.Lights.Where(l => l.SupportsColor))
+        {
+            light.CurrentColor = color;
+        }
+
+        DominantColor = color;
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
+        OnPropertyChanged(nameof(LightColors));
     }
 
     [RelayCommand]

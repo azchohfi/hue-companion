@@ -61,8 +61,23 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Room icon -->
-                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                        Background="#20FFFFFF" Margin="0,0,16,0">
+                <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
+                        Background="#20FFFFFF" Margin="0,0,16,0"
+                        Tapped="HeaderIconContainer_Tapped">
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout x:Name="ColorPickerFlyout"
+                                Placement="Bottom"
+                                ShouldConstrainToRootBounds="False">
+                            <Flyout.FlyoutPresenterStyle>
+                                <Style TargetType="FlyoutPresenter">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="CornerRadius" Value="12"/>
+                                </Style>
+                            </Flyout.FlyoutPresenterStyle>
+                            <controls:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
                     <FontIcon x:Name="RoomIcon"
                               Glyph="&#xE781;"
                               FontSize="22"

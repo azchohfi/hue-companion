@@ -93,7 +93,22 @@
                             Grid.Column="0"
                             Width="40" Height="40"
                             CornerRadius="20"
-                            Background="#20FFFFFF">
+                            Background="#20FFFFFF"
+                            Tapped="IconContainer_Tapped">
+                        <FlyoutBase.AttachedFlyout>
+                            <Flyout x:Name="ColorPickerFlyout"
+                                    Placement="Bottom"
+                                    ShouldConstrainToRootBounds="False">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="CornerRadius" Value="12"/>
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <local:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
+                            </Flyout>
+                        </FlyoutBase.AttachedFlyout>
                         <FontIcon x:Name="RoomIcon"
                                   Glyph="{Binding RoomIcon}"
                                   FontSize="18"

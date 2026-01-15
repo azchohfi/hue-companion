@@ -270,6 +270,30 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
+    public async Task SetRoomColorAsync(Guid roomId, HueColor color)
+    {
+        if (_hueApi == null) return;
+
+        var room = await _hueApi.Room.GetByIdAsync(roomId);
+        if (room?.Data == null || room.Data.Count == 0) return;
+
+        var groupedLightId = room.Data[0].Services?
+            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+        if (groupedLightId.HasValue)
+        {
+            var command = new UpdateGroupedLight
+            {
+                Color = new HueApi.Models.Color
+                {
+                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                }
+            };
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<Result<IReadOnlyList<RoomModel>>> GetZonesAsync()
     {
         if (!await EnsureConnectedAsync())
@@ -396,6 +420,30 @@ public class HueBridgeService : IHueBridgeService
             {
                 On = new HueApi.Models.On { IsOn = brightness > 0 },
                 Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
+            };
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task SetZoneColorAsync(Guid zoneId, HueColor color)
+    {
+        if (_hueApi == null) return;
+
+        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+        if (zone?.Data == null || zone.Data.Count == 0) return;
+
+        var groupedLightId = zone.Data[0].Services?
+            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+        if (groupedLightId.HasValue)
+        {
+            var command = new UpdateGroupedLight
+            {
+                Color = new HueApi.Models.Color
+                {
+                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                }
             };
             await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
         }

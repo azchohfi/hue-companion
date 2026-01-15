@@ -153,6 +153,25 @@ public partial class RoomDetailViewModel : ObservableObject
             await _bridgeService.SetZoneBrightnessAsync(_groupId, Brightness);
     }
 
+    [RelayCommand]
+    private async Task SetRoomColorFromRgbAsync((byte R, byte G, byte B) rgb)
+    {
+        var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
+
+        if (_groupType == LightGroupType.Room)
+            await _bridgeService.SetRoomColorAsync(_groupId, color);
+        else
+            await _bridgeService.SetZoneColorAsync(_groupId, color);
+
+        // Update light viewmodels to reflect new color
+        foreach (var light in Lights.Where(l => l.SupportsColor))
+        {
+            light.UpdateFromBridge(light.IsOn, light.Brightness, color);
+        }
+
+        OnPropertyChanged(nameof(LightColors));
+    }
+
     private async void OnSceneActivated(object? sender, Guid sceneId)
     {
         // Update active scene visual state
@@ -316,6 +335,17 @@ public partial class LightItemViewModel : ObservableObject
         OnPropertyChanged(nameof(BrightnessPercent));
 
         await _bridgeService.SetLightBrightnessAsync(LightId, Brightness);
+    }
+
+    [RelayCommand]
+    private async Task SetColorFromRgbAsync((byte R, byte G, byte B) rgb)
+    {
+        if (!SupportsColor) return;
+
+        var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
+        CurrentColor = color;
+
+        await _bridgeService.SetLightColorAsync(LightId, color);
     }
 
     [RelayCommand]

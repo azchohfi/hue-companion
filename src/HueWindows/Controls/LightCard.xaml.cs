@@ -1,6 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
@@ -195,5 +196,26 @@ public sealed partial class LightCard : UserControl
         {
             AddToDashboardRequested?.Invoke(this, ViewModel.LightId);
         }
+    }
+
+    private void IconContainer_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (ViewModel?.SupportsColor != true) return;
+
+        // Set initial color from current light color
+        var colorRgb = ViewModel.CurrentColorRgb;
+        if (colorRgb.HasValue)
+        {
+            var (r, g, b) = colorRgb.Value;
+            ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
+        }
+
+        FlyoutBase.ShowAttachedFlyout(IconContainer);
+        e.Handled = true;
+    }
+
+    private void ColorFlyout_ColorChanged(object sender, Color color)
+    {
+        ViewModel?.SetColorFromRgbCommand?.Execute((color.R, color.G, color.B));
     }
 }

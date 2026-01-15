@@ -18,6 +18,8 @@ public interface IRoomCardViewModel : INotifyPropertyChanged
     List<(byte R, byte G, byte B)> LightColors { get; }
     (byte R, byte G, byte B)? BackgroundColorRgb { get; }
     bool UseBlackText { get; }
+    bool SupportsColor { get; }
     ICommand TapRoomCommand { get; }
     ICommand SetBrightnessCommand { get; }
+    ICommand? SetColorCommand { get; }
 }

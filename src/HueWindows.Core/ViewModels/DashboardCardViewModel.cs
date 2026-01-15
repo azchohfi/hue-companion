@@ -62,6 +62,20 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     // Explicit ICommand implementations for interface
     ICommand IRoomCardViewModel.TapRoomCommand => TapRoomCommand;
     ICommand IRoomCardViewModel.SetBrightnessCommand => SetBrightnessCommand;
+    ICommand? IRoomCardViewModel.SetColorCommand => SetColorCommand;
+
+    /// <summary>
+    /// Whether this item supports color.
+    /// </summary>
+    public bool SupportsColor
+    {
+        get
+        {
+            if (_room != null)
+                return _room.Lights.Any(l => l.SupportsColor);
+            return _light?.SupportsColor ?? false;
+        }
+    }
 
     /// <summary>
     /// Gets light colors for gradient display.
@@ -206,6 +220,38 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
             OnPropertyChanged(nameof(IsOn));
         }
 #pragma warning restore MVVMTK0034
+    }
+
+    [RelayCommand]
+    private async Task SetColorAsync((byte R, byte G, byte B) rgb)
+    {
+        if (!SupportsColor) return;
+
+        var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
+
+        if (_room != null)
+        {
+            if (_room.GroupType == LightGroupType.Zone)
+                await _bridgeService.SetZoneColorAsync(ItemId, color);
+            else
+                await _bridgeService.SetRoomColorAsync(ItemId, color);
+
+            // Update local light models
+            foreach (var light in _room.Lights.Where(l => l.SupportsColor))
+            {
+                light.CurrentColor = color;
+            }
+        }
+        else if (_light != null)
+        {
+            await _bridgeService.SetLightColorAsync(ItemId, color);
+            _light.CurrentColor = color;
+        }
+
+        DominantColor = color;
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
+        OnPropertyChanged(nameof(LightColors));
     }
 
     [RelayCommand]

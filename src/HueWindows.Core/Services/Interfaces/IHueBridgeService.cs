@@ -64,6 +64,13 @@ public interface IHueBridgeService
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
     Task SetRoomBrightnessAsync(Guid roomId, double brightness);
 
+    /// <summary>
+    /// Sets the color for all color-capable lights in a room.
+    /// </summary>
+    /// <param name="roomId">The room ID.</param>
+    /// <param name="color">The color to set.</param>
+    Task SetRoomColorAsync(Guid roomId, HueColor color);
+
     // Zone operations
 
     /// <summary>
@@ -87,6 +94,13 @@ public interface IHueBridgeService
     /// <param name="zoneId">The zone ID.</param>
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
     Task SetZoneBrightnessAsync(Guid zoneId, double brightness);
+
+    /// <summary>
+    /// Sets the color for all color-capable lights in a zone.
+    /// </summary>
+    /// <param name="zoneId">The zone ID.</param>
+    /// <param name="color">The color to set.</param>
+    Task SetZoneColorAsync(Guid zoneId, HueColor color);
 
     /// <summary>
     /// Gets all scenes for a zone.
