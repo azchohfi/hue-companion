@@ -32,6 +32,8 @@ public sealed partial class RoomDetailPage : Page
     private Color _currentBrightnessIconColor = Colors.Gray;
     private Color _currentToggleColor = Colors.Transparent;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
+    private bool _isUpdatingSlider; // Prevent feedback loops when animating slider
+    private bool _isUserDraggingSlider; // Track when user is actively dragging
 
     public RoomDetailPage()
     {
@@ -61,6 +63,17 @@ public sealed partial class RoomDetailPage : Page
             else
             {
                 DispatcherQueue?.TryEnqueue(UpdateHeaderActiveState);
+            }
+        }
+        else if (e.PropertyName == nameof(RoomDetailViewModel.BrightnessPercent))
+        {
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                AnimateSliderToValue(ViewModel.BrightnessPercent);
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(() => AnimateSliderToValue(ViewModel.BrightnessPercent));
             }
         }
     }
@@ -273,10 +286,18 @@ public sealed partial class RoomDetailPage : Page
             await ViewModel.LoadRoomAsync(roomId, LightGroupType.Room);
         }
 
-        // Update colors after room data is loaded
+        // Update colors and slider after room data is loaded
         if (_isLoaded)
         {
             UpdateHeaderActiveState();
+        }
+
+        // Set initial slider value (no animation for initial load)
+        if (BrightnessSlider != null)
+        {
+            _isUpdatingSlider = true;
+            BrightnessSlider.Value = ViewModel.BrightnessPercent;
+            _isUpdatingSlider = false;
         }
     }
 
@@ -292,13 +313,59 @@ public sealed partial class RoomDetailPage : Page
         e.Handled = true;
     }
 
+    private void BrightnessSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isUserDraggingSlider = true;
+    }
+
+    private void BrightnessSlider_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _isUserDraggingSlider = false;
+    }
+
+    private void BrightnessSlider_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _isUserDraggingSlider = false;
+    }
+
     private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
+        // Skip if we're programmatically animating the slider
+        if (_isUpdatingSlider) return;
+
         // Only fire command if value actually changed from user interaction
         if (Math.Abs(e.NewValue - e.OldValue) > 0.5)
         {
             ViewModel.SetBrightnessCommand.Execute(e.NewValue / 100.0);
         }
+    }
+
+    private void AnimateSliderToValue(double targetValue)
+    {
+        if (BrightnessSlider == null) return;
+
+        // Skip animation if user is actively dragging
+        if (_isUserDraggingSlider)
+        {
+            return;
+        }
+
+        _isUpdatingSlider = true;
+
+        var animation = new DoubleAnimation
+        {
+            To = targetValue,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            EnableDependentAnimation = true
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, BrightnessSlider);
+        Storyboard.SetTargetProperty(animation, "Value");
+        storyboard.Completed += (s, e) => _isUpdatingSlider = false;
+        storyboard.Begin();
     }
 
     /// <summary>

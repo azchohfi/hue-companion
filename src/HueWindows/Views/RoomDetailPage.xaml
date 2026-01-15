@@ -16,6 +16,8 @@
     <Page.Resources>
         <converters:HexToSolidColorBrushConverter x:Key="HexToBrushConverter"/>
         <converters:HexToVisibilityConverter x:Key="HexToVisibilityConverter"/>
+        <converters:HexToGradientBackgroundConverter x:Key="HexToGradientBackgroundConverter"/>
+        <converters:HexToGradientBorderConverter x:Key="HexToGradientBorderConverter"/>
     </Page.Resources>
 
     <Grid>
@@ -121,11 +123,14 @@
                 <FontIcon x:Name="BrightnessIcon" Grid.Column="0" Glyph="&#xE706;" FontSize="20" Margin="0,0,16,0"
                           Foreground="#80FFFFFF"/>
 
-                <Slider Grid.Column="1"
+                <Slider x:Name="BrightnessSlider"
+                        Grid.Column="1"
                         Minimum="0"
                         Maximum="100"
-                        Value="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"
                         ValueChanged="BrightnessSlider_ValueChanged"
+                        PointerPressed="BrightnessSlider_PointerPressed"
+                        PointerReleased="BrightnessSlider_PointerReleased"
+                        PointerCaptureLost="BrightnessSlider_PointerCaptureLost"
                         VerticalAlignment="Center"/>
 
                 <TextBlock Grid.Column="2"
@@ -166,10 +171,11 @@
                                             VerticalContentAlignment="Center"
                                             Padding="8,10"
                                             CornerRadius="8"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                            Background="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBackgroundConverter}}"
                                             Command="{x:Bind ActivateCommand}">
                                         <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE91B;" FontSize="16"/>
+                                            <FontIcon Glyph="&#xE91B;" FontSize="16"
+                                                      Foreground="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"/>
                                             <TextBlock Text="{x:Bind Name}"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
                                                        TextTrimming="CharacterEllipsis"
@@ -179,26 +185,26 @@
                                             <!-- Color swatches -->
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
-                                                        Spacing="3"
+                                                        Spacing="4"
                                                         Visibility="{x:Bind HasPaletteColors}">
-                                                <Ellipse Width="10" Height="10"
+                                                <Ellipse Width="12" Height="12"
                                                          Fill="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"
                                                          Visibility="{x:Bind Color1Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="10" Height="10"
+                                                <Ellipse Width="12" Height="12"
                                                          Fill="{x:Bind Color2Hex, Converter={StaticResource HexToBrushConverter}}"
                                                          Visibility="{x:Bind Color2Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="10" Height="10"
+                                                <Ellipse Width="12" Height="12"
                                                          Fill="{x:Bind Color3Hex, Converter={StaticResource HexToBrushConverter}}"
                                                          Visibility="{x:Bind Color3Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="10" Height="10"
+                                                <Ellipse Width="12" Height="12"
                                                          Fill="{x:Bind Color4Hex, Converter={StaticResource HexToBrushConverter}}"
                                                          Visibility="{x:Bind Color4Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Button>
-                                    <!-- Active indicator border -->
+                                    <!-- Active indicator border - uses scene's primary color -->
                                     <Border BorderThickness="2"
-                                            BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                                            BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
                                             CornerRadius="8"
                                             IsHitTestVisible="False"
                                             Visibility="{x:Bind IsActive, Mode=OneWay}"/>

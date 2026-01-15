@@ -135,6 +135,12 @@ public partial class RoomDetailViewModel : ObservableObject
             _ = _bridgeService.SetZoneOnAsync(_groupId, value);
     }
 
+    partial void OnBrightnessChanged(double value)
+    {
+        // Notify BrightnessPercent when Brightness changes (e.g., from scene activation)
+        OnPropertyChanged(nameof(BrightnessPercent));
+    }
+
     [RelayCommand]
     private async Task SetBrightnessAsync(double brightness)
     {

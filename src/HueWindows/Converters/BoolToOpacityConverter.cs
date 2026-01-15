@@ -157,3 +157,73 @@ public class HexToVisibilityConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Converts a hex color string to a subtle gradient background brush.
+/// Creates a diagonal gradient from the color at low opacity to transparent.
+/// </summary>
+public class HexToGradientBackgroundConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string hex && !string.IsNullOrEmpty(hex) && hex.Length == 7 && hex[0] == '#')
+        {
+            try
+            {
+                var r = System.Convert.ToByte(hex.Substring(1, 2), 16);
+                var g = System.Convert.ToByte(hex.Substring(3, 2), 16);
+                var b = System.Convert.ToByte(hex.Substring(5, 2), 16);
+
+                var gradient = new LinearGradientBrush
+                {
+                    StartPoint = new Windows.Foundation.Point(0, 0),
+                    EndPoint = new Windows.Foundation.Point(1, 1)
+                };
+                gradient.GradientStops.Add(new GradientStop { Color = Color.FromArgb(40, r, g, b), Offset = 0 });
+                gradient.GradientStops.Add(new GradientStop { Color = Color.FromArgb(15, r, g, b), Offset = 1 });
+                return gradient;
+            }
+            catch
+            {
+                // Fall through to return default
+            }
+        }
+        return new SolidColorBrush(Color.FromArgb(30, 255, 255, 255));
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts a hex color string to a gradient border brush for active indicators.
+/// </summary>
+public class HexToGradientBorderConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string hex && !string.IsNullOrEmpty(hex) && hex.Length == 7 && hex[0] == '#')
+        {
+            try
+            {
+                var r = System.Convert.ToByte(hex.Substring(1, 2), 16);
+                var g = System.Convert.ToByte(hex.Substring(3, 2), 16);
+                var b = System.Convert.ToByte(hex.Substring(5, 2), 16);
+
+                return new SolidColorBrush(Color.FromArgb(255, r, g, b));
+            }
+            catch
+            {
+                // Fall through to return default
+            }
+        }
+        return new SolidColorBrush(Colors.White);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
