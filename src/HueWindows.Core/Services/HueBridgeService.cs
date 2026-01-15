@@ -117,11 +117,11 @@ public class HueBridgeService : IHueBridgeService
 
         try
         {
-            var rooms = await _hueApi!.GetRoomsAsync();
+            var rooms = await _hueApi!.Room.GetAllAsync();
             if (rooms?.Data == null)
                 return Result<IReadOnlyList<RoomModel>>.Failure("Failed to retrieve rooms from the bridge.");
 
-            var allLights = await _hueApi.GetLightsAsync();
+            var allLights = await _hueApi.Light.GetAllAsync();
             var result = new List<RoomModel>();
 
             foreach (var room in rooms.Data)
@@ -233,7 +233,7 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var room = await _hueApi.GetRoomAsync(roomId);
+        var room = await _hueApi.Room.GetByIdAsync(roomId);
         if (room?.Data == null || room.Data.Count == 0) return;
 
         // Get the grouped_light service for this room
@@ -243,7 +243,7 @@ public class HueBridgeService : IHueBridgeService
         if (groupedLightId.HasValue)
         {
             var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
-            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
         }
     }
 
@@ -252,7 +252,7 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var room = await _hueApi.GetRoomAsync(roomId);
+        var room = await _hueApi.Room.GetByIdAsync(roomId);
         if (room?.Data == null || room.Data.Count == 0) return;
 
         var groupedLightId = room.Data[0].Services?
@@ -265,7 +265,7 @@ public class HueBridgeService : IHueBridgeService
                 On = new HueApi.Models.On { IsOn = brightness > 0 },
                 Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
             };
-            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
         }
     }
 
@@ -277,11 +277,11 @@ public class HueBridgeService : IHueBridgeService
 
         try
         {
-            var zones = await _hueApi!.GetZonesAsync();
+            var zones = await _hueApi!.Zone.GetAllAsync();
             if (zones?.Data == null)
                 return Result<IReadOnlyList<RoomModel>>.Failure("Failed to retrieve zones from the bridge.");
 
-            var allLights = await _hueApi.GetLightsAsync();
+            var allLights = await _hueApi.Light.GetAllAsync();
             var result = new List<RoomModel>();
 
             foreach (var zone in zones.Data)
@@ -365,7 +365,7 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var zone = await _hueApi.GetZoneAsync(zoneId);
+        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
         if (zone?.Data == null || zone.Data.Count == 0) return;
 
         // Get the grouped_light service for this zone
@@ -375,7 +375,7 @@ public class HueBridgeService : IHueBridgeService
         if (groupedLightId.HasValue)
         {
             var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
-            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
         }
     }
 
@@ -384,7 +384,7 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var zone = await _hueApi.GetZoneAsync(zoneId);
+        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
         if (zone?.Data == null || zone.Data.Count == 0) return;
 
         var groupedLightId = zone.Data[0].Services?
@@ -397,7 +397,7 @@ public class HueBridgeService : IHueBridgeService
                 On = new HueApi.Models.On { IsOn = brightness > 0 },
                 Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
             };
-            await _hueApi.UpdateGroupedLightAsync(groupedLightId.Value, command);
+            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
         }
     }
 
@@ -409,7 +409,7 @@ public class HueBridgeService : IHueBridgeService
 
         try
         {
-            var scenes = await _hueApi.GetScenesAsync();
+            var scenes = await _hueApi.Scene.GetAllAsync();
             var result = new List<SceneModel>();
 
             foreach (var scene in scenes.Data)
@@ -489,7 +489,7 @@ public class HueBridgeService : IHueBridgeService
 
         try
         {
-            var light = await _hueApi.GetLightAsync(lightId);
+            var light = await _hueApi.Light.GetByIdAsync(lightId);
             if (light?.Data == null || light.Data.Count == 0)
                 return Result<LightModel>.Failure($"Light with ID {lightId} not found.");
 
@@ -507,7 +507,7 @@ public class HueBridgeService : IHueBridgeService
         if (_hueApi == null) return;
 
         var command = new UpdateLight { On = new HueApi.Models.On { IsOn = isOn } };
-        await _hueApi.UpdateLightAsync(lightId, command);
+        await _hueApi.Light.UpdateAsync(lightId, command);
     }
 
     /// <inheritdoc/>
@@ -520,7 +520,7 @@ public class HueBridgeService : IHueBridgeService
             On = new HueApi.Models.On { IsOn = brightness > 0 },
             Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
         };
-        await _hueApi.UpdateLightAsync(lightId, command);
+        await _hueApi.Light.UpdateAsync(lightId, command);
     }
 
     /// <inheritdoc/>
@@ -535,7 +535,7 @@ public class HueBridgeService : IHueBridgeService
                 Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
             }
         };
-        await _hueApi.UpdateLightAsync(lightId, command);
+        await _hueApi.Light.UpdateAsync(lightId, command);
     }
 
     /// <inheritdoc/>
@@ -547,7 +547,7 @@ public class HueBridgeService : IHueBridgeService
         {
             ColorTemperature = new HueApi.Models.ColorTemperature { Mirek = mirek }
         };
-        await _hueApi.UpdateLightAsync(lightId, command);
+        await _hueApi.Light.UpdateAsync(lightId, command);
     }
 
     /// <inheritdoc/>
@@ -558,7 +558,7 @@ public class HueBridgeService : IHueBridgeService
 
         try
         {
-            var scenes = await _hueApi.GetScenesAsync();
+            var scenes = await _hueApi.Scene.GetAllAsync();
             var result = new List<SceneModel>();
 
             foreach (var scene in scenes.Data)
@@ -592,7 +592,11 @@ public class HueBridgeService : IHueBridgeService
         if (_hueApi == null) return;
 
         // Recall the scene to activate it
-        await _hueApi.RecallSceneAsync(sceneId);
+        var command = new UpdateScene
+        {
+            Recall = new Recall { Action = SceneRecallAction.active }
+        };
+        await _hueApi.Scene.UpdateAsync(sceneId, command);
     }
 
     /// <inheritdoc/>
