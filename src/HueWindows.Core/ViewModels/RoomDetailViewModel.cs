@@ -121,7 +121,14 @@ public partial class RoomDetailViewModel : ObservableObject
 
     partial void OnIsOnChanged(bool value)
     {
+        // Update individual light states to match room state (UI only, no API calls)
+        foreach (var light in Lights)
+        {
+            light.UpdateFromBridge(value, light.Brightness, light.CurrentColor);
+        }
+
         OnPropertyChanged(nameof(LightColors));
+
         if (_groupType == LightGroupType.Room)
             _ = _bridgeService.SetRoomOnAsync(_groupId, value);
         else
