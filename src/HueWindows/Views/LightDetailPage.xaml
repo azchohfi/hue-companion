@@ -7,58 +7,130 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="Transparent">
+    Background="Transparent"
+    Loaded="Page_Loaded">
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" Padding="24,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Header with Light Controls -->
+        <Grid x:Name="HeaderContainer" Grid.Row="0" Margin="36,32,36,24"
+              CornerRadius="16">
+            <!-- Dark gradient background -->
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
+                    <GradientStop Color="#FF252528" Offset="0.5"/>
+                    <GradientStop Color="#FF1E1E22" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
 
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="{x:Bind ViewModel.LightName, Mode=OneWay}"
-                           Style="{StaticResource TitleTextBlockStyle}"/>
-            </StackPanel>
+            <!-- Outline borders for light color - two for cross-fade -->
+            <Border x:Name="HeaderOutlineBorder"
+                    Canvas.ZIndex="0"
+                    CornerRadius="16"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
+            <Border x:Name="HeaderOutlineBorder2"
+                    Canvas.ZIndex="0"
+                    CornerRadius="16"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
 
-            <ToggleSwitch Grid.Column="1"
-                          Style="{StaticResource PremiumToggleSwitchStyle}"
-                          IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"/>
+            <Grid Canvas.ZIndex="1" Margin="24,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Light icon -->
+                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24"
+                        Background="#20FFFFFF" Margin="0,0,16,0">
+                    <FontIcon x:Name="LightIcon"
+                              Glyph="&#xE781;"
+                              FontSize="22"
+                              Foreground="#80FFFFFF"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind ViewModel.LightName, Mode=OneWay}"
+                               Style="{StaticResource PageHeaderTextStyle}"/>
+                </StackPanel>
+
+                <ToggleSwitch x:Name="LightToggle"
+                              Grid.Column="2"
+                              Style="{StaticResource GradientToggleSwitchStyle}"
+                              VerticalAlignment="Center"
+                              IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
+                              Tapped="LightToggle_Tapped"/>
+            </Grid>
+        </Grid>
+
+        <!-- Brightness Card -->
+        <Grid x:Name="BrightnessContainer" Grid.Row="1" Margin="36,0,36,24"
+              CornerRadius="8">
+            <!-- Dark gradient background -->
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
+                    <GradientStop Color="#FF252528" Offset="0.5"/>
+                    <GradientStop Color="#FF1E1E22" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+
+            <!-- Outline borders for light color - two for cross-fade -->
+            <Border x:Name="BrightnessOutlineBorder"
+                    Canvas.ZIndex="0"
+                    CornerRadius="8"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
+            <Border x:Name="BrightnessOutlineBorder2"
+                    Canvas.ZIndex="0"
+                    CornerRadius="8"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
+
+            <Grid Canvas.ZIndex="1" Margin="20,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <FontIcon x:Name="BrightnessIcon" Grid.Column="0" Glyph="&#xE706;" FontSize="20" Margin="0,0,16,0"
+                          Foreground="#80FFFFFF"/>
+
+                <Slider x:Name="BrightnessSlider"
+                        Grid.Column="1"
+                        Minimum="0"
+                        Maximum="100"
+                        ValueChanged="BrightnessSlider_ValueChanged"
+                        VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Column="2"
+                           VerticalAlignment="Center"
+                           Margin="16,0,0,0"
+                           MinWidth="40"
+                           TextAlignment="Right"
+                           Style="{StaticResource BodyStrongTextBlockStyle}">
+                    <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
+                    <Run Text="%"/>
+                </TextBlock>
+            </Grid>
         </Grid>
 
         <!-- Content -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Padding="24,0,24,24" Spacing="24">
-
-                <!-- Brightness Control -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Slider Grid.Column="0"
-                            x:Name="BrightnessSlider"
-                            Minimum="0"
-                            Maximum="100"
-                            Value="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"
-                            ValueChanged="BrightnessSlider_ValueChanged"
-                            Header="Brightness"/>
-
-                    <TextBlock Grid.Column="1"
-                               VerticalAlignment="Bottom"
-                               Margin="12,0,0,8"
-                               Style="{StaticResource BodyStrongTextBlockStyle}">
-                        <Run Text="{x:Bind ViewModel.BrightnessPercent, Mode=OneWay}"/>
-                        <Run Text="%"/>
-                    </TextBlock>
-                </Grid>
+        <ScrollViewer Grid.Row="2">
+            <StackPanel Padding="36,0,36,36" Spacing="24">
 
                 <!-- Color/Temperature Mode Selector -->
                 <Grid Visibility="{x:Bind BothColorModesSupported(), Mode=OneWay}">
@@ -134,19 +206,19 @@
         </ScrollViewer>
 
         <!-- Loading Overlay -->
-        <Grid Grid.RowSpan="2"
+        <Grid Grid.RowSpan="3"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}">
             <ProgressRing IsActive="True" Width="48" Height="48"/>
         </Grid>
 
         <!-- Error Message -->
-        <InfoBar Grid.Row="1"
+        <InfoBar Grid.Row="2"
                  Title="Error"
                  Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                  IsOpen="{x:Bind HasErrorMessage(ViewModel.ErrorMessage), Mode=OneWay}"
                  Severity="Error"
                  VerticalAlignment="Bottom"
-                 Margin="24,0,24,24"/>
+                 Margin="36,0,36,24"/>
     </Grid>
 </Page>

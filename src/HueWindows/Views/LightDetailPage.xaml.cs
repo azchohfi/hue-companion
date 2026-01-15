@@ -1,7 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
+using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
 
@@ -14,16 +19,201 @@ public sealed partial class LightDetailPage : Page
 {
     public LightDetailViewModel ViewModel { get; }
 
+    private bool _isLoaded;
     private bool _isUpdatingColor;
-#pragma warning disable CS0649 // Field is assigned dynamically
-    private bool _isUpdatingTemperature;
-#pragma warning restore CS0649
+    private bool _isUpdatingSlider;
+    private Color _accentColor = Colors.White;
+    private SolidColorBrush? _lightIconBrush;
+    private SolidColorBrush? _brightnessIconBrush;
+    private SolidColorBrush? _toggleBrush;
+    private Color _currentLightIconColor = Colors.Gray;
+    private Color _currentBrightnessIconColor = Colors.Gray;
+    private Color _currentToggleColor = Colors.Transparent;
+    private bool _useFirstBorder = true;
+    private DispatcherTimer? _brightnessDebounceTimer;
+    private DispatcherTimer? _temperatureDebounceTimer;
+    private DispatcherTimer? _colorDebounceTimer;
+    private double _pendingBrightness;
+    private int _pendingTemperature;
+    private (byte R, byte G, byte B) _pendingColor;
 
     public LightDetailPage()
     {
         ViewModel = App.Services.GetRequiredService<LightDetailViewModel>();
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
+    }
+
+    private void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = true;
+        UpdateHeaderActiveState();
+    }
+
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LightDetailViewModel.IsOn) ||
+            e.PropertyName == nameof(LightDetailViewModel.CurrentColor))
+        {
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                UpdateHeaderActiveState();
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(UpdateHeaderActiveState);
+            }
+        }
+        else if (e.PropertyName == nameof(LightDetailViewModel.BrightnessPercent))
+        {
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                AnimateSliderToValue(BrightnessSlider, ViewModel.BrightnessPercent);
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(() => AnimateSliderToValue(BrightnessSlider, ViewModel.BrightnessPercent));
+            }
+        }
+    }
+
+    private void UpdateHeaderActiveState()
+    {
+        if (!_isLoaded) return;
+
+        var isActive = ViewModel.IsOn;
+        var color = ViewModel.CurrentColor;
+
+        // Get accent color from light
+        if (color != null && isActive)
+        {
+            var rgb = color.ToRgb(1.0);
+            _accentColor = Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
+        }
+        else
+        {
+            _accentColor = Colors.Gray;
+        }
+
+        UpdateBorderEffect(isActive);
+        UpdateToggleColor(isActive);
+        UpdateLightIconColor(isActive);
+        UpdateBrightnessIconColor(isActive);
+    }
+
+    private void UpdateBorderEffect(bool isActive)
+    {
+        if (!isActive)
+        {
+            AnimateBorderOpacity(HeaderOutlineBorder, 0.0);
+            AnimateBorderOpacity(HeaderOutlineBorder2, 0.0);
+            AnimateBorderOpacity(BrightnessOutlineBorder, 0.0);
+            AnimateBorderOpacity(BrightnessOutlineBorder2, 0.0);
+            return;
+        }
+
+        var newHeaderBorder = _useFirstBorder ? HeaderOutlineBorder : HeaderOutlineBorder2;
+        var oldHeaderBorder = _useFirstBorder ? HeaderOutlineBorder2 : HeaderOutlineBorder;
+        var newBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder : BrightnessOutlineBorder2;
+        var oldBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder2 : BrightnessOutlineBorder;
+
+        var brush = new SolidColorBrush(_accentColor);
+        newHeaderBorder.BorderBrush = brush;
+        newBrightnessBorder.BorderBrush = new SolidColorBrush(_accentColor);
+
+        AnimateBorderOpacity(newHeaderBorder, 1.0);
+        AnimateBorderOpacity(oldHeaderBorder, 0.0);
+        AnimateBorderOpacity(newBrightnessBorder, 1.0);
+        AnimateBorderOpacity(oldBrightnessBorder, 0.0);
+
+        _useFirstBorder = !_useFirstBorder;
+    }
+
+    private void AnimateBorderOpacity(Border border, double targetOpacity)
+    {
+        var animation = new DoubleAnimation
+        {
+            To = targetOpacity,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, border);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+        storyboard.Begin();
+    }
+
+    private void UpdateToggleColor(bool isActive)
+    {
+        if (LightToggle == null) return;
+
+        var targetColor = isActive ? _accentColor : Colors.Transparent;
+
+        if (_toggleBrush == null)
+        {
+            _toggleBrush = new SolidColorBrush(_currentToggleColor);
+            LightToggle.Background = _toggleBrush;
+        }
+
+        AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+        _currentToggleColor = targetColor;
+    }
+
+    private void UpdateLightIconColor(bool isActive)
+    {
+        if (LightIcon == null) return;
+
+        var targetColor = isActive
+            ? _accentColor
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        if (_lightIconBrush == null)
+        {
+            _lightIconBrush = new SolidColorBrush(_currentLightIconColor);
+            LightIcon.Foreground = _lightIconBrush;
+        }
+
+        AnimateSolidBrushColor(_lightIconBrush, _currentLightIconColor, targetColor);
+        _currentLightIconColor = targetColor;
+    }
+
+    private void UpdateBrightnessIconColor(bool isActive)
+    {
+        if (BrightnessIcon == null) return;
+
+        var targetColor = isActive
+            ? _accentColor
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        if (_brightnessIconBrush == null)
+        {
+            _brightnessIconBrush = new SolidColorBrush(_currentBrightnessIconColor);
+            BrightnessIcon.Foreground = _brightnessIconBrush;
+        }
+
+        AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+        _currentBrightnessIconColor = targetColor;
+    }
+
+    private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
+    {
+        var animation = new ColorAnimation
+        {
+            From = from,
+            To = to,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            EnableDependentAnimation = true
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, brush);
+        Storyboard.SetTargetProperty(animation, "Color");
+        storyboard.Begin();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -42,33 +232,119 @@ public sealed partial class LightDetailPage : Page
                 LightColorPicker.Color = Color.FromArgb(255, rgb.R, rgb.G, rgb.B);
                 _isUpdatingColor = false;
             }
+
+            // Set initial slider value
+            if (BrightnessSlider != null)
+            {
+                _isUpdatingSlider = true;
+                BrightnessSlider.Value = ViewModel.BrightnessPercent;
+                _isUpdatingSlider = false;
+            }
         }
+
+        if (_isLoaded)
+        {
+            UpdateHeaderActiveState();
+        }
+    }
+
+    private void LightToggle_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        ViewModel.IsOn = !ViewModel.IsOn;
+        e.Handled = true;
     }
 
     private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
-        if (Math.Abs(e.NewValue - e.OldValue) > 0.5)
+        if (_isUpdatingSlider) return;
+
+        // Debounce: only send command after user stops dragging for 150ms
+        _pendingBrightness = e.NewValue / 100.0;
+
+        if (_brightnessDebounceTimer == null)
         {
-            ViewModel.SetBrightnessCommand.Execute(e.NewValue / 100.0);
+            _brightnessDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _brightnessDebounceTimer.Tick += (s, args) =>
+            {
+                _brightnessDebounceTimer.Stop();
+                ViewModel.SetBrightnessCommand.Execute(_pendingBrightness);
+            };
         }
+
+        _brightnessDebounceTimer.Stop();
+        _brightnessDebounceTimer.Start();
     }
 
     private void ColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
     {
         if (_isUpdatingColor) return;
 
+        // Debounce color changes
         var color = args.NewColor;
-        ViewModel.SetColorFromRgbCommand.Execute((color.R, color.G, color.B));
+        _pendingColor = (color.R, color.G, color.B);
+
+        if (_colorDebounceTimer == null)
+        {
+            _colorDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _colorDebounceTimer.Tick += (s, e) =>
+            {
+                _colorDebounceTimer.Stop();
+                ViewModel.SetColorFromRgbCommand.Execute(_pendingColor);
+            };
+        }
+
+        _colorDebounceTimer.Stop();
+        _colorDebounceTimer.Start();
     }
 
     private void TemperatureSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
-        if (_isUpdatingTemperature) return;
+        // Debounce temperature changes
+        _pendingTemperature = (int)e.NewValue;
 
-        if (Math.Abs(e.NewValue - e.OldValue) > 1)
+        if (_temperatureDebounceTimer == null)
         {
-            ViewModel.SetColorTemperatureCommand.Execute((int)e.NewValue);
+            _temperatureDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _temperatureDebounceTimer.Tick += (s, args) =>
+            {
+                _temperatureDebounceTimer.Stop();
+                ViewModel.SetColorTemperatureCommand.Execute(_pendingTemperature);
+            };
         }
+
+        _temperatureDebounceTimer.Stop();
+        _temperatureDebounceTimer.Start();
+    }
+
+    private void AnimateSliderToValue(Slider slider, double targetValue)
+    {
+        if (slider == null) return;
+
+        _isUpdatingSlider = true;
+
+        var animation = new DoubleAnimation
+        {
+            To = targetValue,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            EnableDependentAnimation = true
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        Storyboard.SetTarget(animation, slider);
+        Storyboard.SetTargetProperty(animation, "Value");
+        storyboard.Completed += (s, e) => _isUpdatingSlider = false;
+        storyboard.Begin();
     }
 
     /// <summary>
