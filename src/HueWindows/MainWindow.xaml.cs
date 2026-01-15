@@ -58,11 +58,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         // Set up custom title bar
         SetupTitleBar();
 
-        // Set window size
+        // Set window size and icon
         var hwnd = WindowNative.GetWindowHandle(this);
         var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
         appWindow.Resize(new Windows.Graphics.SizeInt32(AppConstants.Layout.DefaultWindowWidth, AppConstants.Layout.DefaultWindowHeight));
+        appWindow.SetIcon("Assets/app.ico");
 
         // Get services
         _navigationService = App.Services.GetRequiredService<INavigationService>();

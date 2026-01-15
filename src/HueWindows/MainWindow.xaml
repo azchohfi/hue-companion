@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:HueWindows"
     xmlns:views="using:HueWindows.Views"
-    Title="Hue">
+    Title="Hue Companion">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -43,12 +43,11 @@
             </Button>
 
             <!-- App Icon -->
-            <FontIcon Grid.Column="2" Glyph="&#xE781;" FontSize="16" Margin="8,0,8,0"
-                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                      VerticalAlignment="Center"/>
+            <Image Grid.Column="2" Source="Assets/Square44x44Logo.png" Width="18" Height="18" Margin="8,0,8,0"
+                   VerticalAlignment="Center"/>
 
             <!-- Title -->
-            <TextBlock Grid.Column="3" Text="Hue"
+            <TextBlock Grid.Column="3" Text="Hue Companion"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        VerticalAlignment="Center"/>
         </Grid>
