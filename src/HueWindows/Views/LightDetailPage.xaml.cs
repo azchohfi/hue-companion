@@ -113,40 +113,18 @@ public sealed partial class LightDetailPage : Page
     {
         if (!isActive)
         {
-            AnimateBorderOpacity(HeaderOutlineBorder, 0.0);
-            AnimateBorderOpacity(HeaderOutlineBorder2, 0.0);
-            AnimateBorderOpacity(BrightnessOutlineBorder, 0.0);
-            AnimateBorderOpacity(BrightnessOutlineBorder2, 0.0);
-            AnimateBorderOpacity(ColorOutlineBorder, 0.0);
-            AnimateBorderOpacity(ColorOutlineBorder2, 0.0);
-            AnimateBorderOpacity(TemperatureOutlineBorder, 0.0);
-            AnimateBorderOpacity(TemperatureOutlineBorder2, 0.0);
+            AnimateBorderOpacity(OutlineBorder, 0.0);
+            AnimateBorderOpacity(OutlineBorder2, 0.0);
             return;
         }
 
-        var newHeaderBorder = _useFirstBorder ? HeaderOutlineBorder : HeaderOutlineBorder2;
-        var oldHeaderBorder = _useFirstBorder ? HeaderOutlineBorder2 : HeaderOutlineBorder;
-        var newBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder : BrightnessOutlineBorder2;
-        var oldBrightnessBorder = _useFirstBorder ? BrightnessOutlineBorder2 : BrightnessOutlineBorder;
-        var newColorBorder = _useFirstBorder ? ColorOutlineBorder : ColorOutlineBorder2;
-        var oldColorBorder = _useFirstBorder ? ColorOutlineBorder2 : ColorOutlineBorder;
-        var newTempBorder = _useFirstBorder ? TemperatureOutlineBorder : TemperatureOutlineBorder2;
-        var oldTempBorder = _useFirstBorder ? TemperatureOutlineBorder2 : TemperatureOutlineBorder;
+        var newBorder = _useFirstBorder ? OutlineBorder : OutlineBorder2;
+        var oldBorder = _useFirstBorder ? OutlineBorder2 : OutlineBorder;
 
-        var brush = new SolidColorBrush(_accentColor);
-        newHeaderBorder.BorderBrush = brush;
-        newBrightnessBorder.BorderBrush = new SolidColorBrush(_accentColor);
-        newColorBorder.BorderBrush = new SolidColorBrush(_accentColor);
-        newTempBorder.BorderBrush = new SolidColorBrush(_accentColor);
+        newBorder.BorderBrush = new SolidColorBrush(_accentColor);
 
-        AnimateBorderOpacity(newHeaderBorder, 1.0);
-        AnimateBorderOpacity(oldHeaderBorder, 0.0);
-        AnimateBorderOpacity(newBrightnessBorder, 1.0);
-        AnimateBorderOpacity(oldBrightnessBorder, 0.0);
-        AnimateBorderOpacity(newColorBorder, 1.0);
-        AnimateBorderOpacity(oldColorBorder, 0.0);
-        AnimateBorderOpacity(newTempBorder, 1.0);
-        AnimateBorderOpacity(oldTempBorder, 0.0);
+        AnimateBorderOpacity(newBorder, 1.0);
+        AnimateBorderOpacity(oldBorder, 0.0);
 
         _useFirstBorder = !_useFirstBorder;
     }
