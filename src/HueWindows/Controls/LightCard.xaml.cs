@@ -198,24 +198,4 @@ public sealed partial class LightCard : UserControl
         }
     }
 
-    private void IconContainer_Tapped(object sender, TappedRoutedEventArgs e)
-    {
-        if (ViewModel?.SupportsColor != true) return;
-
-        // Set initial color from current light color
-        var colorRgb = ViewModel.CurrentColorRgb;
-        if (colorRgb.HasValue)
-        {
-            var (r, g, b) = colorRgb.Value;
-            ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
-        }
-
-        FlyoutBase.ShowAttachedFlyout(IconContainer);
-        e.Handled = true;
-    }
-
-    private void ColorFlyout_ColorChanged(object sender, Color color)
-    {
-        ViewModel?.SetColorFromRgbCommand?.Execute((color.R, color.G, color.B));
-    }
 }
