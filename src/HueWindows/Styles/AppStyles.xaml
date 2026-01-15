@@ -286,4 +286,15 @@
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
+    <!-- Color SplitButton Style -->
+    <Style x:Key="ColorSplitButtonStyle" TargetType="SplitButton">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="MinWidth" Value="56"/>
+    </Style>
+
 </ResourceDictionary>
