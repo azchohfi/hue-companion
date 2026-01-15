@@ -3,10 +3,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Shapes;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
+using HueWindows.Utilities;
 using Windows.UI;
 
 namespace HueWindows.Controls;
@@ -131,64 +130,17 @@ public sealed partial class RoomCard : UserControl
         if (ViewModel == null) return;
 
         // Build the gradient brush from light colors
-        LinearGradientBrush borderBrush;
         var colors = ViewModel.LightColors;
-
-        if (colors.Count > 1)
-        {
-            borderBrush = new LinearGradientBrush();
-            borderBrush.StartPoint = new Windows.Foundation.Point(0, 0);
-            borderBrush.EndPoint = new Windows.Foundation.Point(1, 1);
-
-            for (int i = 0; i < colors.Count; i++)
-            {
-                var (r, g, b) = colors[i];
-                var color = Color.FromArgb(255, r, g, b);
-                borderBrush.GradientStops.Add(new GradientStop
-                {
-                    Color = color,
-                    Offset = (double)i / (colors.Count - 1)
-                });
-            }
-        }
-        else if (colors.Count == 1)
-        {
-            var (r, g, b) = colors[0];
-            var color = Color.FromArgb(255, r, g, b);
-            borderBrush = new LinearGradientBrush();
-            borderBrush.GradientStops.Add(new GradientStop { Color = color, Offset = 0 });
-            borderBrush.GradientStops.Add(new GradientStop { Color = color, Offset = 1 });
-        }
-        else
-        {
-            // Fallback when no colors available
-            borderBrush = new LinearGradientBrush();
-            borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 0 });
-            borderBrush.GradientStops.Add(new GradientStop { Color = _accentColor, Offset = 1 });
-        }
+        var borderBrush = colors.Count > 0
+            ? BrushFactory.CreateDiagonalGradient(colors)
+            : BrushFactory.CreateDiagonalGradient(new[] { (_accentColor.R, _accentColor.G, _accentColor.B) });
 
         // Set the brush FIRST, then animate opacity
         OutlineBorder.BorderBrush = borderBrush;
 
         // Animate border opacity
         var targetOpacity = isActive ? 1.0 : 0.0;
-        AnimateBorderOpacity(targetOpacity);
-    }
-
-    private void AnimateBorderOpacity(double targetOpacity)
-    {
-        var animation = new DoubleAnimation
-        {
-            To = targetOpacity,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, OutlineBorder);
-        Storyboard.SetTargetProperty(animation, "Opacity");
-        storyboard.Begin();
+        AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
     }
 
     private void UpdateToggleColor(bool isActive)
@@ -198,26 +150,11 @@ public sealed partial class RoomCard : UserControl
             if (RoomToggle == null) return;
 
             Brush fillBrush;
-            
+
             if (isActive && ViewModel != null && ViewModel.LightColors.Count > 1)
             {
-                 // Create gradient for toggle
-                var gradient = new LinearGradientBrush();
-                gradient.StartPoint = new Windows.Foundation.Point(0, 0);
-                gradient.EndPoint = new Windows.Foundation.Point(1, 0); // Horizontal for toggle
-                
-                var colors = ViewModel.LightColors;
-                for (int i = 0; i < colors.Count; i++)
-                {
-                    var (r, g, b) = colors[i];
-                    var color = Color.FromArgb(255, r, g, b);
-                    gradient.GradientStops.Add(new GradientStop 
-                    { 
-                        Color = color, 
-                        Offset = (double)i / (colors.Count - 1) 
-                    });
-                }
-                fillBrush = gradient;
+                // Create gradient for toggle (horizontal)
+                fillBrush = BrushFactory.CreateHorizontalGradient(ViewModel.LightColors);
             }
             else
             {
@@ -254,21 +191,7 @@ public sealed partial class RoomCard : UserControl
             if (colors.Count > 1)
             {
                 // Create gradient for icon matching toggle/border
-                var gradient = new LinearGradientBrush();
-                gradient.StartPoint = new Windows.Foundation.Point(0, 0);
-                gradient.EndPoint = new Windows.Foundation.Point(1, 1);
-
-                for (int i = 0; i < colors.Count; i++)
-                {
-                    var (r, g, b) = colors[i];
-                    var color = Color.FromArgb(255, r, g, b);
-                    gradient.GradientStops.Add(new GradientStop
-                    {
-                        Color = color,
-                        Offset = (double)i / (colors.Count - 1)
-                    });
-                }
-                RoomIcon.Foreground = gradient;
+                RoomIcon.Foreground = BrushFactory.CreateDiagonalGradient(colors);
             }
             else
             {
@@ -366,7 +289,7 @@ public sealed partial class RoomCard : UserControl
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
         // Prevent navigation if clicking the toggle
-        if (e.OriginalSource is DependencyObject obj && IsDescendantOf(obj, RoomToggle))
+        if (e.OriginalSource is DependencyObject obj && obj.IsDescendantOf(RoomToggle))
         {
             return;
         }
@@ -377,24 +300,6 @@ public sealed partial class RoomCard : UserControl
         }
 
         e.Handled = true;
-    }
-
-    private bool IsDescendantOf(DependencyObject? current, DependencyObject target)
-    {
-        while (current != null)
-        {
-            if (current == target) return true;
-            try 
-            {
-                current = VisualTreeHelper.GetParent(current);
-            }
-            catch
-            {
-                // In some cases (like popups) GetParent might fail or return null
-                return false;
-            }
-        }
-        return false;
     }
 
     private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)

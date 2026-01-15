@@ -3,9 +3,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
+using HueWindows.Utilities;
 using Windows.UI;
 
 namespace HueWindows.Controls;
@@ -100,8 +100,8 @@ public sealed partial class LightCard : UserControl
         if (!isActive)
         {
             // Fade out both borders
-            AnimateBorderOpacity(OutlineBorder, 0.0);
-            AnimateBorderOpacity(OutlineBorder2, 0.0);
+            AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
+            AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
             return;
         }
 
@@ -113,45 +113,11 @@ public sealed partial class LightCard : UserControl
         newBorder.BorderBrush = new SolidColorBrush(_accentColor);
 
         // Cross-fade: fade in new, fade out old
-        AnimateBorderOpacity(newBorder, 1.0);
-        AnimateBorderOpacity(oldBorder, 0.0);
+        AnimationHelper.AnimateOpacity(newBorder, 1.0);
+        AnimationHelper.AnimateOpacity(oldBorder, 0.0);
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
-    }
-
-    private void AnimateBorderOpacity(Border border, double targetOpacity)
-    {
-        var animation = new DoubleAnimation
-        {
-            To = targetOpacity,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, border);
-        Storyboard.SetTargetProperty(animation, "Opacity");
-        storyboard.Begin();
-    }
-
-    private void AnimateColor(SolidColorBrush brush, Color from, Color to)
-    {
-        var animation = new ColorAnimation
-        {
-            From = from,
-            To = to,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-            EnableDependentAnimation = true
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, brush);
-        Storyboard.SetTargetProperty(animation, "Color");
-        storyboard.Begin();
     }
 
     private void UpdateToggleColor(bool isActive)
@@ -168,7 +134,7 @@ public sealed partial class LightCard : UserControl
         }
 
         // Animate color change
-        AnimateColor(_toggleBrush, ((SolidColorBrush)LightToggle.Background).Color, targetColor);
+        AnimationHelper.AnimateColor(_toggleBrush, ((SolidColorBrush)LightToggle.Background).Color, targetColor);
     }
 
     private void UpdateIconColor(bool isActive)
@@ -187,14 +153,14 @@ public sealed partial class LightCard : UserControl
         }
 
         // Animate color change
-        AnimateColor(_iconBrush, _currentIconColor, targetColor);
+        AnimationHelper.AnimateColor(_iconBrush, _currentIconColor, targetColor);
         _currentIconColor = targetColor;
     }
 
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
         // Prevent navigation if clicking the toggle
-        if (e.OriginalSource is DependencyObject obj && IsDescendantOf(obj, LightToggle))
+        if (e.OriginalSource is DependencyObject obj && obj.IsDescendantOf(LightToggle))
         {
             return;
         }
@@ -211,23 +177,6 @@ public sealed partial class LightCard : UserControl
             ViewModel.IsOn = !ViewModel.IsOn;
         }
         e.Handled = true;
-    }
-
-    private bool IsDescendantOf(DependencyObject? current, DependencyObject target)
-    {
-        while (current != null)
-        {
-            if (current == target) return true;
-            try
-            {
-                current = VisualTreeHelper.GetParent(current);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        return false;
     }
 
     private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)

@@ -286,6 +286,12 @@ public sealed partial class RoomDetailPage : Page
         navigationService.NavigateTo<LightDetailPage>(lightId);
     }
 
+    private void RoomToggle_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        ViewModel.IsOn = !ViewModel.IsOn;
+        e.Handled = true;
+    }
+
     private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
         // Only fire command if value actually changed from user interaction
