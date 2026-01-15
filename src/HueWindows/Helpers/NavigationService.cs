@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Views;
 
 namespace HueWindows.Helpers;
 
@@ -25,13 +27,15 @@ public class NavigationService : INavigationService
     /// <inheritdoc/>
     public void NavigateTo<TPage>() where TPage : class
     {
-        _frame?.Navigate(typeof(TPage));
+        var transitionInfo = GetTransitionInfo(typeof(TPage));
+        _frame?.Navigate(typeof(TPage), null, transitionInfo);
     }
 
     /// <inheritdoc/>
     public void NavigateTo<TPage>(object parameter) where TPage : class
     {
-        _frame?.Navigate(typeof(TPage), parameter);
+        var transitionInfo = GetTransitionInfo(typeof(TPage));
+        _frame?.Navigate(typeof(TPage), parameter, transitionInfo);
     }
 
     /// <inheritdoc/>
@@ -46,13 +50,23 @@ public class NavigationService : INavigationService
     /// <inheritdoc/>
     public void NavigateTo(Type pageType, object? parameter = null)
     {
-        if (parameter != null)
+        var transitionInfo = GetTransitionInfo(pageType);
+        _frame?.Navigate(pageType, parameter, transitionInfo);
+    }
+
+    /// <summary>
+    /// Gets the appropriate navigation transition for the target page type.
+    /// Detail pages use DrillIn, list pages use default entrance.
+    /// </summary>
+    private static NavigationTransitionInfo GetTransitionInfo(Type pageType)
+    {
+        // Detail pages drill in from source
+        if (pageType == typeof(RoomDetailPage) || pageType == typeof(LightDetailPage))
         {
-            _frame?.Navigate(pageType, parameter);
+            return new DrillInNavigationTransitionInfo();
         }
-        else
-        {
-            _frame?.Navigate(pageType);
-        }
+
+        // Default entrance animation for other pages
+        return new EntranceNavigationTransitionInfo();
     }
 }

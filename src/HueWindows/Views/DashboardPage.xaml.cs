@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using HueWindows.Constants;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
+using HueWindows.Utilities;
 
 namespace HueWindows.Views;
 
@@ -13,6 +15,7 @@ public sealed partial class DashboardPage : Page
 {
     public DashboardViewModel ViewModel { get; }
     private readonly IPinnedItemsService _pinnedItemsService;
+    private int _entranceAnimationIndex; // Track stagger index across repeaters
 
     public DashboardPage()
     {
@@ -25,6 +28,7 @@ public sealed partial class DashboardPage : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        _entranceAnimationIndex = 0; // Reset stagger index on page load
         await ViewModel.LoadRoomsAsync();
     }
 
@@ -76,5 +80,27 @@ public sealed partial class DashboardPage : Page
         {
             await _pinnedItemsService.PinAsync(roomCard.ItemId, roomCard.ItemType);
         }
+    }
+
+    /// <summary>
+    /// Handles staggered entrance animation for cards.
+    /// </summary>
+    private async void CardsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        var element = args.Element;
+        var index = _entranceAnimationIndex++;
+
+        // Start invisible
+        element.Opacity = 0;
+
+        // Staggered delay based on index
+        var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
+
+        // Use dispatcher to ensure we're on UI thread after delay
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            await Task.Delay(delay);
+            AnimationHelper.AnimateOpacity(element, 1.0);
+        });
     }
 }

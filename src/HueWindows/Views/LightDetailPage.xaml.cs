@@ -255,6 +255,11 @@ public sealed partial class LightDetailPage : Page
     {
         base.OnNavigatedTo(e);
 
+        // Try to receive connected animation from LightCard
+        var connectedAnimation = ConnectedAnimationService.GetForCurrentView()
+            .GetAnimation("LightCardToHeader");
+        connectedAnimation?.TryStart(MainContainer);
+
         if (e.Parameter is Guid lightId)
         {
             await ViewModel.LoadLightAsync(lightId);

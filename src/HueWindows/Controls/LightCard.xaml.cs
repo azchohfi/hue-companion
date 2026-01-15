@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
@@ -165,6 +166,10 @@ public sealed partial class LightCard : UserControl
         {
             return;
         }
+
+        // Prepare connected animation before navigation
+        ConnectedAnimationService.GetForCurrentView()
+            .PrepareToAnimate("LightCardToHeader", CardRoot);
 
         ViewModel?.TapLightCommand.Execute(null);
         e.Handled = true;

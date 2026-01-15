@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
@@ -297,6 +298,10 @@ public sealed partial class RoomCard : UserControl
 
         if (!_isDragging && ViewModel != null)
         {
+            // Prepare connected animation before navigation
+            ConnectedAnimationService.GetForCurrentView()
+                .PrepareToAnimate("RoomCardToHeader", CardRoot);
+
             ViewModel.TapRoomCommand.Execute(null);
         }
 

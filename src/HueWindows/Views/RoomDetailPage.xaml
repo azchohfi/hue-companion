@@ -164,7 +164,8 @@
                     <TextBlock Text="Scenes"
                                Style="{StaticResource SectionHeaderTextStyle}"/>
 
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}">
+                    <ItemsRepeater x:Name="ScenesRepeater" ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
+                                   ElementPrepared="ScenesRepeater_ElementPrepared">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="110"
                                                MinItemHeight="88"
@@ -174,7 +175,10 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:SceneItemViewModel">
-                                <Grid>
+                                <Grid RenderTransformOrigin="0.5,0.5">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform/>
+                                    </Grid.RenderTransform>
                                     <Button HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
                                             HorizontalContentAlignment="Center"

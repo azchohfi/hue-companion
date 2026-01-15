@@ -12,6 +12,7 @@ using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
+using HueWindows.Utilities;
 using Windows.UI;
 using PinnedItemType = HueWindows.Core.Models.PinnedItemType;
 
@@ -38,6 +39,8 @@ public sealed partial class RoomDetailPage : Page
     private bool _isUpdatingSlider; // Prevent feedback loops when animating slider
     private DispatcherTimer? _brightnessDebounceTimer; // Debounce brightness changes
     private double _pendingBrightness; // Pending brightness value to send
+    private readonly Dictionary<Guid, UIElement> _sceneElements = new(); // Track scene UI elements for animation
+    private int _lightEntranceIndex; // Track stagger index for light cards
 
     public RoomDetailPage()
     {
@@ -279,6 +282,15 @@ public sealed partial class RoomDetailPage : Page
     {
         base.OnNavigatedTo(e);
 
+        // Reset animation indices for entrance animations
+        _lightEntranceIndex = 0;
+        _sceneElements.Clear();
+
+        // Try to receive connected animation from RoomCard
+        var connectedAnimation = ConnectedAnimationService.GetForCurrentView()
+            .GetAnimation("RoomCardToHeader");
+        connectedAnimation?.TryStart(HeaderContainer);
+
         // Support both simple Guid (room) and NavigationTag (room or zone)
         if (e.Parameter is NavigationTag navTag)
         {
@@ -394,6 +406,18 @@ public sealed partial class RoomDetailPage : Page
         {
             lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
         }
+
+        // Staggered entrance animation
+        var element = args.Element;
+        var index = _lightEntranceIndex++;
+        element.Opacity = 0;
+
+        var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            await Task.Delay(delay);
+            AnimationHelper.AnimateOpacity(element, 1.0);
+        });
     }
 
     private void ColorPickerFlyout_Opening(object sender, object e)
@@ -410,5 +434,58 @@ public sealed partial class RoomDetailPage : Page
     private void ColorFlyout_ColorChanged(object sender, Color color)
     {
         ViewModel.SetRoomColorFromRgbCommand.Execute((color.R, color.G, color.B));
+    }
+
+    private void ScenesRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (args.Element is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
+        {
+            // Track element for animation
+            _sceneElements[sceneVm.SceneId] = element;
+
+            // Subscribe to activation for pulse animation
+            sceneVm.SceneActivated += OnSceneActivatedForPulse;
+        }
+    }
+
+    private void OnSceneActivatedForPulse(object? sender, Guid sceneId)
+    {
+        if (_sceneElements.TryGetValue(sceneId, out var element))
+        {
+            AnimateScenePulse(element);
+        }
+    }
+
+    private void AnimateScenePulse(UIElement element)
+    {
+        if (element.RenderTransform is not ScaleTransform scaleTransform)
+            return;
+
+        var scaleXAnimation = new DoubleAnimation
+        {
+            From = 1.0,
+            To = AppConstants.Animation.PulseScaleFactor,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+            AutoReverse = true,
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var scaleYAnimation = new DoubleAnimation
+        {
+            From = 1.0,
+            To = AppConstants.Animation.PulseScaleFactor,
+            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+            AutoReverse = true,
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(scaleXAnimation);
+        storyboard.Children.Add(scaleYAnimation);
+        Storyboard.SetTarget(scaleXAnimation, scaleTransform);
+        Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
+        Storyboard.SetTarget(scaleYAnimation, scaleTransform);
+        Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
+        storyboard.Begin();
     }
 }

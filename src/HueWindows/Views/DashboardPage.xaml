@@ -64,7 +64,8 @@
                                Style="{StaticResource SubtitleTextBlockStyle}"
                                Margin="0,0,0,12"/>
                     <ItemsRepeater x:Name="RoomCardsRepeater"
-                                   ItemsSource="{x:Bind ViewModel.RoomCards, Mode=OneWay}">
+                                   ItemsSource="{x:Bind ViewModel.RoomCards, Mode=OneWay}"
+                                   ElementPrepared="CardsRepeater_ElementPrepared">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="200"
                                                MinItemHeight="120"
@@ -98,7 +99,8 @@
                                Style="{StaticResource SubtitleTextBlockStyle}"
                                Margin="0,0,0,12"/>
                     <ItemsRepeater x:Name="ZoneCardsRepeater"
-                                   ItemsSource="{x:Bind ViewModel.ZoneCards, Mode=OneWay}">
+                                   ItemsSource="{x:Bind ViewModel.ZoneCards, Mode=OneWay}"
+                                   ElementPrepared="CardsRepeater_ElementPrepared">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="200"
                                                MinItemHeight="120"

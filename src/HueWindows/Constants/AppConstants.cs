@@ -18,6 +18,12 @@ public static class AppConstants
 
         /// <summary>Slow animation duration in milliseconds.</summary>
         public const int SlowDurationMs = 500;
+
+        /// <summary>Scale factor for pulse feedback animations.</summary>
+        public const double PulseScaleFactor = 1.05;
+
+        /// <summary>Stagger delay between list item entrance animations in milliseconds.</summary>
+        public const int EntranceStaggerDelayMs = 50;
     }
 
     /// <summary>
