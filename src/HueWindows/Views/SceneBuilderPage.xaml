@@ -103,13 +103,8 @@
 
         <!-- Timeline Area -->
         <Grid Grid.Row="2" Padding="36,0,36,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
             <!-- Timeline -->
-            <Border Grid.Column="0"
+            <Border
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -195,42 +190,37 @@
                 </Grid>
             </Border>
 
-            <!-- Side Panel (appears on keyframe selection) -->
+            <!-- Keyframe Panel (overlay on keyframe selection) -->
             <Border x:Name="SidePanel"
-                    Grid.Column="1"
                     Width="280"
-                    Margin="16,0,0,0"
+                    MaxHeight="500"
+                    Margin="0,0,16,16"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
                     Visibility="Collapsed"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1">
-                <Grid Padding="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel Spacing="16">
+                        <!-- Panel Header -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="KeyframeTimeText"
+                                       Text="Keyframe @ 0.0s"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <Button Grid.Column="1"
+                                    Click="CloseSidePanel_Click"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTipService.ToolTip="Close">
+                                <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                            </Button>
+                        </Grid>
 
-                    <!-- Panel Header -->
-                    <Grid Grid.Row="0" Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="KeyframeTimeText"
-                                   Text="Keyframe @ 0.0s"
-                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <Button Grid.Column="1"
-                                Click="CloseSidePanel_Click"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTipService.ToolTip="Close">
-                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                        </Button>
-                    </Grid>
-
-                    <!-- Panel Content -->
-                    <StackPanel Grid.Row="1" Spacing="20">
                         <!-- Color Picker -->
                         <StackPanel Spacing="8">
                             <TextBlock Text="Color"
@@ -238,7 +228,7 @@
                             <ColorPicker x:Name="KeyframeColorPicker"
                                          ColorSpectrumShape="Ring"
                                          IsAlphaEnabled="False"
-                                         IsHexInputVisible="True"
+                                         IsHexInputVisible="False"
                                          IsMoreButtonVisible="False"
                                          ColorChanged="KeyframeColorPicker_ColorChanged"/>
                         </StackPanel>
@@ -279,16 +269,16 @@
                                 <ComboBoxItem Content="Instant" Tag="Instant"/>
                             </ComboBox>
                         </StackPanel>
-                    </StackPanel>
 
-                    <!-- Panel Actions -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,16,0,0">
-                        <Button Content="Duplicate"
-                                Click="DuplicateKeyframe_Click"/>
-                        <Button Content="Delete"
-                                Click="DeleteKeyframe_Click"/>
+                        <!-- Panel Actions -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Duplicate"
+                                    Click="DuplicateKeyframe_Click"/>
+                            <Button Content="Delete"
+                                    Click="DeleteKeyframe_Click"/>
+                        </StackPanel>
                     </StackPanel>
-                </Grid>
+                </ScrollViewer>
             </Border>
         </Grid>
 

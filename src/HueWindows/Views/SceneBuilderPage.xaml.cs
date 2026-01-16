@@ -16,6 +16,15 @@ public sealed partial class SceneBuilderPage : Page
     private DispatcherTimer? _playbackTimer;
     private DateTime _lastFrameTime;
     private bool _isDraggingPlayhead;
+    private bool _isDraggingKeyframe;
+    private KeyframeViewModel? _draggingKeyframe;
+    private TrackViewModel? _draggingTrack;
+
+    // Cached playhead elements for efficient updates
+    private Microsoft.UI.Xaml.Shapes.Line? _playheadHitArea;
+    private Microsoft.UI.Xaml.Shapes.Line? _playheadLine;
+    private Microsoft.UI.Xaml.Shapes.Polygon? _playheadHandle;
+    private Microsoft.UI.Xaml.Shapes.Polygon? _rulerPlayheadMarker;
 
     public SceneBuilderPage()
     {
@@ -138,8 +147,23 @@ public sealed partial class SceneBuilderPage : Page
     {
         var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
 
-        // Playhead line
-        var playheadLine = new Microsoft.UI.Xaml.Shapes.Line
+        // Invisible wider hit area for easier dragging
+        _playheadHitArea = new Microsoft.UI.Xaml.Shapes.Line
+        {
+            X1 = x,
+            Y1 = 0,
+            X2 = x,
+            Y2 = height,
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(0, 0, 0, 0)), // Transparent
+            StrokeThickness = 12, // Wide hit area
+            Tag = "PlayheadHitArea"
+        };
+        _playheadHitArea.PointerPressed += PlayheadHandle_PointerPressed;
+        KeyframeCanvas.Children.Add(_playheadHitArea);
+
+        // Visible playhead line
+        _playheadLine = new Microsoft.UI.Xaml.Shapes.Line
         {
             X1 = x,
             Y1 = 0,
@@ -147,12 +171,13 @@ public sealed partial class SceneBuilderPage : Page
             Y2 = height,
             Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
                 Windows.UI.Color.FromArgb(255, 255, 100, 100)),
-            StrokeThickness = 2
+            StrokeThickness = 2,
+            IsHitTestVisible = false // Let the hit area handle input
         };
-        KeyframeCanvas.Children.Add(playheadLine);
+        KeyframeCanvas.Children.Add(_playheadLine);
 
         // Playhead handle (triangle at top) - make it draggable
-        var handle = new Microsoft.UI.Xaml.Shapes.Polygon
+        _playheadHandle = new Microsoft.UI.Xaml.Shapes.Polygon
         {
             Points = new Microsoft.UI.Xaml.Media.PointCollection
             {
@@ -164,8 +189,52 @@ public sealed partial class SceneBuilderPage : Page
                 Windows.UI.Color.FromArgb(255, 255, 100, 100)),
             Tag = "PlayheadHandle"
         };
-        handle.PointerPressed += PlayheadHandle_PointerPressed;
-        KeyframeCanvas.Children.Add(handle);
+        _playheadHandle.PointerPressed += PlayheadHandle_PointerPressed;
+        KeyframeCanvas.Children.Add(_playheadHandle);
+    }
+
+    /// <summary>
+    /// Efficiently updates just the playhead position without re-rendering everything.
+    /// </summary>
+    private void UpdatePlayheadPosition()
+    {
+        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+
+        // Update hit area
+        if (_playheadHitArea != null)
+        {
+            _playheadHitArea.X1 = x;
+            _playheadHitArea.X2 = x;
+        }
+
+        // Update visible line
+        if (_playheadLine != null)
+        {
+            _playheadLine.X1 = x;
+            _playheadLine.X2 = x;
+        }
+
+        // Update handle
+        if (_playheadHandle != null)
+        {
+            _playheadHandle.Points = new Microsoft.UI.Xaml.Media.PointCollection
+            {
+                new Windows.Foundation.Point(x - 8, 0),
+                new Windows.Foundation.Point(x + 8, 0),
+                new Windows.Foundation.Point(x, 12)
+            };
+        }
+
+        // Update ruler marker
+        if (_rulerPlayheadMarker != null)
+        {
+            _rulerPlayheadMarker.Points = new Microsoft.UI.Xaml.Media.PointCollection
+            {
+                new Windows.Foundation.Point(x - 5, 20),
+                new Windows.Foundation.Point(x + 5, 20),
+                new Windows.Foundation.Point(x, 12)
+            };
+        }
     }
 
     private void PlayheadHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -193,7 +262,9 @@ public sealed partial class SceneBuilderPage : Page
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
 
         ViewModel.PlayheadPosition = timeSeconds;
-        RenderTimeline();
+
+        // Use optimized update instead of full re-render
+        UpdatePlayheadPosition();
     }
 
     private void KeyframeCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -268,7 +339,7 @@ public sealed partial class SceneBuilderPage : Page
 
         // Draw playhead marker on ruler
         var playheadX = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
-        var playheadMarker = new Microsoft.UI.Xaml.Shapes.Polygon
+        _rulerPlayheadMarker = new Microsoft.UI.Xaml.Shapes.Polygon
         {
             Points = new Microsoft.UI.Xaml.Media.PointCollection
             {
@@ -279,7 +350,7 @@ public sealed partial class SceneBuilderPage : Page
             Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
                 Windows.UI.Color.FromArgb(255, 255, 100, 100))
         };
-        TimeRulerCanvas.Children.Add(playheadMarker);
+        TimeRulerCanvas.Children.Add(_rulerPlayheadMarker);
     }
 
     private void RenderKeyframe(KeyframeViewModel keyframe, TrackViewModel track, double x, double y)
@@ -307,6 +378,7 @@ public sealed partial class SceneBuilderPage : Page
         // Store references for selection
         circle.Tag = (keyframe, track);
         circle.PointerPressed += Keyframe_PointerPressed;
+        circle.RightTapped += Keyframe_RightTapped;
 
         KeyframeCanvas.Children.Add(circle);
     }
@@ -341,7 +413,96 @@ public sealed partial class SceneBuilderPage : Page
         if (sender is Microsoft.UI.Xaml.Shapes.Ellipse ellipse &&
             ellipse.Tag is (KeyframeViewModel keyframe, TrackViewModel track))
         {
-            SelectKeyframe(keyframe);
+            var props = e.GetCurrentPoint(ellipse).Properties;
+
+            if (props.IsRightButtonPressed)
+            {
+                // Right-click: delete keyframe (if track has more than 2 keyframes)
+                if (track.Keyframes.Count > 2)
+                {
+                    ViewModel.DeleteKeyframeCommand.Execute(keyframe);
+                    SidePanel.Visibility = Visibility.Collapsed;
+                    ViewModel.SelectedKeyframe = null;
+                    RenderTimeline();
+                }
+                e.Handled = true;
+                return;
+            }
+
+            if (props.IsLeftButtonPressed)
+            {
+                // Start dragging the keyframe
+                _isDraggingKeyframe = true;
+                _draggingKeyframe = keyframe;
+                _draggingTrack = track;
+
+                // Capture pointer for dragging
+                KeyframeCanvas.CapturePointer(e.Pointer);
+                KeyframeCanvas.PointerMoved += KeyframeCanvas_KeyframeDrag;
+                KeyframeCanvas.PointerReleased += KeyframeCanvas_KeyframeDragEnd;
+
+                // Select the keyframe
+                SelectKeyframe(keyframe);
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void KeyframeCanvas_KeyframeDrag(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDraggingKeyframe || _draggingKeyframe == null || _draggingTrack == null)
+            return;
+
+        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+
+        // Clamp to valid range
+        if (timeSeconds < 0) timeSeconds = 0;
+        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        // Update keyframe time
+        _draggingKeyframe.TimeSeconds = timeSeconds;
+
+        // Re-sort keyframes in track
+        var sorted = _draggingTrack.Keyframes.OrderBy(k => k.TimeSeconds).ToList();
+        _draggingTrack.Keyframes.Clear();
+        foreach (var kf in sorted)
+        {
+            _draggingTrack.Keyframes.Add(kf);
+        }
+
+        // Update UI
+        RenderTimeline();
+        KeyframeTimeText.Text = $"Keyframe @ {timeSeconds:F1}s";
+    }
+
+    private void KeyframeCanvas_KeyframeDragEnd(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isDraggingKeyframe)
+        {
+            _isDraggingKeyframe = false;
+            _draggingKeyframe = null;
+            _draggingTrack = null;
+            KeyframeCanvas.ReleasePointerCapture(e.Pointer);
+
+            // Unwire events
+            KeyframeCanvas.PointerMoved -= KeyframeCanvas_KeyframeDrag;
+            KeyframeCanvas.PointerReleased -= KeyframeCanvas_KeyframeDragEnd;
+        }
+    }
+
+    private void Keyframe_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        if (sender is Microsoft.UI.Xaml.Shapes.Ellipse ellipse &&
+            ellipse.Tag is (KeyframeViewModel keyframe, TrackViewModel track))
+        {
+            // Delete keyframe on right-click (if track has more than 2 keyframes)
+            if (track.Keyframes.Count > 2)
+            {
+                ViewModel.DeleteKeyframeCommand.Execute(keyframe);
+                SidePanel.Visibility = Visibility.Collapsed;
+                RenderTimeline();
+            }
             e.Handled = true;
         }
     }
@@ -470,9 +631,19 @@ public sealed partial class SceneBuilderPage : Page
     private void KeyframeCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
+        {
+            // Close panel if clicking on empty canvas
+            SidePanel.Visibility = Visibility.Collapsed;
+            if (ViewModel != null) ViewModel.SelectedKeyframe = null;
             return;
+        }
 
         var point = e.GetCurrentPoint(KeyframeCanvas);
+
+        // Only handle left-click for creating keyframes
+        if (!point.Properties.IsLeftButtonPressed)
+            return;
+
         var x = point.Position.X;
         var y = point.Position.Y;
 
@@ -481,7 +652,12 @@ public sealed partial class SceneBuilderPage : Page
 
         // Ensure track index is valid
         if (trackIndex < 0 || trackIndex >= ViewModel.Tracks.Count)
+        {
+            // Clicked outside tracks - close the panel
+            SidePanel.Visibility = Visibility.Collapsed;
+            ViewModel.SelectedKeyframe = null;
             return;
+        }
 
         var track = ViewModel.Tracks[trackIndex];
         var timeSeconds = x / ViewModel.ZoomLevel;
@@ -490,28 +666,36 @@ public sealed partial class SceneBuilderPage : Page
         if (timeSeconds < 0) timeSeconds = 0;
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
 
-        // Check if clicking near an existing keyframe (within 10 pixels)
-        var clickThreshold = 10.0 / ViewModel.ZoomLevel; // Convert pixels to seconds
+        // Check if clicking near an existing keyframe - if so, don't create a new one
+        // (the keyframe's own handler will handle it)
+        var clickThreshold = 12.0 / ViewModel.ZoomLevel; // Match the keyframe circle size
         var nearbyKeyframe = track.Keyframes
             .FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < clickThreshold);
 
         if (nearbyKeyframe != null)
         {
-            // Select the existing keyframe
-            SelectKeyframe(nearbyKeyframe);
+            // Don't create new keyframe - let the keyframe handle its own click
+            return;
         }
-        else
-        {
-            // Add a new keyframe at this position
-            ViewModel.AddKeyframe(track, timeSeconds);
-            RenderTimeline();
 
-            // Select the newly added keyframe
-            var newKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
-            if (newKeyframe != null)
-            {
-                SelectKeyframe(newKeyframe);
-            }
+        // If panel is open, just close it without creating a new keyframe
+        if (SidePanel.Visibility == Visibility.Visible)
+        {
+            SidePanel.Visibility = Visibility.Collapsed;
+            ViewModel.SelectedKeyframe = null;
+            e.Handled = true;
+            return;
+        }
+
+        // Left-click on blank space creates a new keyframe
+        ViewModel.AddKeyframe(track, timeSeconds);
+        RenderTimeline();
+
+        // Select the newly added keyframe
+        var newKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
+        if (newKeyframe != null)
+        {
+            SelectKeyframe(newKeyframe);
         }
 
         e.Handled = true;

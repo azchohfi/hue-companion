@@ -104,7 +104,42 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- Animated Scenes Section -->
+                <!-- My Scenes Section (User-Created) -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasUserScenes, Mode=OneWay}">
+                    <TextBlock Text="My Scenes"
+                               Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.UserScenes, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="200"
+                                               MinItemHeight="100"
+                                               MinRowSpacing="12"
+                                               MinColumnSpacing="12"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:AnimatedSceneModel">
+                                <Button Click="AnimatedScene_Click"
+                                        Tag="{x:Bind}"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Padding="16">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                        <TextBlock Text="{x:Bind Description}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   TextWrapping="Wrap"
+                                                   MaxLines="2"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Preset Scenes Section (Built-In) -->
                 <StackPanel Spacing="16">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -112,14 +147,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
-                                   Text="Animated Scenes"
+                                   Text="Preset Scenes"
                                    Style="{StaticResource SubtitleTextBlockStyle}"/>
                         <HyperlinkButton Grid.Column="1"
                                          Content="Browse All"
                                          Click="BrowseAnimatedScenes_Click"/>
                     </Grid>
 
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.AnimatedScenes, Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.PresetScenes, Mode=OneWay}">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="200"
                                                MinItemHeight="100"

@@ -26,7 +26,13 @@ public partial class ScenesViewModel : ObservableObject
     private RoomModel? _selectedRoom;
 
     [ObservableProperty]
-    private List<AnimatedSceneModel> _animatedScenes = new();
+    [NotifyPropertyChangedFor(nameof(HasUserScenes))]
+    private List<AnimatedSceneModel> _userScenes = new();
+
+    [ObservableProperty]
+    private List<AnimatedSceneModel> _presetScenes = new();
+
+    public bool HasUserScenes => UserScenes.Count > 0;
 
     [ObservableProperty]
     private bool _isAnimationPlaying;
@@ -66,11 +72,12 @@ public partial class ScenesViewModel : ObservableObject
                 SelectedRoom = Rooms.FirstOrDefault();
             }
 
-            // Load animated scenes
+            // Load animated scenes and separate by type
             var scenesResult = await _animationService.GetAllScenesAsync();
             if (scenesResult.IsSuccess && scenesResult.Value != null)
             {
-                AnimatedScenes = scenesResult.Value.ToList();
+                UserScenes = scenesResult.Value.Where(s => !s.IsBuiltIn).ToList();
+                PresetScenes = scenesResult.Value.Where(s => s.IsBuiltIn).ToList();
             }
 
             // Update animation state
