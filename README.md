@@ -9,10 +9,33 @@ A modern Windows 11 app for controlling Philips Hue smart lights, built with Win
 - **Drag to Dim** - Press and drag on cards to adjust brightness
 - **Color-Coded Toggles** - Toggle switches show the room's active light color
 - **Scene Selection** - Quickly activate saved Hue scenes
+- **Scene Builder** - DAW-style timeline editor for creating custom animated scenes
+- **Animated Scenes** - Built-in and custom animations with keyframe and event-based effects
 - **Color Control** - Full color picker with color wheel and temperature slider
 - **Individual Light Control** - Fine-grained control of each light
 - **Dark/Light Theme** - Follows system theme or manual selection
 - **Mica Backdrop** - Modern Windows 11 visual style with premium styling
+
+## Scene Builder
+
+Create custom animated light scenes with a DAW-style timeline editor.
+
+### Features
+
+- **Per-light tracks** - Each light gets its own track with independent keyframes
+- **Keyframe editing** - Click to add keyframes, drag to reposition, adjust color/brightness/transition
+- **Snap to grid** - Zoom-adaptive grid snapping (hold Ctrl to disable temporarily)
+- **Event tracks** - Add random effects like lightning flashes, sparkles, and candle flicker
+- **Live preview** - See changes on actual lights during playback
+- **Save/Load** - Scenes save to user library and appear in room detail pages
+
+### Event Presets
+
+| Preset | Effect |
+|--------|--------|
+| Lightning Flash | Bright white flash with quick fade |
+| Sparkle | Quick brightness pulse on random lights |
+| Candle Flicker | Warm orange with subtle brightness dip |
 
 ## Command-Line Deep Linking
 

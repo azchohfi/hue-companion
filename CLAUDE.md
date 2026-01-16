@@ -31,15 +31,23 @@ src/
 | `Views/DashboardPage.xaml` | Main home page with room/zone cards |
 | `Views/RoomDetailPage.xaml` | Room detail with scenes and lights |
 | `Views/LightDetailPage.xaml` | Individual light control (color/temp) |
+| `Views/SceneBuilderPage.xaml` | DAW-style timeline editor for animated scenes |
+| `Views/ScenesPage.xaml` | Scene library with built-in and user scenes |
 | `Controls/RoomCard.xaml` | Widget card for rooms/zones on dashboard |
 | `Controls/LightCard.xaml` | Light row card with toggle and color indicator |
 | `Styles/AppStyles.xaml` | Global styles and theme resource overrides |
 | `Converters/BoolToOpacityConverter.cs` | XAML converters including gradient converters |
 | `Constants/AppConstants.cs` | Animation durations, color values |
 | `Core/Services/HueBridgeService.cs` | Hue API communication layer |
+| `Core/Services/AnimationEngine.cs` | Runs animated scenes on lights |
+| `Core/Services/AnimationService.cs` | Manages scene library and playback |
+| `Core/Services/SceneStorageService.cs` | Saves/loads user scenes to JSON |
 | `Core/ViewModels/DashboardViewModel.cs` | Dashboard data and commands |
 | `Core/ViewModels/RoomDetailViewModel.cs` | Room/zone detail with lights and scenes |
 | `Core/ViewModels/LightDetailViewModel.cs` | Individual light control state |
+| `Core/ViewModels/SceneBuilderViewModel.cs` | Scene Builder state and keyframe editing |
+| `Core/Models/AnimationDefinition.cs` | Animation types, keyframes, event patterns |
+| `Core/Models/AnimatedSceneModel.cs` | Complete scene with multiple animations |
 
 ## Styling Approach
 
@@ -148,3 +156,83 @@ SetLightTemperatureAsync() // Set color temperature (mirek)
 Defined in `Constants/AppConstants.cs`:
 - `StandardDurationMs` = 300ms - Default animation duration
 - `InactiveIconAlpha` = 128 - Icon opacity when light is off
+
+## Scene Builder
+
+DAW-style timeline editor for creating animated light scenes.
+
+### Architecture
+
+```
+SceneBuilderPage.xaml.cs          # UI rendering, input handling
+    └── SceneBuilderViewModel     # State, keyframes, event tracks
+            ├── TrackViewModel         # One per light
+            │   └── KeyframeViewModel  # Color/brightness at time
+            └── EventTrackViewModel    # Random effects (lightning, etc.)
+```
+
+### Key Concepts
+
+**Tracks**: One `TrackViewModel` per light in the selected room. Each track has a collection of `KeyframeViewModel` objects sorted by time.
+
+**Keyframes**: Define color, brightness, and transition style at a specific time. Click canvas to add, drag to move, right-click to delete.
+
+**Event Tracks**: `EventTrackViewModel` for random effects. Uses `EventPreset` enum (LightningFlash, Sparkle, CandleFlicker) with frequency slider.
+
+**Snap to Grid**: Zoom-adaptive intervals (2s → 1s → 0.5s → 0.25s). Hold Ctrl to temporarily disable.
+
+### Timeline Rendering
+
+```csharp
+// RenderTimeline() in SceneBuilderPage.xaml.cs
+1. Clear canvas
+2. Render time ruler ticks
+3. Render track separators
+4. Render snap grid lines (if enabled)
+5. Render keyframes as colored circles
+6. Render event tracks with dashed pattern
+7. Render playhead line
+```
+
+### Playback
+
+- 60fps timer updates `PlayheadPosition`
+- `UpdatePlayheadPosition()` moves playhead visuals efficiently
+- Light updates rate-limited to 10Hz via `_lastLightUpdateTime`
+- Event triggers checked each frame, visual pulses shown when fired
+
+### Save Format
+
+Scenes save as `AnimatedSceneModel` JSON in `%LOCALAPPDATA%/HueWindows/Scenes/`:
+
+```json
+{
+  "Id": "user_abc123",
+  "Name": "My Scene",
+  "Animations": [
+    {
+      "Type": "Keyframe",
+      "Keyframes": [...]
+    },
+    {
+      "Type": "Event",
+      "EventPattern": { "Triggers": [...], "MinIntervalSeconds": 3 }
+    }
+  ]
+}
+```
+
+### Adding New Event Presets
+
+1. Add enum value to `EventPreset` in `SceneBuilderViewModel.cs`
+2. Add trigger states in `GetPresetTriggers()` method
+3. Add display name in `OnPresetChanged()` partial method
+4. Add icon glyph in `IconGlyph` property
+5. Add menu item in `SceneBuilderPage.xaml` (Add Event flyout)
+6. Add click handler in `SceneBuilderPage.xaml.cs`
+
+### Keyboard Shortcuts
+
+- **Space** - Play/Pause
+- **Ctrl+Click** - Add keyframe without snap
+- **Ctrl+Drag** - Move keyframe without snap
