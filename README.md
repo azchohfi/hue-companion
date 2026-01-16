@@ -1,5 +1,9 @@
 # Hue Windows
 
+[![Build Status](https://github.com/ddrayne/hue-windows/workflows/PR%20Validation/badge.svg)](https://github.com/ddrayne/hue-windows/actions)
+[![codecov](https://codecov.io/gh/ddrayne/hue-windows/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-windows)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A modern Windows 11 app for controlling Philips Hue smart lights, built with WinUI 3 and Fluent Design.
 
 ## Features
@@ -88,6 +92,95 @@ dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
 
 # ARM64
 dotnet build src/HueWindows/HueWindows.csproj -p:Platform=ARM64
+```
+
+## Testing
+
+### Run Unit Tests
+
+```bash
+# Run all tests
+dotnet test src/HueWindows.Tests
+
+# Run tests with detailed output
+dotnet test src/HueWindows.Tests --verbosity normal
+
+# Run tests with code coverage
+dotnet test src/HueWindows.Tests --collect:"XPlat Code Coverage"
+```
+
+### Code Coverage
+
+This project uses [Coverlet](https://github.com/coverlet-coverage/coverlet) for code coverage and reports to [Codecov](https://codecov.io/).
+
+Coverage reports are automatically generated in CI/CD pipelines. To generate a local coverage report:
+
+```bash
+# Install report generator (one-time)
+dotnet tool install -g dotnet-reportgenerator-globaltool
+
+# Run tests with coverage
+dotnet test src/HueWindows.Tests --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+# Generate HTML report
+reportgenerator -reports:./coverage/**/coverage.cobertura.xml -targetdir:./coverage-report -reporttypes:HtmlInline
+
+# Open the report (Windows)
+start ./coverage-report/index.html
+```
+
+### Continuous Integration
+
+This project uses GitHub Actions for automated testing and deployment:
+
+- **PR Validation** - Runs on every pull request
+  - Build verification
+  - Unit tests
+  - Code coverage reporting
+  - Build warning checks
+
+- **Main CI** - Runs on every push to main
+  - All PR validation checks
+  - Coverage report generation
+  - Artifact publishing
+
+See [`.github/workflows/`](.github/workflows/) for workflow definitions.
+
+## Version Management
+
+This project follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
+
+### Bumping the Version
+
+Use the `Bump-Version.ps1` script to increment the version:
+
+```powershell
+# Patch version (bug fixes): 1.2.3 -> 1.2.4
+.\tools\Bump-Version.ps1 -Type patch
+
+# Minor version (new features): 1.2.3 -> 1.3.0
+.\tools\Bump-Version.ps1 -Type minor
+
+# Major version (breaking changes): 1.2.3 -> 2.0.0
+.\tools\Bump-Version.ps1 -Type major
+
+# Preview changes without committing
+.\tools\Bump-Version.ps1 -Type minor -DryRun
+```
+
+The script will:
+1. Increment the version in all required files
+2. Create a git commit with the changes
+3. Create a git tag (e.g., `v1.3.0`)
+
+### Creating a Release
+
+```powershell
+# After bumping the version, push to GitHub
+git push
+git push --tags
+
+# The git tag push will automatically trigger the release workflow
 ```
 
 ## Project Structure
