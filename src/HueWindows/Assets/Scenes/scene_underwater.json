@@ -1,0 +1,30 @@
+{
+  "id": "underwater",
+  "name": "Underwater",
+  "description": "Deep ocean blue-green flow using native underwater effect",
+  "category": "Nature",
+  "previewColor": {
+    "x": 0.17,
+    "y": 0.30
+  },
+  "paletteColors": [
+    { "x": 0.15, "y": 0.28 },
+    { "x": 0.18, "y": 0.34 },
+    { "x": 0.20, "y": 0.38 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "underwater_effect",
+      "name": "underwater",
+      "type": "nativeEffect",
+      "lightAssignment": "all",
+      "keyframes": [],
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}
