@@ -23,7 +23,7 @@ public static class AppConstants
         public const double PulseScaleFactor = 1.05;
 
         /// <summary>Stagger delay between list item entrance animations in milliseconds.</summary>
-        public const int EntranceStaggerDelayMs = 50;
+        public const int EntranceStaggerDelayMs = 25;
     }
 
     /// <summary>

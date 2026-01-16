@@ -179,12 +179,7 @@
                                     <Grid.RenderTransform>
                                         <ScaleTransform/>
                                     </Grid.RenderTransform>
-                                    <Button HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center"
-                                            Padding="8,10"
-                                            CornerRadius="8"
+                                    <Button Style="{StaticResource SceneCardButtonStyle}"
                                             Background="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBackgroundConverter}}"
                                             Command="{x:Bind ActivateCommand}">
                                         <StackPanel HorizontalAlignment="Center" Spacing="4">
