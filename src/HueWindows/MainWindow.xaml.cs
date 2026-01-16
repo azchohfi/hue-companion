@@ -175,6 +175,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             NavView.SelectedItem = RoomsNavItem;
         else if (target.PageType == typeof(ZonesPage))
             NavView.SelectedItem = ZonesNavItem;
+        else if (target.PageType == typeof(ScenesPage))
+            NavView.SelectedItem = ScenesNavItem;
         else if (target.PageType == typeof(SettingsPage))
             NavView.SelectedItem = NavView.SettingsItem;
         // For room/zone/light detail pages, don't set selection (they're drill-down pages)
@@ -263,6 +265,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                     break;
                 case "Zones":
                     _navigationService.NavigateTo<ZonesPage>();
+                    break;
+                case "Scenes":
+                    _navigationService.NavigateTo<ScenesPage>();
                     break;
                 case NavigationTag navTag:
                     _navigationService.NavigateTo<RoomDetailPage>(navTag);

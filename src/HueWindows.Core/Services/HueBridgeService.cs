@@ -599,6 +599,31 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
+    public async Task ApplyEffectAsync(Guid lightId, string effect)
+    {
+        if (_hueApi == null) return;
+
+        // Map string effect names to HueApi Effect enum
+        var effectEnum = effect.ToLowerInvariant() switch
+        {
+            "fire" => Effect.fire,
+            "candle" => Effect.candle,
+            "sparkle" => Effect.sparkle,
+            "glisten" => Effect.glisten,
+            "opal" => Effect.opal,
+            "prism" => Effect.prism,
+            "none" => Effect.no_effect,
+            _ => Effect.no_effect
+        };
+
+        var command = new UpdateLight
+        {
+            Effects = new HueApi.Models.Effects { Effect = effectEnum }
+        };
+        await _hueApi.Light.UpdateAsync(lightId, command);
+    }
+
+    /// <inheritdoc/>
     public async Task<Result<IReadOnlyList<SceneModel>>> GetScenesForRoomAsync(Guid roomId)
     {
         if (_hueApi == null)

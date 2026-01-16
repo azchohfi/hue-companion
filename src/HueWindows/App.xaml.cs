@@ -73,6 +73,8 @@ public partial class App : Application
         services.AddSingleton<IHueBridgeService, HueBridgeService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
+        services.AddSingleton<ISceneStorageService, SceneStorageService>();
+        services.AddSingleton<IAnimationService, AnimationService>();
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();
@@ -81,6 +83,8 @@ public partial class App : Application
         services.AddTransient<LightDetailViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SetupViewModel>();
+        services.AddTransient<ScenesViewModel>();
+        services.AddTransient<SceneLibraryViewModel>();
 
         // Register Messenger for MVVM communication
         services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);

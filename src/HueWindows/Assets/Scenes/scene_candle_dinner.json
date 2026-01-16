@@ -1,0 +1,30 @@
+{
+  "id": "candle_dinner",
+  "name": "Candlelight Dinner",
+  "description": "Romantic candlelight ambiance using native candle effect",
+  "category": "Romantic",
+  "previewColor": {
+    "x": 0.55,
+    "y": 0.43
+  },
+  "paletteColors": [
+    { "x": 0.55, "y": 0.43 },
+    { "x": 0.52, "y": 0.45 },
+    { "x": 0.48, "y": 0.47 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "candle_effect",
+      "name": "candle",
+      "type": "nativeEffect",
+      "lightAssignment": "all",
+      "keyframes": [],
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}

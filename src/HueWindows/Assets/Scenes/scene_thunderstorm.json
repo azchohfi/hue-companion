@@ -1,0 +1,122 @@
+{
+  "id": "thunderstorm",
+  "name": "Thunderstorm",
+  "description": "Dramatic thunderstorm with random lightning flashes",
+  "category": "Nature",
+  "previewColor": {
+    "x": 0.28,
+    "y": 0.29
+  },
+  "paletteColors": [
+    { "x": 0.28, "y": 0.29 },
+    { "x": 0.31, "y": 0.32 },
+    { "x": 0.33, "y": 0.33 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "ambient_storm",
+      "name": "Storm Ambient",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.15,
+          "color": { "x": 0.28, "y": 0.29 },
+          "isOn": true,
+          "transitionStyle": "linear"
+        },
+        {
+          "timeSeconds": 5,
+          "brightness": 0.18,
+          "color": { "x": 0.30, "y": 0.31 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 10,
+          "brightness": 0.15,
+          "color": { "x": 0.28, "y": 0.29 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 10,
+      "repeatMode": "loop",
+      "priority": 1
+    },
+    {
+      "id": "lightning_flashes",
+      "name": "Lightning",
+      "type": "event",
+      "lightAssignment": "random",
+      "randomPercentage": 0.3,
+      "eventPattern": {
+        "triggers": [
+          {
+            "weight": 3.0,
+            "states": [
+              {
+                "durationSeconds": 0.1,
+                "brightness": 1.0,
+                "color": { "x": 0.31, "y": 0.32 },
+                "isOn": true,
+                "transitionStyle": "instant"
+              },
+              {
+                "durationSeconds": 0.05,
+                "brightness": 0.1,
+                "isOn": true,
+                "transitionStyle": "instant"
+              },
+              {
+                "durationSeconds": 0.08,
+                "brightness": 0.95,
+                "color": { "x": 0.31, "y": 0.32 },
+                "isOn": true,
+                "transitionStyle": "instant"
+              },
+              {
+                "durationSeconds": 0.5,
+                "brightness": 0.15,
+                "color": { "x": 0.28, "y": 0.29 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              }
+            ]
+          },
+          {
+            "weight": 1.0,
+            "states": [
+              {
+                "durationSeconds": 0.15,
+                "brightness": 0.85,
+                "color": { "x": 0.31, "y": 0.32 },
+                "isOn": true,
+                "transitionStyle": "instant"
+              },
+              {
+                "durationSeconds": 0.6,
+                "brightness": 0.15,
+                "color": { "x": 0.28, "y": 0.29 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              }
+            ]
+          }
+        ],
+        "minIntervalSeconds": 3.0,
+        "maxIntervalSeconds": 12.0,
+        "probability": 0.8,
+        "allowSimultaneous": true,
+        "maxSimultaneous": 2
+      },
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 2
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}

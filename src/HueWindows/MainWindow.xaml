@@ -96,6 +96,13 @@
                         <FontIcon Glyph="&#xEBC6;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <!-- Scenes -->
+                <NavigationViewItem x:Name="ScenesNavItem" Content="Scenes" Tag="Scenes">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame" Padding="0">
