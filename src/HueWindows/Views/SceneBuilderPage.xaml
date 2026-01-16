@@ -138,28 +138,53 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Track Labels -->
-                            <ItemsRepeater x:Name="TrackLabelsRepeater"
-                                           Grid.Column="0"
-                                           VerticalAlignment="Top"
-                                           ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout Orientation="Vertical"/>
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:TrackViewModel">
-                                        <Border Height="50"
-                                                Padding="16,0"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="0,0,1,1">
-                                            <TextBlock Text="{x:Bind DisplayName}"
-                                                       Style="{StaticResource BodyTextBlockStyle}"
-                                                       VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
+                            <!-- Track Labels (Light tracks + Event tracks) -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                                <!-- Light Track Labels -->
+                                <ItemsRepeater x:Name="TrackLabelsRepeater"
+                                               ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Orientation="Vertical"/>
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:TrackViewModel">
+                                            <Border Height="50"
+                                                    Padding="16,0"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="0,0,1,1">
+                                                <TextBlock Text="{x:Bind DisplayName}"
+                                                           Style="{StaticResource BodyTextBlockStyle}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+
+                                <!-- Event Track Labels -->
+                                <ItemsRepeater x:Name="EventTrackLabelsRepeater"
+                                               ItemsSource="{x:Bind ViewModel.EventTracks, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Orientation="Vertical"/>
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:EventTrackViewModel">
+                                            <Border Height="50"
+                                                    Padding="16,0"
+                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="0,0,1,1">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                                                    <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="14"/>
+                                                    <TextBlock Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                               Style="{StaticResource BodyTextBlockStyle}"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
 
                             <!-- Keyframe Canvas -->
                             <Canvas x:Name="KeyframeCanvas"
@@ -281,6 +306,98 @@
                     </StackPanel>
                 </ScrollViewer>
             </Border>
+
+            <!-- Event Track Panel (overlay on event track selection) -->
+            <Border x:Name="EventSidePanel"
+                    Width="280"
+                    Margin="0,0,16,16"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Visibility="Collapsed"
+                    Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
+                    CornerRadius="8"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                <StackPanel Padding="16" Spacing="16">
+                    <!-- Panel Header -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <FontIcon x:Name="EventTrackIcon" Glyph="&#xE945;" FontSize="18" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="EventTrackNameText"
+                                   Grid.Column="1"
+                                   Text="Lightning Flash"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <Button Grid.Column="2"
+                                Click="CloseEventSidePanel_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTipService.ToolTip="Close">
+                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Effect Preset -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Effect"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <ComboBox x:Name="EventPresetComboBox"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="EventPresetComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Lightning Flash" Tag="LightningFlash"/>
+                            <ComboBoxItem Content="Sparkle" Tag="Sparkle"/>
+                            <ComboBoxItem Content="Candle Flicker" Tag="CandleFlicker"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Frequency Slider -->
+                    <StackPanel Spacing="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Frequency"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBlock x:Name="FrequencyValueText"
+                                       Grid.Column="1"
+                                       Text="Medium"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Rare" Grid.Column="0"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Slider x:Name="FrequencySlider"
+                                    Grid.Column="1"
+                                    Minimum="0"
+                                    Maximum="1"
+                                    StepFrequency="0.1"
+                                    Value="0.5"
+                                    Margin="8,0"
+                                    ValueChanged="FrequencySlider_ValueChanged"/>
+                            <TextBlock Text="Frequent" Grid.Column="2"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Delete Button -->
+                    <Button Content="Delete Event Track"
+                            Click="DeleteEventTrack_Click"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- Footer: Transport Controls -->
@@ -317,13 +434,39 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Add Keyframe -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                <!-- Add Keyframe / Add Event -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
                     <Button Click="AddKeyframe_Click"
                             ToolTipService.ToolTip="Add keyframe to all tracks at playhead position">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE710;" FontSize="14"/>
                             <TextBlock Text="Add Keyframe"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button ToolTipService.ToolTip="Add event track (lightning, sparkles, etc.)">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="Top">
+                                <MenuFlyoutItem Text="Lightning Flash" Click="AddLightningTrack_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE945;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Sparkle" Click="AddSparkleTrack_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE734;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Candle Flicker" Click="AddCandleTrack_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE7E8;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE945;" FontSize="14"/>
+                            <TextBlock Text="Add Event"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>

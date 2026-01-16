@@ -36,7 +36,13 @@ public partial class SceneBuilderViewModel : ObservableObject
     private ObservableCollection<TrackViewModel> _tracks = new();
 
     [ObservableProperty]
+    private ObservableCollection<EventTrackViewModel> _eventTracks = new();
+
+    [ObservableProperty]
     private KeyframeViewModel? _selectedKeyframe;
+
+    [ObservableProperty]
+    private EventTrackViewModel? _selectedEventTrack;
 
     [ObservableProperty]
     private double _playheadPosition;
@@ -173,6 +179,36 @@ public partial class SceneBuilderViewModel : ObservableObject
     private void SelectKeyframe(KeyframeViewModel keyframe)
     {
         SelectedKeyframe = keyframe;
+        SelectedEventTrack = null; // Clear event track selection
+    }
+
+    [RelayCommand]
+    private void SelectEventTrack(EventTrackViewModel eventTrack)
+    {
+        SelectedEventTrack = eventTrack;
+        SelectedKeyframe = null; // Clear keyframe selection
+    }
+
+    [RelayCommand]
+    private void AddEventTrack(EventPreset preset)
+    {
+        var eventTrack = new EventTrackViewModel
+        {
+            Preset = preset,
+            Frequency = 0.5
+        };
+        EventTracks.Add(eventTrack);
+        SelectEventTrack(eventTrack);
+    }
+
+    [RelayCommand]
+    private void DeleteEventTrack(EventTrackViewModel eventTrack)
+    {
+        EventTracks.Remove(eventTrack);
+        if (SelectedEventTrack == eventTrack)
+        {
+            SelectedEventTrack = null;
+        }
     }
 
     public void AddKeyframe(TrackViewModel track, double timeSeconds)
@@ -430,6 +466,12 @@ public partial class SceneBuilderViewModel : ObservableObject
             scene.Animations.Add(animation);
         }
 
+        // Convert each event track to an AnimationDefinition
+        foreach (var eventTrack in EventTracks)
+        {
+            scene.Animations.Add(eventTrack.ToAnimationDefinition());
+        }
+
         // Save using storage service
         var result = await _storageService.SaveSceneAsync(scene);
 
@@ -484,28 +526,73 @@ public partial class SceneBuilderViewModel : ObservableObject
 
         // Load tracks from animations
         Tracks.Clear();
+        EventTracks.Clear();
+
         foreach (var animation in scene.Animations)
         {
-            // Find the matching light
-            var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
-            var light = lightIndex < SelectedRoom.Lights.Count ? SelectedRoom.Lights[lightIndex] : null;
-
-            var track = new TrackViewModel
+            if (animation.Type == AnimationType.Event)
             {
-                LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
-                DisplayName = animation.Name ?? light?.Name ?? $"Track {lightIndex}",
-                Keyframes = new ObservableCollection<KeyframeViewModel>(
-                    animation.Keyframes.Select(k => new KeyframeViewModel
-                    {
-                        TimeSeconds = k.TimeSeconds,
-                        Color = k.Color ?? new HueColor(0.45, 0.41),
-                        Brightness = k.Brightness ?? 1.0,
-                        Transition = k.TransitionStyle
-                    })
-                )
-            };
+                // Load as event track
+                var eventTrack = new EventTrackViewModel
+                {
+                    Id = animation.Id,
+                    DisplayName = animation.Name ?? "Event"
+                };
 
-            Tracks.Add(track);
+                // Try to determine preset from trigger states
+                if (animation.EventPattern?.Triggers.Count > 0)
+                {
+                    var trigger = animation.EventPattern.Triggers[0];
+                    if (trigger.States.Count > 0)
+                    {
+                        var firstState = trigger.States[0];
+                        // Infer preset from color/brightness patterns
+                        if (firstState.Color?.X < 0.35) // Cool white = lightning
+                            eventTrack.Preset = EventPreset.LightningFlash;
+                        else if (firstState.Color?.X > 0.5) // Warm = candle
+                            eventTrack.Preset = EventPreset.CandleFlicker;
+                        else
+                            eventTrack.Preset = EventPreset.Sparkle;
+                    }
+                }
+
+                // Infer frequency from intervals
+                if (animation.EventPattern != null)
+                {
+                    var avgInterval = (animation.EventPattern.MinIntervalSeconds + animation.EventPattern.MaxIntervalSeconds) / 2;
+                    eventTrack.Frequency = avgInterval switch
+                    {
+                        > 10 => 0.0,
+                        > 4 => 0.5,
+                        _ => 1.0
+                    };
+                }
+
+                EventTracks.Add(eventTrack);
+            }
+            else
+            {
+                // Load as keyframe track
+                var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+                var light = lightIndex < SelectedRoom.Lights.Count ? SelectedRoom.Lights[lightIndex] : null;
+
+                var track = new TrackViewModel
+                {
+                    LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                    DisplayName = animation.Name ?? light?.Name ?? $"Track {lightIndex}",
+                    Keyframes = new ObservableCollection<KeyframeViewModel>(
+                        animation.Keyframes.Select(k => new KeyframeViewModel
+                        {
+                            TimeSeconds = k.TimeSeconds,
+                            Color = k.Color ?? new HueColor(0.45, 0.41),
+                            Brightness = k.Brightness ?? 1.0,
+                            Transition = k.TransitionStyle
+                        })
+                    )
+                };
+
+                Tracks.Add(track);
+            }
         }
 
         return Result.Success();
@@ -566,4 +653,176 @@ public partial class KeyframeViewModel : ObservableObject
 
     [ObservableProperty]
     private TransitionStyle _transition = TransitionStyle.EaseInOut;
+}
+
+/// <summary>
+/// Available event presets for event tracks.
+/// </summary>
+public enum EventPreset
+{
+    LightningFlash,
+    Sparkle,
+    CandleFlicker
+}
+
+/// <summary>
+/// ViewModel for an event track (random triggers like lightning, sparkles).
+/// </summary>
+public partial class EventTrackViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private string _id = Guid.NewGuid().ToString();
+
+    [ObservableProperty]
+    private string _displayName = "Lightning Flash";
+
+    [ObservableProperty]
+    private EventPreset _preset = EventPreset.LightningFlash;
+
+    [ObservableProperty]
+    private double _frequency = 0.5; // 0.0 (rare) to 1.0 (frequent)
+
+    /// <summary>
+    /// Gets the icon glyph for the preset.
+    /// </summary>
+    public string IconGlyph => Preset switch
+    {
+        EventPreset.LightningFlash => "\uE945", // Lightning bolt
+        EventPreset.Sparkle => "\uE734", // Star
+        EventPreset.CandleFlicker => "\uE7E8", // Brightness
+        _ => "\uE768"
+    };
+
+    /// <summary>
+    /// Gets the min/max interval based on frequency.
+    /// </summary>
+    public (double Min, double Max) GetInterval() => Frequency switch
+    {
+        < 0.33 => (8.0, 15.0),   // Rare
+        < 0.66 => (3.0, 6.0),    // Medium
+        _ => (0.5, 2.0)          // Frequent
+    };
+
+    /// <summary>
+    /// Converts this event track to an AnimationDefinition for saving.
+    /// </summary>
+    public AnimationDefinition ToAnimationDefinition()
+    {
+        var (minInterval, maxInterval) = GetInterval();
+        var triggers = GetPresetTriggers();
+
+        return new AnimationDefinition
+        {
+            Id = Id,
+            Name = DisplayName,
+            Type = AnimationType.Event,
+            LightAssignment = LightAssignment.Random,
+            RandomPercentage = 1.0, // One light at a time
+            EventPattern = new EventPattern
+            {
+                Triggers = triggers,
+                MinIntervalSeconds = minInterval,
+                MaxIntervalSeconds = maxInterval,
+                Probability = 1.0,
+                AllowSimultaneous = false
+            },
+            RepeatMode = RepeatMode.Loop
+        };
+    }
+
+    /// <summary>
+    /// Gets the trigger states for the current preset.
+    /// </summary>
+    private List<EventTrigger> GetPresetTriggers()
+    {
+        return Preset switch
+        {
+            EventPreset.LightningFlash => new List<EventTrigger>
+            {
+                new EventTrigger
+                {
+                    Weight = 1.0,
+                    States = new List<EventTriggerState>
+                    {
+                        // Flash on - bright white
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.1,
+                            Brightness = 1.0,
+                            Color = new HueColor(0.31, 0.32), // Cool white
+                            TransitionStyle = TransitionStyle.Instant
+                        },
+                        // Fade out
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.2,
+                            Brightness = 0.0,
+                            TransitionStyle = TransitionStyle.EaseOut
+                        }
+                    }
+                }
+            },
+            EventPreset.Sparkle => new List<EventTrigger>
+            {
+                new EventTrigger
+                {
+                    Weight = 1.0,
+                    States = new List<EventTriggerState>
+                    {
+                        // Quick bright pulse
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.05,
+                            Brightness = 1.0,
+                            TransitionStyle = TransitionStyle.Instant
+                        },
+                        // Fade back
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.15,
+                            Brightness = 0.5,
+                            TransitionStyle = TransitionStyle.EaseOut
+                        }
+                    }
+                }
+            },
+            EventPreset.CandleFlicker => new List<EventTrigger>
+            {
+                new EventTrigger
+                {
+                    Weight = 1.0,
+                    States = new List<EventTriggerState>
+                    {
+                        // Dip down
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.15,
+                            Brightness = 0.6,
+                            Color = new HueColor(0.57, 0.41), // Warm orange
+                            TransitionStyle = TransitionStyle.EaseIn
+                        },
+                        // Return
+                        new EventTriggerState
+                        {
+                            DurationSeconds = 0.15,
+                            Brightness = 0.8,
+                            TransitionStyle = TransitionStyle.EaseOut
+                        }
+                    }
+                }
+            },
+            _ => new List<EventTrigger>()
+        };
+    }
+
+    partial void OnPresetChanged(EventPreset value)
+    {
+        DisplayName = value switch
+        {
+            EventPreset.LightningFlash => "Lightning Flash",
+            EventPreset.Sparkle => "Sparkle",
+            EventPreset.CandleFlicker => "Candle Flicker",
+            _ => "Event"
+        };
+    }
 }

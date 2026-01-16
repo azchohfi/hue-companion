@@ -152,9 +152,11 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeRuler();
 
         const double trackHeight = 50;
-        var canvasHeight = ViewModel.Tracks.Count * trackHeight;
+        var lightTracksHeight = ViewModel.Tracks.Count * trackHeight;
+        var eventTracksHeight = ViewModel.EventTracks.Count * trackHeight;
+        var canvasHeight = lightTracksHeight + eventTracksHeight;
 
-        // Render track separator lines
+        // Render track separator lines for light tracks
         for (int i = 1; i < ViewModel.Tracks.Count; i++)
         {
             var separator = new Microsoft.UI.Xaml.Shapes.Line
@@ -184,6 +186,9 @@ public sealed partial class SceneBuilderPage : Page
                 RenderKeyframe(keyframe, track, keyframe.TimeSeconds * ViewModel.ZoomLevel, y);
             }
         }
+
+        // Render event tracks
+        RenderEventTracks(lightTracksHeight, trackHeight);
 
         // Render playhead
         RenderPlayhead(canvasHeight);
@@ -241,6 +246,74 @@ public sealed partial class SceneBuilderPage : Page
         };
         _playheadHandle.PointerPressed += PlayheadHandle_PointerPressed;
         KeyframeCanvas.Children.Add(_playheadHandle);
+    }
+
+    private void RenderEventTracks(double startY, double trackHeight)
+    {
+        if (ViewModel.EventTracks.Count == 0)
+            return;
+
+        var width = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+
+        for (int i = 0; i < ViewModel.EventTracks.Count; i++)
+        {
+            var eventTrack = ViewModel.EventTracks[i];
+            var y = startY + i * trackHeight;
+
+            // Draw background for event track (slightly different color)
+            var background = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Width = width,
+                Height = trackHeight,
+                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(20, 255, 200, 100)), // Subtle warm tint
+                IsHitTestVisible = true,
+                Tag = eventTrack
+            };
+            background.PointerPressed += EventTrack_PointerPressed;
+            Canvas.SetLeft(background, 0);
+            Canvas.SetTop(background, y);
+            KeyframeCanvas.Children.Add(background);
+
+            // Draw separator line
+            var separator = new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = 0,
+                Y1 = y,
+                X2 = width,
+                Y2 = y,
+                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(60, 255, 200, 100)),
+                StrokeThickness = 1,
+                IsHitTestVisible = false
+            };
+            KeyframeCanvas.Children.Add(separator);
+
+            // Draw event pattern indicator (dashed line in the middle)
+            var patternLine = new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = 0,
+                Y1 = y + trackHeight / 2,
+                X2 = width,
+                Y2 = y + trackHeight / 2,
+                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(80, 255, 200, 100)),
+                StrokeThickness = 2,
+                StrokeDashArray = new Microsoft.UI.Xaml.Media.DoubleCollection { 4, 4 },
+                IsHitTestVisible = false
+            };
+            KeyframeCanvas.Children.Add(patternLine);
+        }
+    }
+
+    private void EventTrack_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Microsoft.UI.Xaml.Shapes.Rectangle rect &&
+            rect.Tag is EventTrackViewModel eventTrack)
+        {
+            SelectEventTrack(eventTrack);
+            e.Handled = true;
+        }
     }
 
     private void RenderGridLines(double height)
@@ -946,4 +1019,99 @@ public sealed partial class SceneBuilderPage : Page
             RenderTimeline();
         }
     }
+
+    #region Event Track Handlers
+
+    private void AddLightningTrack_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.AddEventTrackCommand.Execute(EventPreset.LightningFlash);
+        RenderTimeline();
+    }
+
+    private void AddSparkleTrack_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.AddEventTrackCommand.Execute(EventPreset.Sparkle);
+        RenderTimeline();
+    }
+
+    private void AddCandleTrack_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.AddEventTrackCommand.Execute(EventPreset.CandleFlicker);
+        RenderTimeline();
+    }
+
+    private void CloseEventSidePanel_Click(object sender, RoutedEventArgs e)
+    {
+        EventSidePanel.Visibility = Visibility.Collapsed;
+        ViewModel.SelectedEventTrack = null;
+    }
+
+    private void EventPresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel?.SelectedEventTrack != null && EventPresetComboBox.SelectedItem is ComboBoxItem item)
+        {
+            var tagValue = item.Tag?.ToString();
+            if (Enum.TryParse<EventPreset>(tagValue, out var preset))
+            {
+                ViewModel.SelectedEventTrack.Preset = preset;
+                UpdateEventTrackPanel(ViewModel.SelectedEventTrack);
+                RenderTimeline();
+            }
+        }
+    }
+
+    private void FrequencySlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (ViewModel?.SelectedEventTrack != null)
+        {
+            ViewModel.SelectedEventTrack.Frequency = e.NewValue;
+        }
+
+        // Update frequency label
+        var label = e.NewValue switch
+        {
+            < 0.33 => "Rare",
+            < 0.66 => "Medium",
+            _ => "Frequent"
+        };
+        if (FrequencyValueText != null)
+            FrequencyValueText.Text = label;
+    }
+
+    private void DeleteEventTrack_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedEventTrack != null)
+        {
+            ViewModel.DeleteEventTrackCommand.Execute(ViewModel.SelectedEventTrack);
+            EventSidePanel.Visibility = Visibility.Collapsed;
+            RenderTimeline();
+        }
+    }
+
+    private void SelectEventTrack(EventTrackViewModel eventTrack)
+    {
+        ViewModel.SelectEventTrackCommand.Execute(eventTrack);
+        SidePanel.Visibility = Visibility.Collapsed; // Hide keyframe panel
+        EventSidePanel.Visibility = Visibility.Visible;
+        UpdateEventTrackPanel(eventTrack);
+    }
+
+    private void UpdateEventTrackPanel(EventTrackViewModel eventTrack)
+    {
+        EventTrackNameText.Text = eventTrack.DisplayName;
+        EventTrackIcon.Glyph = eventTrack.IconGlyph;
+        FrequencySlider.Value = eventTrack.Frequency;
+
+        // Select the right preset in combo
+        foreach (ComboBoxItem item in EventPresetComboBox.Items)
+        {
+            if (item.Tag?.ToString() == eventTrack.Preset.ToString())
+            {
+                EventPresetComboBox.SelectedItem = item;
+                break;
+            }
+        }
+    }
+
+    #endregion
 }
