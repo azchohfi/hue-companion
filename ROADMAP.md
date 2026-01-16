@@ -13,11 +13,30 @@
 - Real-time event streaming
 - Custom dashboard with pinnable items
 - Theme settings
+- Delightful animations (page transitions, scene pulse, staggered entrance, connected animations)
+- Color picker with scale/fade flyout animation
+- Color continuity during page transitions
 
 ### User Hardware
 - Gradient lightstrips
 - Motion/temperature sensors
 - Dimmer switches and buttons
+
+---
+
+## Near-Term: UI Polish
+
+### Light Card Color Controls
+- Add color SplitButton to light cards on room detail page
+- Same pattern as room header color button
+- Only show for lights that support color
+
+### Animation Polish
+
+| Feature | Description |
+|---------|-------------|
+| **Brightness Drag Feedback** | Card scales 1.02x during drag-to-brightness gesture with visual indicator |
+| **Composition Implicit Animations** | Elements auto-animate property changes (Translation, Scale, Opacity) |
 
 ---
 
