@@ -29,6 +29,11 @@ public sealed partial class SceneBuilderPage : Page
     private Microsoft.UI.Xaml.Shapes.Polygon? _playheadHandle;
     private Microsoft.UI.Xaml.Shapes.Polygon? _rulerPlayheadMarker;
 
+    // Event track playback state
+    private readonly Dictionary<string, double> _nextEventFireTimes = new();
+    private readonly Dictionary<string, Microsoft.UI.Xaml.Shapes.Ellipse> _eventPulses = new();
+    private readonly Random _random = new();
+
     private string? _sceneIdToLoad;
 
     public SceneBuilderPage()
@@ -73,6 +78,7 @@ public sealed partial class SceneBuilderPage : Page
             if (ViewModel.IsLooping)
             {
                 ViewModel.PlayheadPosition = 0;
+                InitializeEventPlayback(); // Reset event timers on loop
                 // Full re-render when looping back (ruler needs update)
                 RenderTimeline();
                 return;
@@ -96,6 +102,9 @@ public sealed partial class SceneBuilderPage : Page
             _lastLightUpdateTime = now;
             await ViewModel.UpdateLightsForPlayheadAsync();
         }
+
+        // Check for event track triggers
+        CheckEventTriggers();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -746,6 +755,7 @@ public sealed partial class SceneBuilderPage : Page
             }
             _lastFrameTime = DateTime.Now;
             _lastLightUpdateTime = DateTime.Now;
+            InitializeEventPlayback();
             _playbackTimer?.Start();
         }
         else
@@ -1021,6 +1031,86 @@ public sealed partial class SceneBuilderPage : Page
     }
 
     #region Event Track Handlers
+
+    private void InitializeEventPlayback()
+    {
+        _nextEventFireTimes.Clear();
+        _eventPulses.Clear();
+
+        foreach (var eventTrack in ViewModel.EventTracks)
+        {
+            var (min, max) = eventTrack.GetInterval();
+            var nextFire = _random.NextDouble() * (max - min) + min;
+            _nextEventFireTimes[eventTrack.Id] = nextFire;
+        }
+    }
+
+    private void CheckEventTriggers()
+    {
+        if (ViewModel.EventTracks.Count == 0)
+            return;
+
+        var currentTime = ViewModel.PlayheadPosition;
+        const double trackHeight = 50;
+        var lightTracksHeight = ViewModel.Tracks.Count * trackHeight;
+
+        foreach (var eventTrack in ViewModel.EventTracks)
+        {
+            if (!_nextEventFireTimes.TryGetValue(eventTrack.Id, out var nextFireTime))
+                continue;
+
+            if (currentTime >= nextFireTime)
+            {
+                // Event fires - show visual pulse
+                ShowEventPulse(eventTrack, lightTracksHeight, trackHeight);
+
+                // Schedule next event
+                var (min, max) = eventTrack.GetInterval();
+                var interval = _random.NextDouble() * (max - min) + min;
+                _nextEventFireTimes[eventTrack.Id] = currentTime + interval;
+            }
+        }
+    }
+
+    private void ShowEventPulse(EventTrackViewModel eventTrack, double lightTracksHeight, double trackHeight)
+    {
+        var trackIndex = ViewModel.EventTracks.IndexOf(eventTrack);
+        if (trackIndex < 0) return;
+
+        var y = lightTracksHeight + trackIndex * trackHeight + trackHeight / 2;
+        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+
+        // Create a pulse circle that fades out
+        var pulse = new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Width = 20,
+            Height = 20,
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(200, 255, 220, 100)),
+            IsHitTestVisible = false
+        };
+        Canvas.SetLeft(pulse, x - 10);
+        Canvas.SetTop(pulse, y - 10);
+        KeyframeCanvas.Children.Add(pulse);
+
+        // Animate fade out
+        var fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        var opacity = 1.0;
+        fadeTimer.Tick += (s, e) =>
+        {
+            opacity -= 0.15;
+            if (opacity <= 0)
+            {
+                fadeTimer.Stop();
+                KeyframeCanvas.Children.Remove(pulse);
+            }
+            else
+            {
+                pulse.Opacity = opacity;
+            }
+        };
+        fadeTimer.Start();
+    }
 
     private void AddLightningTrack_Click(object sender, RoutedEventArgs e)
     {
