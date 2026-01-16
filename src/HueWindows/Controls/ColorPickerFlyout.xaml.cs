@@ -1,7 +1,9 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using Windows.UI;
+using HueWindows.Constants;
 
 namespace HueWindows.Controls;
 
@@ -73,5 +75,57 @@ public sealed partial class ColorPickerFlyout : UserControl
 
         _debounceTimer.Stop();
         _debounceTimer.Start();
+    }
+
+    /// <summary>
+    /// Plays the entrance animation (scale + fade in).
+    /// </summary>
+    public void AnimateEntrance()
+    {
+        // Set initial state
+        RootGrid.Opacity = 0;
+        RootScaleTransform.ScaleX = 0.95;
+        RootScaleTransform.ScaleY = 0.95;
+
+        var duration = TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        // Opacity animation
+        var opacityAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(duration),
+            EasingFunction = easing
+        };
+
+        // Scale X animation
+        var scaleXAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(duration),
+            EasingFunction = easing
+        };
+
+        // Scale Y animation
+        var scaleYAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(duration),
+            EasingFunction = easing
+        };
+
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(opacityAnim);
+        storyboard.Children.Add(scaleXAnim);
+        storyboard.Children.Add(scaleYAnim);
+
+        Storyboard.SetTarget(opacityAnim, RootGrid);
+        Storyboard.SetTargetProperty(opacityAnim, "Opacity");
+        Storyboard.SetTarget(scaleXAnim, RootScaleTransform);
+        Storyboard.SetTargetProperty(scaleXAnim, "ScaleX");
+        Storyboard.SetTarget(scaleYAnim, RootScaleTransform);
+        Storyboard.SetTargetProperty(scaleYAnim, "ScaleY");
+
+        storyboard.Begin();
     }
 }

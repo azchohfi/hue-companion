@@ -8,7 +8,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid CornerRadius="12" Padding="16" MinWidth="300">
+    <Grid x:Name="RootGrid" CornerRadius="12" Padding="16" MinWidth="300"
+          RenderTransformOrigin="0.5,0">
+        <Grid.RenderTransform>
+            <ScaleTransform x:Name="RootScaleTransform" ScaleX="1" ScaleY="1"/>
+        </Grid.RenderTransform>
         <!-- Dark gradient background matching card style -->
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">

@@ -557,6 +557,9 @@ public sealed partial class RoomDetailPage : Page
             var (r, g, b) = colors[0];
             ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
         }
+
+        // Animate the flyout entrance
+        ColorFlyout.AnimateEntrance();
     }
 
     private void ColorFlyout_ColorChanged(object sender, Color color)
