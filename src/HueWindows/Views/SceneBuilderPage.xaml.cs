@@ -36,6 +36,7 @@ public sealed partial class SceneBuilderPage : Page
 
     private void RoomComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (ViewModel == null) return;
         UpdateEmptyState();
         RenderTimeline();
     }
@@ -259,7 +260,7 @@ public sealed partial class SceneBuilderPage : Page
 
     private void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
     {
-        if (ViewModel.SelectedKeyframe != null)
+        if (ViewModel?.SelectedKeyframe != null)
         {
             // Convert RGB to xy color space (approximation)
             var r = args.NewColor.R / 255.0;
@@ -292,7 +293,7 @@ public sealed partial class SceneBuilderPage : Page
     {
         if (BrightnessValueText != null)
             BrightnessValueText.Text = $"{(int)e.NewValue}%";
-        if (ViewModel.SelectedKeyframe != null)
+        if (ViewModel?.SelectedKeyframe != null)
         {
             ViewModel.SelectedKeyframe.Brightness = e.NewValue / 100.0;
             RenderTimeline();
@@ -301,7 +302,7 @@ public sealed partial class SceneBuilderPage : Page
 
     private void TransitionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel.SelectedKeyframe != null && TransitionComboBox.SelectedItem is ComboBoxItem item)
+        if (ViewModel?.SelectedKeyframe != null && TransitionComboBox.SelectedItem is ComboBoxItem item)
         {
             var tagValue = item.Tag?.ToString();
             if (Enum.TryParse<HueWindows.Core.Models.TransitionStyle>(tagValue, out var transition))
