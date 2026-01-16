@@ -38,7 +38,7 @@ public sealed partial class ScenesPage : Page
         }
     }
 
-    public bool InvertBool(bool value) => !value;
+    public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public bool HasError(string error) => !string.IsNullOrWhiteSpace(error);
+    public bool HasError(string? error) => !string.IsNullOrWhiteSpace(error);
 }

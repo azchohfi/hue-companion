@@ -151,7 +151,7 @@
                                                            Style="{StaticResource CaptionTextBlockStyle}"
                                                            Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
                                             </Border>
-                                            <TextBlock Text="{x:Bind GetAnimationCountText(Animations.Count)}"
+                                            <TextBlock Text="{x:Bind AnimationCountText}"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                        VerticalAlignment="Center"/>

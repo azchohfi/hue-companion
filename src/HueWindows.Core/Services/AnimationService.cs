@@ -111,7 +111,7 @@ public class AnimationService : IAnimationService
             var sceneResult = await GetSceneAsync(sceneId);
             if (sceneResult.IsFailure)
             {
-                return sceneResult;
+                return Result.Failure(sceneResult.Error!);
             }
 
             var scene = sceneResult.Value!;

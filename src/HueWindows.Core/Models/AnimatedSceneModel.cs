@@ -69,6 +69,11 @@ public class AnimatedSceneModel
     /// Whether this scene is a built-in scene.
     /// </summary>
     public bool IsBuiltIn { get; set; }
+
+    /// <summary>
+    /// Gets a display string for animation count.
+    /// </summary>
+    public string AnimationCountText => Animations.Count == 1 ? "1 animation" : $"{Animations.Count} animations";
 }
 
 /// <summary>

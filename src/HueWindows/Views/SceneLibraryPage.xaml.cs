@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
@@ -40,11 +41,11 @@ public sealed partial class SceneLibraryPage : Page
         }
     }
 
-    public bool InvertBool(bool value) => !value;
+    public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public bool HasError(string error) => !string.IsNullOrWhiteSpace(error);
+    public bool HasError(string? error) => !string.IsNullOrWhiteSpace(error);
 
-    public bool ShowEmptyState(int count) => count == 0;
+    public Visibility ShowEmptyState(int count) => count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public string GetSceneCountText(int count)
     {

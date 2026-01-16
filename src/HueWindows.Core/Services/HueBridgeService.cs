@@ -611,7 +611,6 @@ public class HueBridgeService : IHueBridgeService
             "sparkle" => Effect.sparkle,
             "glisten" => Effect.glisten,
             "opal" => Effect.opal,
-            "sunrise" => Effect.sunrise,
             "prism" => Effect.prism,
             "none" => Effect.no_effect,
             _ => Effect.no_effect

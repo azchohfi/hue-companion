@@ -118,6 +118,7 @@ public class AnimationEngine : IDisposable
         try
         {
             var startTime = DateTimeOffset.UtcNow;
+            var isReversed = false; // Track direction for PingPong mode
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -140,15 +141,18 @@ public class AnimationEngine : IDisposable
                     }
                     else if (animation.RepeatMode == RepeatMode.PingPong)
                     {
-                        // Reverse the keyframes and continue
-                        animation.Keyframes.Reverse();
+                        // Toggle direction for next iteration
+                        isReversed = !isReversed;
                         startTime = DateTimeOffset.UtcNow;
                         progress = 0;
                     }
                 }
 
+                // For PingPong in reverse direction, invert the progress
+                var effectiveProgress = isReversed ? (1.0 - progress) : progress;
+
                 // Find the two keyframes we're between
-                var currentTime = progress * animation.DurationSeconds;
+                var currentTime = effectiveProgress * animation.DurationSeconds;
                 var (prevFrame, nextFrame) = FindSurroundingKeyframes(animation.Keyframes, currentTime);
 
                 if (prevFrame != null && nextFrame != null)
