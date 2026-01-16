@@ -85,6 +85,7 @@ public partial class App : Application
         services.AddTransient<SetupViewModel>();
         services.AddTransient<ScenesViewModel>();
         services.AddTransient<SceneLibraryViewModel>();
+        services.AddTransient<SceneBuilderViewModel>();
 
         // Register Messenger for MVVM communication
         services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);

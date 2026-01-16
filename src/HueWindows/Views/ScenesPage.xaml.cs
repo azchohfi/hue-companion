@@ -30,6 +30,12 @@ public sealed partial class ScenesPage : Page
         Frame.Navigate(typeof(SceneLibraryPage));
     }
 
+    private void CreateScene_Click(object sender, RoutedEventArgs e)
+    {
+        // Navigate to Scene Builder page
+        Frame.Navigate(typeof(SceneBuilderPage));
+    }
+
     private async void AnimatedScene_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button button && button.Tag is AnimatedSceneModel scene)
