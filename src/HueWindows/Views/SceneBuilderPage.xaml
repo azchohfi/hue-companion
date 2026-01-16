@@ -143,6 +143,7 @@
                             <!-- Track Labels -->
                             <ItemsRepeater x:Name="TrackLabelsRepeater"
                                            Grid.Column="0"
+                                           VerticalAlignment="Top"
                                            ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}">
                                 <ItemsRepeater.Layout>
                                     <StackLayout Orientation="Vertical"/>
@@ -165,6 +166,7 @@
                             <!-- Keyframe Canvas -->
                             <Canvas x:Name="KeyframeCanvas"
                                     Grid.Column="1"
+                                    VerticalAlignment="Top"
                                     Background="Transparent"
                                     PointerPressed="KeyframeCanvas_PointerPressed"/>
                         </Grid>
