@@ -13,6 +13,7 @@ namespace HueWindows.Core.ViewModels;
 public partial class RoomDetailViewModel : ObservableObject
 {
     private readonly IHueBridgeService _bridgeService;
+    private readonly IAnimationService _animationService;
     private Guid _groupId;
     private LightGroupType _groupType = LightGroupType.Room;
 
@@ -35,10 +36,19 @@ public partial class RoomDetailViewModel : ObservableObject
     private ObservableCollection<SceneItemViewModel> _scenes = new();
 
     [ObservableProperty]
+    private ObservableCollection<AnimatedSceneModel> _animatedScenes = new();
+
+    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
     private SceneItemViewModel? _activeScene;
+
+    [ObservableProperty]
+    private bool _isAnimationRunning;
+
+    [ObservableProperty]
+    private string? _runningAnimationName;
 
     /// <summary>
     /// Event raised when a light is selected for detail view.
@@ -62,9 +72,21 @@ public partial class RoomDetailViewModel : ObservableObject
                 .ToList()
         : new();
 
-    public RoomDetailViewModel(IHueBridgeService bridgeService)
+    public RoomDetailViewModel(IHueBridgeService bridgeService, IAnimationService animationService)
     {
         _bridgeService = bridgeService;
+        _animationService = animationService;
+
+        _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
+    }
+
+    private void OnRoomAnimationChanged(object? sender, RoomAnimationChangedEventArgs e)
+    {
+        // Only update if this is our room
+        if (e.RoomId != _groupId) return;
+
+        IsAnimationRunning = e.IsRunning;
+        RunningAnimationName = e.Scene?.Name;
     }
 
     [ObservableProperty]
@@ -120,6 +142,21 @@ public partial class RoomDetailViewModel : ObservableObject
                 Scenes.Add(sceneVm);
             }
         }
+
+        // Load animated scenes
+        AnimatedScenes.Clear();
+        var animatedResult = await _animationService.GetAllScenesAsync();
+        if (animatedResult.IsSuccess && animatedResult.Value != null)
+        {
+            foreach (var scene in animatedResult.Value.Take(6)) // Show first 6 for quick-pick
+            {
+                AnimatedScenes.Add(scene);
+            }
+        }
+
+        // Update animation state for this room
+        IsAnimationRunning = _animationService.IsAnimationRunning(groupId);
+        RunningAnimationName = _animationService.GetRunningScene(groupId)?.Name;
 
         IsLoading = false;
 
@@ -233,6 +270,18 @@ public partial class RoomDetailViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(LightColors));
         }
+    }
+
+    [RelayCommand]
+    private async Task StartAnimatedSceneAsync(AnimatedSceneModel scene)
+    {
+        await _animationService.StartSceneAsync(scene.Id, _groupId);
+    }
+
+    [RelayCommand]
+    private async Task StopAnimationAsync()
+    {
+        await _animationService.StopSceneInRoomAsync(_groupId);
     }
 }
 

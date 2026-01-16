@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:HueWindows.Views"
     xmlns:vm="using:HueWindows.Core.ViewModels"
+    xmlns:models="using:HueWindows.Core.Models"
     xmlns:controls="using:HueWindows.Controls"
     xmlns:converters="using:HueWindows.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -218,6 +219,70 @@
                                             IsHitTestVisible="False"
                                             Visibility="{x:Bind IsActive, Mode=OneWay}"/>
                                 </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Animations Section -->
+                <StackPanel Visibility="{x:Bind HasAnimatedScenes(ViewModel.AnimatedScenes.Count), Mode=OneWay}">
+                    <TextBlock Text="Animations"
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                    <!-- Now Playing Card -->
+                    <Border Visibility="{x:Bind ViewModel.IsAnimationRunning, Mode=OneWay}"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            CornerRadius="8"
+                            Padding="16"
+                            Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="0"
+                                       Glyph="&#xE768;"
+                                       FontSize="20"
+                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                       Margin="0,0,12,0"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Now Playing"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="{x:Bind ViewModel.RunningAnimationName, Mode=OneWay}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    Content="Stop"
+                                    Command="{x:Bind ViewModel.StopAnimationCommand}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Quick-pick Grid -->
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.AnimatedScenes, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="110"
+                                               MinItemHeight="88"
+                                               MinRowSpacing="8"
+                                               MinColumnSpacing="8"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:AnimatedSceneModel">
+                                <Button Style="{StaticResource SceneCardButtonStyle}"
+                                        Click="AnimatedScene_Click"
+                                        Tag="{x:Bind}">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                        <FontIcon Glyph="&#xE768;" FontSize="16"/>
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="90"
+                                                   TextAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

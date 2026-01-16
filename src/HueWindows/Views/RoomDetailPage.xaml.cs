@@ -513,6 +513,25 @@ public sealed partial class RoomDetailPage : Page
     }
 
     /// <summary>
+    /// Helper to check if animated scenes exist.
+    /// </summary>
+    public Visibility HasAnimatedScenes(int count)
+    {
+        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Handles click on an animated scene card.
+    /// </summary>
+    private async void AnimatedScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is AnimatedSceneModel scene)
+        {
+            await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
     /// Helper to check if error message exists.
     /// </summary>
     public bool HasErrorMessage(string? message)
