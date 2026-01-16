@@ -589,6 +589,37 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeline();
     }
 
+    private void ZoomSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        // Re-render the timeline with new zoom level
+        RenderTimeline();
+    }
+
+    private void KeyframeCanvas_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var delta = point.Properties.MouseWheelDelta;
+
+        // Zoom in/out based on wheel direction
+        var zoomChange = delta > 0 ? 10 : -10;
+        var newZoom = ViewModel.ZoomLevel + zoomChange;
+
+        // Clamp to slider range
+        if (newZoom < 20) newZoom = 20;
+        if (newZoom > 200) newZoom = 200;
+
+        ViewModel.ZoomLevel = newZoom;
+        RenderTimeline();
+
+        e.Handled = true;
+    }
+
     private void UpdatePlayButtonState()
     {
         if (ViewModel.IsPlaying)

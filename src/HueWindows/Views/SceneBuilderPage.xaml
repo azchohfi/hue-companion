@@ -166,7 +166,8 @@
                                     Grid.Column="1"
                                     VerticalAlignment="Top"
                                     Background="Transparent"
-                                    PointerPressed="KeyframeCanvas_PointerPressed"/>
+                                    PointerPressed="KeyframeCanvas_PointerPressed"
+                                    PointerWheelChanged="KeyframeCanvas_PointerWheelChanged"/>
                         </Grid>
                     </ScrollViewer>
 
@@ -327,16 +328,35 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Loop Toggle -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE8EE;" FontSize="14" VerticalAlignment="Center"/>
-                    <TextBlock Text="Loop:"
-                               Style="{StaticResource BodyTextBlockStyle}"
-                               VerticalAlignment="Center"/>
-                    <ToggleSwitch x:Name="LoopToggle"
-                                  IsOn="True"
-                                  OnContent=""
-                                  OffContent=""/>
+                <!-- Zoom and Loop -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="24">
+                    <!-- Zoom Slider -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE71E;" FontSize="14" VerticalAlignment="Center"
+                                  ToolTipService.ToolTip="Zoom Out"/>
+                        <Slider x:Name="ZoomSlider"
+                                Minimum="20"
+                                Maximum="200"
+                                Value="{x:Bind ViewModel.ZoomLevel, Mode=TwoWay}"
+                                Width="120"
+                                VerticalAlignment="Center"
+                                ValueChanged="ZoomSlider_ValueChanged"
+                                ToolTipService.ToolTip="Timeline Zoom"/>
+                        <FontIcon Glyph="&#xE8A3;" FontSize="14" VerticalAlignment="Center"
+                                  ToolTipService.ToolTip="Zoom In"/>
+                    </StackPanel>
+
+                    <!-- Loop Toggle -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8EE;" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="Loop:"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   VerticalAlignment="Center"/>
+                        <ToggleSwitch x:Name="LoopToggle"
+                                      IsOn="True"
+                                      OnContent=""
+                                      OffContent=""/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
