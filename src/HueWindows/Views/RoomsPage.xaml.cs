@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
+using HueWindows.Helpers;
 
 namespace HueWindows.Views;
 
@@ -33,10 +35,11 @@ public sealed partial class RoomsPage : Page
         SubtitleText.Text = count == 1 ? "1 room" : $"{count} rooms";
     }
 
-    private void OnRoomSelected(object? sender, Guid roomId)
+    private void OnRoomSelected(object? sender, (Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors) args)
     {
         var navigationService = App.Services.GetRequiredService<INavigationService>();
-        navigationService.NavigateTo<RoomDetailPage>(roomId);
+        var navParams = new RoomNavigationParams(args.Type, args.Id, args.IsOn, args.Colors);
+        navigationService.NavigateTo<RoomDetailPage>(navParams);
     }
 
     public Visibility InvertBool(bool value)

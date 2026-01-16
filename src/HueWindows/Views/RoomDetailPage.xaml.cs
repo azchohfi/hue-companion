@@ -31,16 +31,17 @@ public sealed partial class RoomDetailPage : Page
     private SolidColorBrush? _brightnessIconBrush;
     private SolidColorBrush? _toggleBrush;
     private SolidColorBrush? _colorButtonBrush;
-    private Color _currentRoomIconColor = Colors.Gray;
-    private Color _currentBrightnessIconColor = Colors.Gray;
+    private Color _currentRoomIconColor = Colors.Transparent;
+    private Color _currentBrightnessIconColor = Colors.Transparent;
     private Color _currentToggleColor = Colors.Transparent;
-    private Color _currentColorButtonColor = Colors.Gray;
+    private Color _currentColorButtonColor = Colors.Transparent;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
     private bool _isUpdatingSlider; // Prevent feedback loops when animating slider
     private DispatcherTimer? _brightnessDebounceTimer; // Debounce brightness changes
     private double _pendingBrightness; // Pending brightness value to send
     private readonly Dictionary<Guid, UIElement> _sceneElements = new(); // Track scene UI elements for animation
     private int _lightEntranceIndex; // Track stagger index for light cards
+    private bool _useInstantColorUpdate; // Use instant update (no animation) when initial state was set from navigation params
 
     public RoomDetailPage()
     {
@@ -55,7 +56,7 @@ public sealed partial class RoomDetailPage : Page
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
-        UpdateHeaderActiveState();
+        // Don't call UpdateHeaderActiveState here - let property changes from ViewModel drive updates
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -91,6 +92,7 @@ public sealed partial class RoomDetailPage : Page
 
         var isActive = ViewModel.IsOn;
         var colors = ViewModel.LightColors;
+        var instant = _useInstantColorUpdate;
 
         // Get primary accent color
         if (colors.Count > 0 && isActive)
@@ -103,36 +105,56 @@ public sealed partial class RoomDetailPage : Page
             _accentColor = Colors.Gray;
         }
 
-        UpdateBorderEffect(isActive, colors);
-        UpdateToggleColor(isActive, colors);
-        UpdateRoomIconColor(isActive, colors);
-        UpdateBrightnessIconColor(isActive, colors);
-        UpdateColorButtonColor(isActive, colors);
+        UpdateBorderEffect(isActive, colors, instant);
+        UpdateToggleColor(isActive, colors, instant);
+        UpdateRoomIconColor(isActive, colors, instant);
+        UpdateBrightnessIconColor(isActive, colors, instant);
+        UpdateColorButtonColor(isActive, colors, instant);
     }
 
-    private void UpdateBorderEffect(bool isActive, List<(byte R, byte G, byte B)> colors)
+    private void UpdateBorderEffect(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (!isActive)
         {
             // Fade out borders
-            AnimateBorderOpacity(OutlineBorder, 0.0);
-            AnimateBorderOpacity(OutlineBorder2, 0.0);
+            if (instant)
+            {
+                OutlineBorder.Opacity = 0.0;
+                OutlineBorder2.Opacity = 0.0;
+            }
+            else
+            {
+                AnimateBorderOpacity(OutlineBorder, 0.0);
+                AnimateBorderOpacity(OutlineBorder2, 0.0);
+            }
             return;
         }
 
-        // Cross-fade between two borders for smooth color transitions
-        var newBorder = _useFirstBorder ? OutlineBorder : OutlineBorder2;
-        var oldBorder = _useFirstBorder ? OutlineBorder2 : OutlineBorder;
+        // Set gradient on the primary border
+        OutlineBorder.BorderBrush = CreateGradientBrush(colors);
 
-        // Set new gradient on the incoming border
-        newBorder.BorderBrush = CreateGradientBrush(colors);
+        if (instant)
+        {
+            // Instant update - no cross-fade
+            OutlineBorder.Opacity = 1.0;
+            OutlineBorder2.Opacity = 0.0;
+        }
+        else
+        {
+            // Cross-fade between two borders for smooth color transitions
+            var newBorder = _useFirstBorder ? OutlineBorder : OutlineBorder2;
+            var oldBorder = _useFirstBorder ? OutlineBorder2 : OutlineBorder;
 
-        // Cross-fade: fade in new, fade out old
-        AnimateBorderOpacity(newBorder, 1.0);
-        AnimateBorderOpacity(oldBorder, 0.0);
+            // Set new gradient on the incoming border
+            newBorder.BorderBrush = CreateGradientBrush(colors);
 
-        // Toggle for next update
-        _useFirstBorder = !_useFirstBorder;
+            // Cross-fade: fade in new, fade out old
+            AnimateBorderOpacity(newBorder, 1.0);
+            AnimateBorderOpacity(oldBorder, 0.0);
+
+            // Toggle for next update
+            _useFirstBorder = !_useFirstBorder;
+        }
     }
 
     private LinearGradientBrush CreateGradientBrush(List<(byte R, byte G, byte B)> colors)
@@ -185,7 +207,7 @@ public sealed partial class RoomDetailPage : Page
         storyboard.Begin();
     }
 
-    private void UpdateToggleColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    private void UpdateToggleColor(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (RoomToggle == null) return;
 
@@ -200,11 +222,18 @@ public sealed partial class RoomDetailPage : Page
             RoomToggle.Background = _toggleBrush;
         }
 
-        AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+        if (instant)
+        {
+            _toggleBrush.Color = targetColor;
+        }
+        else
+        {
+            AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+        }
         _currentToggleColor = targetColor;
     }
 
-    private void UpdateRoomIconColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    private void UpdateRoomIconColor(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (RoomIcon == null) return;
 
@@ -219,11 +248,18 @@ public sealed partial class RoomDetailPage : Page
             RoomIcon.Foreground = _roomIconBrush;
         }
 
-        AnimateSolidBrushColor(_roomIconBrush, _currentRoomIconColor, targetColor);
+        if (instant)
+        {
+            _roomIconBrush.Color = targetColor;
+        }
+        else
+        {
+            AnimateSolidBrushColor(_roomIconBrush, _currentRoomIconColor, targetColor);
+        }
         _currentRoomIconColor = targetColor;
     }
 
-    private void UpdateBrightnessIconColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    private void UpdateBrightnessIconColor(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (BrightnessIcon == null) return;
 
@@ -238,11 +274,18 @@ public sealed partial class RoomDetailPage : Page
             BrightnessIcon.Foreground = _brightnessIconBrush;
         }
 
-        AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+        if (instant)
+        {
+            _brightnessIconBrush.Color = targetColor;
+        }
+        else
+        {
+            AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+        }
         _currentBrightnessIconColor = targetColor;
     }
 
-    private void UpdateColorButtonColor(bool isActive, List<(byte R, byte G, byte B)> colors)
+    private void UpdateColorButtonColor(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (ColorButtonContent == null) return;
 
@@ -256,7 +299,14 @@ public sealed partial class RoomDetailPage : Page
             ColorButtonContent.Background = _colorButtonBrush;
         }
 
-        AnimateSolidBrushColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
+        if (instant)
+        {
+            _colorButtonBrush.Color = targetColor;
+        }
+        else
+        {
+            AnimateSolidBrushColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
+        }
         _currentColorButtonColor = targetColor;
     }
 
@@ -291,21 +341,34 @@ public sealed partial class RoomDetailPage : Page
             .GetAnimation("RoomCardToHeader");
         connectedAnimation?.TryStart(HeaderContainer);
 
-        // Support both simple Guid (room) and NavigationTag (room or zone)
-        if (e.Parameter is NavigationTag navTag)
+        // Handle different navigation parameter types
+        Guid roomId;
+        LightGroupType groupType;
+
+        if (e.Parameter is RoomNavigationParams navParams)
         {
-            await ViewModel.LoadRoomAsync(navTag.Id, navTag.Type);
+            // New navigation with initial state - set colors immediately
+            roomId = navParams.Id;
+            groupType = navParams.Type;
+            SetInitialVisualState(navParams.IsOn, navParams.InitialColors);
         }
-        else if (e.Parameter is Guid roomId)
+        else if (e.Parameter is NavigationTag navTag)
         {
-            await ViewModel.LoadRoomAsync(roomId, LightGroupType.Room);
+            roomId = navTag.Id;
+            groupType = navTag.Type;
+        }
+        else if (e.Parameter is Guid id)
+        {
+            roomId = id;
+            groupType = LightGroupType.Room;
+        }
+        else
+        {
+            return; // Invalid parameter
         }
 
-        // Update colors and slider after room data is loaded
-        if (_isLoaded)
-        {
-            UpdateHeaderActiveState();
-        }
+        // Load room data
+        await ViewModel.LoadRoomAsync(roomId, groupType);
 
         // Set initial slider value (no animation for initial load)
         if (BrightnessSlider != null)
@@ -314,6 +377,71 @@ public sealed partial class RoomDetailPage : Page
             BrightnessSlider.Value = ViewModel.BrightnessPercent;
             _isUpdatingSlider = false;
         }
+
+        // Force update colors now that data is loaded (with instant mode if set)
+        _isLoaded = true; // Ensure we can update
+        UpdateHeaderActiveState();
+
+        // Clear the instant update flag now that initial load is complete
+        _useInstantColorUpdate = false;
+    }
+
+    /// <summary>
+    /// Sets the initial visual state immediately without animation.
+    /// Used to preserve color continuity during page transitions.
+    /// </summary>
+    private void SetInitialVisualState(bool isOn, List<(byte R, byte G, byte B)> colors)
+    {
+        // Enable instant mode for subsequent updates during load
+        _useInstantColorUpdate = true;
+
+        // Set accent color
+        if (colors.Count > 0 && isOn)
+        {
+            var (r, g, b) = colors[0];
+            _accentColor = Color.FromArgb(255, r, g, b);
+        }
+        else
+        {
+            _accentColor = Colors.Gray;
+        }
+
+        // Set border immediately
+        if (isOn && colors.Count > 0)
+        {
+            OutlineBorder.BorderBrush = CreateGradientBrush(colors);
+            OutlineBorder.Opacity = 1.0;
+        }
+        else
+        {
+            OutlineBorder.Opacity = 0.0;
+        }
+        OutlineBorder2.Opacity = 0.0;
+
+        // Set icon color
+        var iconColor = isOn && colors.Count > 0
+            ? _accentColor
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+
+        _currentRoomIconColor = iconColor;
+        _roomIconBrush = new SolidColorBrush(iconColor);
+        RoomIcon.Foreground = _roomIconBrush;
+
+        _currentBrightnessIconColor = iconColor;
+        _brightnessIconBrush = new SolidColorBrush(iconColor);
+        BrightnessIcon.Foreground = _brightnessIconBrush;
+
+        // Set toggle color
+        _currentToggleColor = isOn && colors.Count > 0 ? _accentColor : Colors.Transparent;
+        _toggleBrush = new SolidColorBrush(_currentToggleColor);
+        RoomToggle.Background = _toggleBrush;
+
+        // Set color button
+        _currentColorButtonColor = isOn && colors.Count > 0
+            ? _accentColor
+            : Color.FromArgb(64, 255, 255, 255);
+        _colorButtonBrush = new SolidColorBrush(_currentColorButtonColor);
+        ColorButtonContent.Background = _colorButtonBrush;
     }
 
     private void OnLightSelected(object? sender, Guid lightId)

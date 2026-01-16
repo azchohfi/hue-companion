@@ -68,7 +68,7 @@
                         <FontIcon x:Name="RoomIcon"
                                   Glyph="&#xE781;"
                                   FontSize="22"
-                                  Foreground="#80FFFFFF"/>
+                                  Foreground="Transparent"/>
                     </Border>
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -88,7 +88,7 @@
                                  Margin="0,0,16,0"
                                  Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}">
                         <Border x:Name="ColorButtonContent" Width="40" Height="40" CornerRadius="6"
-                                Background="#40FFFFFF">
+                                Background="Transparent">
                             <FontIcon Glyph="&#xE790;" FontSize="18" Foreground="White"/>
                         </Border>
                         <SplitButton.Flyout>
@@ -123,7 +123,7 @@
                 <StackPanel Spacing="12">
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <FontIcon x:Name="BrightnessIcon" Glyph="&#xE706;" FontSize="18"
-                                  Foreground="#80FFFFFF"/>
+                                  Foreground="Transparent"/>
                         <TextBlock Text="Brightness" Style="{StaticResource BodyStrongTextBlockStyle}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>

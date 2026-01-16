@@ -40,8 +40,9 @@ public partial class DashboardViewModel : ObservableObject
 
     /// <summary>
     /// Event raised when a room is selected for detail view.
+    /// Includes initial state for smooth visual transitions.
     /// </summary>
-    public event EventHandler<Guid>? RoomSelected;
+    public event EventHandler<(Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors)>? RoomSelected;
 
     public DashboardViewModel(
         IHueBridgeService bridgeService,
@@ -117,9 +118,9 @@ public partial class DashboardViewModel : ObservableObject
         await LoadRoomsAsync();
     }
 
-    private void OnRoomTapped(object? sender, Guid roomId)
+    private void OnRoomTapped(object? sender, (Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors) args)
     {
-        RoomSelected?.Invoke(this, roomId);
+        RoomSelected?.Invoke(this, args);
     }
 
     private void OnLightStateChanged(object? sender, LightStateChangedEventArgs e)
@@ -183,8 +184,9 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
 
     /// <summary>
     /// Event raised when the room card is tapped (for navigation).
+    /// Includes initial state for smooth visual transitions.
     /// </summary>
-    public event EventHandler<Guid>? RoomTapped;
+    public event EventHandler<(Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors)>? RoomTapped;
 
     public int BrightnessPercent => (int)(Brightness * 100);
     public string BrightnessDisplayText => $"{BrightnessPercent}%";
@@ -345,7 +347,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
     [RelayCommand]
     private void TapRoom()
     {
-        RoomTapped?.Invoke(this, RoomId);
+        RoomTapped?.Invoke(this, (RoomId, _room.GroupType, IsOn, LightColors));
     }
 
     /// <summary>

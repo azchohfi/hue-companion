@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
@@ -34,11 +35,11 @@ public sealed partial class ZonesPage : Page
         SubtitleText.Text = count == 1 ? "1 zone" : $"{count} zones";
     }
 
-    private void OnZoneSelected(object? sender, Guid zoneId)
+    private void OnZoneSelected(object? sender, (Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors) args)
     {
         var navigationService = App.Services.GetRequiredService<INavigationService>();
-        var navTag = new NavigationTag(Core.Models.LightGroupType.Zone, zoneId);
-        navigationService.NavigateTo<RoomDetailPage>(navTag);
+        var navParams = new RoomNavigationParams(args.Type, args.Id, args.IsOn, args.Colors);
+        navigationService.NavigateTo<RoomDetailPage>(navParams);
     }
 
     public Visibility InvertBool(bool value)
