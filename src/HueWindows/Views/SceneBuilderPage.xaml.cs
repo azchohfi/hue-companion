@@ -15,6 +15,8 @@ public sealed partial class SceneBuilderPage : Page
     public SceneBuilderViewModel ViewModel { get; }
     private DispatcherTimer? _playbackTimer;
     private DateTime _lastFrameTime;
+    private DateTime _lastLightUpdateTime;
+    private const int LightUpdateIntervalMs = 100; // ~10 updates per second
     private bool _isDraggingPlayhead;
     private bool _isDraggingKeyframe;
     private KeyframeViewModel? _draggingKeyframe;
@@ -57,6 +59,9 @@ public sealed partial class SceneBuilderPage : Page
             if (ViewModel.IsLooping)
             {
                 ViewModel.PlayheadPosition = 0;
+                // Full re-render when looping back (ruler needs update)
+                RenderTimeline();
+                return;
             }
             else
             {
@@ -67,10 +72,16 @@ public sealed partial class SceneBuilderPage : Page
             }
         }
 
-        RenderTimeline();
+        // Efficiently update just the playhead position (not full re-render)
+        UpdatePlayheadPosition();
 
-        // Update lights in real-time during playback
-        await ViewModel.UpdateLightsForPlayheadAsync();
+        // Rate-limit light updates to ~10 per second to avoid flooding the bridge
+        var msSinceLastUpdate = (now - _lastLightUpdateTime).TotalMilliseconds;
+        if (msSinceLastUpdate >= LightUpdateIntervalMs)
+        {
+            _lastLightUpdateTime = now;
+            await ViewModel.UpdateLightsForPlayheadAsync();
+        }
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -559,8 +570,10 @@ public sealed partial class SceneBuilderPage : Page
             if (ViewModel.PlayheadPosition >= ViewModel.DurationSeconds)
             {
                 ViewModel.PlayheadPosition = 0;
+                RenderTimeline();
             }
             _lastFrameTime = DateTime.Now;
+            _lastLightUpdateTime = DateTime.Now;
             _playbackTimer?.Start();
         }
         else
