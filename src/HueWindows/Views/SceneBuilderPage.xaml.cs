@@ -13,12 +13,55 @@ namespace HueWindows.Views;
 public sealed partial class SceneBuilderPage : Page
 {
     public SceneBuilderViewModel ViewModel { get; }
+    private DispatcherTimer? _playbackTimer;
+    private DateTime _lastFrameTime;
+    private bool _isDraggingPlayhead;
 
     public SceneBuilderPage()
     {
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<SceneBuilderViewModel>();
         Loaded += Page_Loaded;
+
+        // Initialize playback timer
+        _playbackTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16) // ~60fps
+        };
+        _playbackTimer.Tick += PlaybackTimer_Tick;
+    }
+
+    private async void PlaybackTimer_Tick(object? sender, object e)
+    {
+        if (ViewModel == null || !ViewModel.IsPlaying)
+            return;
+
+        var now = DateTime.Now;
+        var deltaSeconds = (now - _lastFrameTime).TotalSeconds;
+        _lastFrameTime = now;
+
+        ViewModel.PlayheadPosition += deltaSeconds;
+
+        // Check if we've reached the end
+        if (ViewModel.PlayheadPosition >= ViewModel.DurationSeconds)
+        {
+            if (ViewModel.IsLooping)
+            {
+                ViewModel.PlayheadPosition = 0;
+            }
+            else
+            {
+                ViewModel.PlayheadPosition = ViewModel.DurationSeconds;
+                ViewModel.IsPlaying = false;
+                _playbackTimer?.Stop();
+                UpdatePlayButtonState();
+            }
+        }
+
+        RenderTimeline();
+
+        // Update lights in real-time during playback
+        await ViewModel.UpdateLightsForPlayheadAsync();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -52,8 +95,26 @@ public sealed partial class SceneBuilderPage : Page
         // Render time ruler ticks
         RenderTimeRuler();
 
-        // Render keyframes for each track
         const double trackHeight = 50;
+        var canvasHeight = ViewModel.Tracks.Count * trackHeight;
+
+        // Render track separator lines
+        for (int i = 1; i < ViewModel.Tracks.Count; i++)
+        {
+            var separator = new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = 0,
+                Y1 = i * trackHeight,
+                X2 = ViewModel.DurationSeconds * ViewModel.ZoomLevel,
+                Y2 = i * trackHeight,
+                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(40, 255, 255, 255)),
+                StrokeThickness = 1
+            };
+            KeyframeCanvas.Children.Add(separator);
+        }
+
+        // Render keyframes for each track
         for (int trackIndex = 0; trackIndex < ViewModel.Tracks.Count; trackIndex++)
         {
             var track = ViewModel.Tracks[trackIndex];
@@ -65,9 +126,104 @@ public sealed partial class SceneBuilderPage : Page
             }
         }
 
+        // Render playhead
+        RenderPlayhead(canvasHeight);
+
         // Set canvas size
         KeyframeCanvas.Width = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
-        KeyframeCanvas.Height = ViewModel.Tracks.Count * trackHeight;
+        KeyframeCanvas.Height = canvasHeight;
+    }
+
+    private void RenderPlayhead(double height)
+    {
+        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+
+        // Playhead line
+        var playheadLine = new Microsoft.UI.Xaml.Shapes.Line
+        {
+            X1 = x,
+            Y1 = 0,
+            X2 = x,
+            Y2 = height,
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 255, 100, 100)),
+            StrokeThickness = 2
+        };
+        KeyframeCanvas.Children.Add(playheadLine);
+
+        // Playhead handle (triangle at top) - make it draggable
+        var handle = new Microsoft.UI.Xaml.Shapes.Polygon
+        {
+            Points = new Microsoft.UI.Xaml.Media.PointCollection
+            {
+                new Windows.Foundation.Point(x - 8, 0),
+                new Windows.Foundation.Point(x + 8, 0),
+                new Windows.Foundation.Point(x, 12)
+            },
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 255, 100, 100)),
+            Tag = "PlayheadHandle"
+        };
+        handle.PointerPressed += PlayheadHandle_PointerPressed;
+        KeyframeCanvas.Children.Add(handle);
+    }
+
+    private void PlayheadHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isDraggingPlayhead = true;
+        KeyframeCanvas.CapturePointer(e.Pointer);
+
+        // Wire up move and release events
+        KeyframeCanvas.PointerMoved += KeyframeCanvas_PointerMoved;
+        KeyframeCanvas.PointerReleased += KeyframeCanvas_PointerReleased;
+
+        e.Handled = true;
+    }
+
+    private void KeyframeCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDraggingPlayhead)
+            return;
+
+        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+
+        // Clamp to valid range
+        if (timeSeconds < 0) timeSeconds = 0;
+        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        ViewModel.PlayheadPosition = timeSeconds;
+        RenderTimeline();
+    }
+
+    private void KeyframeCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isDraggingPlayhead)
+        {
+            _isDraggingPlayhead = false;
+            KeyframeCanvas.ReleasePointerCapture(e.Pointer);
+
+            // Unwire events
+            KeyframeCanvas.PointerMoved -= KeyframeCanvas_PointerMoved;
+            KeyframeCanvas.PointerReleased -= KeyframeCanvas_PointerReleased;
+        }
+    }
+
+    private void TimeRulerCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        var point = e.GetCurrentPoint(TimeRulerCanvas);
+        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+
+        // Clamp to valid range
+        if (timeSeconds < 0) timeSeconds = 0;
+        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        ViewModel.PlayheadPosition = timeSeconds;
+        RenderTimeline();
+        e.Handled = true;
     }
 
     private void RenderTimeRuler()
@@ -109,6 +265,21 @@ public sealed partial class SceneBuilderPage : Page
                 TimeRulerCanvas.Children.Add(label);
             }
         }
+
+        // Draw playhead marker on ruler
+        var playheadX = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+        var playheadMarker = new Microsoft.UI.Xaml.Shapes.Polygon
+        {
+            Points = new Microsoft.UI.Xaml.Media.PointCollection
+            {
+                new Windows.Foundation.Point(playheadX - 5, 20),
+                new Windows.Foundation.Point(playheadX + 5, 20),
+                new Windows.Foundation.Point(playheadX, 12)
+            },
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 255, 100, 100))
+        };
+        TimeRulerCanvas.Children.Add(playheadMarker);
     }
 
     private void RenderKeyframe(KeyframeViewModel keyframe, TrackViewModel track, double x, double y)
@@ -175,7 +346,7 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void SelectKeyframe(KeyframeViewModel keyframe)
+    private async void SelectKeyframe(KeyframeViewModel keyframe)
     {
         ViewModel.SelectedKeyframe = keyframe;
         SidePanel.Visibility = Visibility.Visible;
@@ -199,6 +370,9 @@ public sealed partial class SceneBuilderPage : Page
                 break;
             }
         }
+
+        // Live preview the selected keyframe on the light
+        await ViewModel.UpdateLightForKeyframeAsync(keyframe);
     }
 
     private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -216,16 +390,42 @@ public sealed partial class SceneBuilderPage : Page
 
     private void PlayButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement play
         ViewModel.IsPlaying = !ViewModel.IsPlaying;
+
+        if (ViewModel.IsPlaying)
+        {
+            // If at the end, restart from beginning
+            if (ViewModel.PlayheadPosition >= ViewModel.DurationSeconds)
+            {
+                ViewModel.PlayheadPosition = 0;
+            }
+            _lastFrameTime = DateTime.Now;
+            _playbackTimer?.Start();
+        }
+        else
+        {
+            _playbackTimer?.Stop();
+        }
+
         UpdatePlayButtonState();
     }
 
     private void StopButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement stop
         ViewModel.IsPlaying = false;
+        ViewModel.PlayheadPosition = 0;
+        _playbackTimer?.Stop();
         UpdatePlayButtonState();
+        RenderTimeline();
+    }
+
+    private void DurationNumberBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (ViewModel == null || double.IsNaN(args.NewValue))
+            return;
+
+        // Re-render the timeline with new duration
+        RenderTimeline();
     }
 
     private void UpdatePlayButtonState()
@@ -244,12 +444,77 @@ public sealed partial class SceneBuilderPage : Page
 
     private void AddKeyframe_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement add keyframe
+        if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
+            return;
+
+        // Add a keyframe at the playhead position for all tracks
+        var timeSeconds = ViewModel.PlayheadPosition;
+
+        // Clamp to valid range
+        if (timeSeconds < 0) timeSeconds = 0;
+        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        foreach (var track in ViewModel.Tracks)
+        {
+            // Check if a keyframe already exists at this time
+            var existingKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
+            if (existingKeyframe == null)
+            {
+                ViewModel.AddKeyframe(track, timeSeconds);
+            }
+        }
+
+        RenderTimeline();
     }
 
     private void KeyframeCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        // TODO: Handle click on canvas to add/select keyframe
+        if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
+            return;
+
+        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var x = point.Position.X;
+        var y = point.Position.Y;
+
+        const double trackHeight = 50;
+        var trackIndex = (int)(y / trackHeight);
+
+        // Ensure track index is valid
+        if (trackIndex < 0 || trackIndex >= ViewModel.Tracks.Count)
+            return;
+
+        var track = ViewModel.Tracks[trackIndex];
+        var timeSeconds = x / ViewModel.ZoomLevel;
+
+        // Clamp time to valid range
+        if (timeSeconds < 0) timeSeconds = 0;
+        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        // Check if clicking near an existing keyframe (within 10 pixels)
+        var clickThreshold = 10.0 / ViewModel.ZoomLevel; // Convert pixels to seconds
+        var nearbyKeyframe = track.Keyframes
+            .FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < clickThreshold);
+
+        if (nearbyKeyframe != null)
+        {
+            // Select the existing keyframe
+            SelectKeyframe(nearbyKeyframe);
+        }
+        else
+        {
+            // Add a new keyframe at this position
+            ViewModel.AddKeyframe(track, timeSeconds);
+            RenderTimeline();
+
+            // Select the newly added keyframe
+            var newKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
+            if (newKeyframe != null)
+            {
+                SelectKeyframe(newKeyframe);
+            }
+        }
+
+        e.Handled = true;
     }
 
     private void CloseSidePanel_Click(object sender, RoutedEventArgs e)
@@ -258,7 +523,7 @@ public sealed partial class SceneBuilderPage : Page
         ViewModel.SelectedKeyframe = null;
     }
 
-    private void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    private async void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
     {
         if (ViewModel?.SelectedKeyframe != null)
         {
@@ -285,11 +550,14 @@ public sealed partial class SceneBuilderPage : Page
                 var y = Y / sum;
                 ViewModel.SelectedKeyframe.Color = new HueWindows.Core.Models.HueColor(x, y);
                 RenderTimeline();
+
+                // Live preview on actual light
+                await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
             }
         }
     }
 
-    private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    private async void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
         if (BrightnessValueText != null)
             BrightnessValueText.Text = $"{(int)e.NewValue}%";
@@ -297,6 +565,9 @@ public sealed partial class SceneBuilderPage : Page
         {
             ViewModel.SelectedKeyframe.Brightness = e.NewValue / 100.0;
             RenderTimeline();
+
+            // Live preview on actual light
+            await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
         }
     }
 

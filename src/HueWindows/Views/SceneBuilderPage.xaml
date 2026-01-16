@@ -78,7 +78,8 @@
                            SpinButtonPlacementMode="Inline"
                            SmallChange="1"
                            LargeChange="10"
-                           MinWidth="120"/>
+                           MinWidth="120"
+                           ValueChanged="DurationNumberBox_ValueChanged"/>
                 <TextBlock Text="sec"
                            Style="{StaticResource BodyTextBlockStyle}"
                            VerticalAlignment="Center"
@@ -125,7 +126,9 @@
                             Padding="150,8,16,8"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,0,0,1">
-                        <Canvas x:Name="TimeRulerCanvas" Height="20"/>
+                        <Canvas x:Name="TimeRulerCanvas" Height="20"
+                                Background="Transparent"
+                                PointerPressed="TimeRulerCanvas_PointerPressed"/>
                     </Border>
 
                     <!-- Tracks Area -->

@@ -244,6 +244,105 @@ public partial class SceneBuilderViewModel : ObservableObject
             }
         }
     }
+
+    /// <summary>
+    /// Updates lights to reflect the current playhead position (live preview).
+    /// </summary>
+    public async Task UpdateLightsForPlayheadAsync()
+    {
+        if (SelectedRoom == null || Tracks.Count == 0)
+            return;
+
+        foreach (var track in Tracks)
+        {
+            if (!Guid.TryParse(track.LightId, out var lightId))
+                continue;
+
+            var (color, brightness) = InterpolateAtTime(track, PlayheadPosition);
+
+            // Send to light
+            await _bridgeService.SetLightColorAsync(lightId, color);
+            await _bridgeService.SetLightBrightnessAsync(lightId, brightness);
+        }
+    }
+
+    /// <summary>
+    /// Updates a single light to match a keyframe (for editing preview).
+    /// </summary>
+    public async Task UpdateLightForKeyframeAsync(KeyframeViewModel keyframe)
+    {
+        // Find which track this keyframe belongs to
+        foreach (var track in Tracks)
+        {
+            if (track.Keyframes.Contains(keyframe))
+            {
+                if (Guid.TryParse(track.LightId, out var lightId))
+                {
+                    await _bridgeService.SetLightColorAsync(lightId, keyframe.Color);
+                    await _bridgeService.SetLightBrightnessAsync(lightId, keyframe.Brightness);
+                }
+                break;
+            }
+        }
+    }
+
+    private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
+    {
+        if (track.Keyframes.Count == 0)
+            return (new HueColor(0.45, 0.41), 1.0);
+
+        // Find surrounding keyframes
+        var sortedKeyframes = track.Keyframes.OrderBy(k => k.TimeSeconds).ToList();
+
+        KeyframeViewModel? prev = null;
+        KeyframeViewModel? next = null;
+
+        foreach (var kf in sortedKeyframes)
+        {
+            if (kf.TimeSeconds <= timeSeconds)
+                prev = kf;
+            else if (next == null)
+                next = kf;
+        }
+
+        // If no previous keyframe, use first
+        if (prev == null)
+            prev = sortedKeyframes.First();
+
+        // If no next keyframe, use previous (hold)
+        if (next == null)
+            return (prev.Color, prev.Brightness);
+
+        // Interpolate between prev and next
+        var duration = next.TimeSeconds - prev.TimeSeconds;
+        if (duration <= 0)
+            return (prev.Color, prev.Brightness);
+
+        var t = (timeSeconds - prev.TimeSeconds) / duration;
+
+        // Apply easing based on transition style
+        t = ApplyEasing(t, next.Transition);
+
+        // Interpolate color
+        var x = prev.Color.X + (next.Color.X - prev.Color.X) * t;
+        var y = prev.Color.Y + (next.Color.Y - prev.Color.Y) * t;
+        var brightness = prev.Brightness + (next.Brightness - prev.Brightness) * t;
+
+        return (new HueColor(x, y), brightness);
+    }
+
+    private double ApplyEasing(double t, TransitionStyle style)
+    {
+        return style switch
+        {
+            TransitionStyle.Linear => t,
+            TransitionStyle.EaseIn => t * t,
+            TransitionStyle.EaseOut => 1 - (1 - t) * (1 - t),
+            TransitionStyle.EaseInOut => t < 0.5 ? 2 * t * t : 1 - Math.Pow(-2 * t + 2, 2) / 2,
+            TransitionStyle.Instant => t >= 1 ? 1 : 0,
+            _ => t
+        };
+    }
 }
 
 /// <summary>
