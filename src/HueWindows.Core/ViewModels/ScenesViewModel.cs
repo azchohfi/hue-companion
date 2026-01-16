@@ -47,8 +47,7 @@ public partial class ScenesViewModel : ObservableObject
         _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
 
-        _animationService.SceneStarted += OnSceneStarted;
-        _animationService.SceneStopped += OnSceneStopped;
+        _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
 
     public async Task InitializeAsync()
@@ -114,27 +113,35 @@ public partial class ScenesViewModel : ObservableObject
     [RelayCommand]
     private async Task StopAnimatedScene()
     {
-        await _animationService.StopCurrentSceneAsync();
+        if (SelectedRoom != null)
+        {
+            await _animationService.StopSceneInRoomAsync(SelectedRoom.Id);
+        }
     }
 
-    private void OnSceneStarted(object? sender, AnimatedSceneEventArgs e)
-    {
-        UpdateAnimationState();
-    }
-
-    private void OnSceneStopped(object? sender, AnimatedSceneEventArgs e)
+    private void OnRoomAnimationChanged(object? sender, RoomAnimationChangedEventArgs e)
     {
         UpdateAnimationState();
     }
 
     private void UpdateAnimationState()
     {
-        IsAnimationPlaying = _animationService.IsPlaying;
-        CurrentAnimationName = _animationService.CurrentScene?.Name;
+        // Check if animation is running in the selected room
+        if (SelectedRoom != null)
+        {
+            IsAnimationPlaying = _animationService.IsAnimationRunning(SelectedRoom.Id);
+            CurrentAnimationName = _animationService.GetRunningScene(SelectedRoom.Id)?.Name;
+        }
+        else
+        {
+            IsAnimationPlaying = _animationService.IsAnyAnimationRunning;
+            CurrentAnimationName = null;
+        }
     }
 
     partial void OnSelectedRoomChanged(RoomModel? value)
     {
-        // Room selection changed - could update UI accordingly
+        // Update animation state for the newly selected room
+        UpdateAnimationState();
     }
 }

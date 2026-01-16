@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 
@@ -5,14 +6,13 @@ namespace HueWindows.Core.Services;
 
 /// <summary>
 /// Service for managing and executing animated scenes.
+/// Supports concurrent animations in multiple rooms.
 /// </summary>
 public class AnimationService : IAnimationService
 {
     private readonly ISceneStorageService _storageService;
     private readonly IHueBridgeService _bridgeService;
-    private AnimationEngine? _currentEngine;
-    private AnimatedSceneModel? _currentScene;
-    private Guid? _currentTargetId;
+    private readonly ConcurrentDictionary<Guid, RunningAnimation> _runningAnimations = new();
 
     public AnimationService(
         ISceneStorageService storageService,
@@ -23,16 +23,10 @@ public class AnimationService : IAnimationService
     }
 
     /// <inheritdoc/>
-    public event EventHandler<AnimatedSceneEventArgs>? SceneStarted;
+    public event EventHandler<RoomAnimationChangedEventArgs>? RoomAnimationChanged;
 
     /// <inheritdoc/>
-    public event EventHandler<AnimatedSceneEventArgs>? SceneStopped;
-
-    /// <inheritdoc/>
-    public AnimatedSceneModel? CurrentScene => _currentScene;
-
-    /// <inheritdoc/>
-    public bool IsPlaying => _currentEngine != null;
+    public bool IsAnyAnimationRunning => !_runningAnimations.IsEmpty;
 
     /// <inheritdoc/>
     public async Task<Result<IReadOnlyList<AnimatedSceneModel>>> GetAllScenesAsync()
@@ -100,12 +94,12 @@ public class AnimationService : IAnimationService
     }
 
     /// <inheritdoc/>
-    public async Task<Result> StartSceneAsync(string sceneId, Guid? targetId = null, List<Guid>? targetLights = null)
+    public async Task<Result> StartSceneAsync(string sceneId, Guid roomId)
     {
         try
         {
-            // Stop any currently running scene
-            await StopCurrentSceneAsync();
+            // Stop any animation currently running in this room
+            await StopSceneInRoomAsync(roomId);
 
             // Load the scene
             var sceneResult = await GetSceneAsync(sceneId);
@@ -116,49 +110,34 @@ public class AnimationService : IAnimationService
 
             var scene = sceneResult.Value!;
 
-            // Determine target lights
-            List<Guid> lights;
-
-            if (targetLights != null && targetLights.Count > 0)
-            {
-                lights = targetLights;
-            }
-            else
-            {
-                // Use scene's default targeting
-                var effectiveTargetId = targetId ?? scene.TargetId;
-
-                if (scene.TargetLights.Count > 0)
-                {
-                    lights = scene.TargetLights;
-                }
-                else if (effectiveTargetId.HasValue)
-                {
-                    lights = await GetLightsForTargetAsync(scene.DefaultTargeting, effectiveTargetId.Value);
-                }
-                else
-                {
-                    return Result.Failure("No target specified for scene. Please specify a room, zone, or lights.");
-                }
-            }
+            // Get lights for the target room/zone
+            var lights = await GetLightsForRoomAsync(roomId);
 
             if (lights.Count == 0)
             {
-                return Result.Failure("No lights found for the specified target");
+                return Result.Failure("No lights found in the specified room/zone");
             }
 
             // Create and start the animation engine
-            _currentEngine = new AnimationEngine(_bridgeService, scene, lights);
-            _currentEngine.Start();
+            var engine = new AnimationEngine(_bridgeService, scene, lights);
+            engine.Start();
 
-            _currentScene = scene;
-            _currentTargetId = targetId ?? scene.TargetId;
+            var runningAnimation = new RunningAnimation
+            {
+                Engine = engine,
+                Scene = scene,
+                RoomId = roomId,
+                StartedAt = DateTime.UtcNow
+            };
+
+            _runningAnimations[roomId] = runningAnimation;
 
             // Raise event
-            SceneStarted?.Invoke(this, new AnimatedSceneEventArgs
+            RoomAnimationChanged?.Invoke(this, new RoomAnimationChangedEventArgs
             {
+                RoomId = roomId,
                 Scene = scene,
-                TargetId = _currentTargetId
+                IsRunning = true
             });
 
             return Result.Success();
@@ -170,52 +149,82 @@ public class AnimationService : IAnimationService
     }
 
     /// <inheritdoc/>
-    public async Task StopCurrentSceneAsync()
+    public async Task StopSceneInRoomAsync(Guid roomId)
     {
-        if (_currentEngine != null)
+        if (_runningAnimations.TryRemove(roomId, out var animation))
         {
-            await _currentEngine.StopAsync();
-            _currentEngine.Dispose();
-            _currentEngine = null;
+            await animation.Engine.StopAsync();
+            animation.Engine.Dispose();
 
-            var stoppedScene = _currentScene;
-            var stoppedTargetId = _currentTargetId;
-
-            _currentScene = null;
-            _currentTargetId = null;
-
-            if (stoppedScene != null)
+            // Raise event
+            RoomAnimationChanged?.Invoke(this, new RoomAnimationChangedEventArgs
             {
-                SceneStopped?.Invoke(this, new AnimatedSceneEventArgs
-                {
-                    Scene = stoppedScene,
-                    TargetId = stoppedTargetId
-                });
-            }
+                RoomId = roomId,
+                Scene = animation.Scene,
+                IsRunning = false
+            });
         }
     }
 
-    private async Task<List<Guid>> GetLightsForTargetAsync(LightTargeting targeting, Guid targetId)
+    /// <inheritdoc/>
+    public async Task StopAllScenesAsync()
+    {
+        var roomIds = _runningAnimations.Keys.ToList();
+
+        foreach (var roomId in roomIds)
+        {
+            await StopSceneInRoomAsync(roomId);
+        }
+    }
+
+    /// <inheritdoc/>
+    public bool IsAnimationRunning(Guid roomId)
+    {
+        return _runningAnimations.ContainsKey(roomId);
+    }
+
+    /// <inheritdoc/>
+    public AnimatedSceneModel? GetRunningScene(Guid roomId)
+    {
+        if (_runningAnimations.TryGetValue(roomId, out var animation))
+        {
+            return animation.Scene;
+        }
+        return null;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<RunningAnimationInfo> GetAllRunningAnimations()
+    {
+        return _runningAnimations.Values
+            .Select(a => new RunningAnimationInfo
+            {
+                RoomId = a.RoomId,
+                Scene = a.Scene,
+                StartedAt = a.StartedAt
+            })
+            .ToList();
+    }
+
+    private async Task<List<Guid>> GetLightsForRoomAsync(Guid roomId)
     {
         var lights = new List<Guid>();
 
         try
         {
-            if (targeting == LightTargeting.Room)
+            // Try as room first
+            var roomResult = await _bridgeService.GetRoomAsync(roomId);
+            if (roomResult.IsSuccess && roomResult.Value != null)
             {
-                var roomResult = await _bridgeService.GetRoomAsync(targetId);
-                if (roomResult.IsSuccess && roomResult.Value != null)
-                {
-                    lights.AddRange(roomResult.Value.Lights.Select(l => l.Id));
-                }
+                lights.AddRange(roomResult.Value.Lights.Select(l => l.Id));
+                return lights;
             }
-            else if (targeting == LightTargeting.Zone)
+
+            // Try as zone
+            var zoneResult = await _bridgeService.GetZoneAsync(roomId);
+            if (zoneResult.IsSuccess && zoneResult.Value != null)
             {
-                var zoneResult = await _bridgeService.GetZoneAsync(targetId);
-                if (zoneResult.IsSuccess && zoneResult.Value != null)
-                {
-                    lights.AddRange(zoneResult.Value.Lights.Select(l => l.Id));
-                }
+                lights.AddRange(zoneResult.Value.Lights.Select(l => l.Id));
             }
         }
         catch
@@ -224,5 +233,16 @@ public class AnimationService : IAnimationService
         }
 
         return lights;
+    }
+
+    /// <summary>
+    /// Internal class to track a running animation.
+    /// </summary>
+    private class RunningAnimation
+    {
+        public AnimationEngine Engine { get; init; } = null!;
+        public AnimatedSceneModel Scene { get; init; } = null!;
+        public Guid RoomId { get; init; }
+        public DateTime StartedAt { get; init; }
     }
 }

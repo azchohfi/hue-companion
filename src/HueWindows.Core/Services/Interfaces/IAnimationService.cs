@@ -4,18 +4,14 @@ namespace HueWindows.Core.Services.Interfaces;
 
 /// <summary>
 /// Service for managing and executing animated scenes.
+/// Supports concurrent animations in multiple rooms.
 /// </summary>
 public interface IAnimationService
 {
     /// <summary>
-    /// Event raised when an animated scene starts.
+    /// Event raised when an animation state changes in any room.
     /// </summary>
-    event EventHandler<AnimatedSceneEventArgs>? SceneStarted;
-
-    /// <summary>
-    /// Event raised when an animated scene stops.
-    /// </summary>
-    event EventHandler<AnimatedSceneEventArgs>? SceneStopped;
+    event EventHandler<RoomAnimationChangedEventArgs>? RoomAnimationChanged;
 
     /// <summary>
     /// Gets all available animated scenes (built-in and user-created).
@@ -33,41 +29,86 @@ public interface IAnimationService
     Task<Result<AnimatedSceneModel>> GetSceneAsync(string sceneId);
 
     /// <summary>
-    /// Starts playing an animated scene.
+    /// Starts playing an animated scene in a specific room/zone.
+    /// If an animation is already running in that room, it will be stopped first.
     /// </summary>
     /// <param name="sceneId">The ID of the scene to play.</param>
-    /// <param name="targetId">Optional override for the target room/zone ID.</param>
-    /// <param name="targetLights">Optional override for specific target lights.</param>
-    Task<Result> StartSceneAsync(string sceneId, Guid? targetId = null, List<Guid>? targetLights = null);
+    /// <param name="roomId">The target room or zone ID.</param>
+    Task<Result> StartSceneAsync(string sceneId, Guid roomId);
 
     /// <summary>
-    /// Stops the currently playing animated scene.
+    /// Stops the animation running in a specific room/zone.
     /// </summary>
-    Task StopCurrentSceneAsync();
+    /// <param name="roomId">The room or zone ID to stop.</param>
+    Task StopSceneInRoomAsync(Guid roomId);
 
     /// <summary>
-    /// Gets the currently playing scene, if any.
+    /// Stops all running animations across all rooms.
     /// </summary>
-    AnimatedSceneModel? CurrentScene { get; }
+    Task StopAllScenesAsync();
 
     /// <summary>
-    /// Gets whether a scene is currently playing.
+    /// Checks if an animation is running in a specific room/zone.
     /// </summary>
-    bool IsPlaying { get; }
+    /// <param name="roomId">The room or zone ID to check.</param>
+    bool IsAnimationRunning(Guid roomId);
+
+    /// <summary>
+    /// Gets the scene currently running in a specific room/zone.
+    /// </summary>
+    /// <param name="roomId">The room or zone ID to check.</param>
+    /// <returns>The running scene, or null if no animation is running.</returns>
+    AnimatedSceneModel? GetRunningScene(Guid roomId);
+
+    /// <summary>
+    /// Gets information about all currently running animations.
+    /// </summary>
+    IReadOnlyList<RunningAnimationInfo> GetAllRunningAnimations();
+
+    /// <summary>
+    /// Gets whether any animation is currently playing.
+    /// </summary>
+    bool IsAnyAnimationRunning { get; }
 }
 
 /// <summary>
-/// Event arguments for animated scene events.
+/// Event arguments for room animation state changes.
 /// </summary>
-public class AnimatedSceneEventArgs : EventArgs
+public class RoomAnimationChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// The scene that triggered the event.
+    /// The room or zone ID where the animation state changed.
+    /// </summary>
+    public Guid RoomId { get; init; }
+
+    /// <summary>
+    /// The scene that started or stopped. Null if animation stopped.
+    /// </summary>
+    public AnimatedSceneModel? Scene { get; init; }
+
+    /// <summary>
+    /// Whether an animation is now running in this room.
+    /// </summary>
+    public bool IsRunning { get; init; }
+}
+
+/// <summary>
+/// Information about a running animation.
+/// </summary>
+public class RunningAnimationInfo
+{
+    /// <summary>
+    /// The room or zone ID where the animation is running.
+    /// </summary>
+    public Guid RoomId { get; init; }
+
+    /// <summary>
+    /// The scene being played.
     /// </summary>
     public AnimatedSceneModel Scene { get; init; } = null!;
 
     /// <summary>
-    /// The target ID (room/zone) for the scene, if applicable.
+    /// When the animation started.
     /// </summary>
-    public Guid? TargetId { get; init; }
+    public DateTime StartedAt { get; init; }
 }

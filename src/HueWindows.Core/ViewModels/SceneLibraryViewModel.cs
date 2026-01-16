@@ -50,8 +50,7 @@ public partial class SceneLibraryViewModel : ObservableObject
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
         _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
 
-        _animationService.SceneStarted += OnSceneStarted;
-        _animationService.SceneStopped += OnSceneStopped;
+        _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
 
     public async Task InitializeAsync()
@@ -133,7 +132,10 @@ public partial class SceneLibraryViewModel : ObservableObject
     [RelayCommand]
     private async Task StopScene()
     {
-        await _animationService.StopCurrentSceneAsync();
+        if (SelectedRoom != null)
+        {
+            await _animationService.StopSceneInRoomAsync(SelectedRoom.Id);
+        }
     }
 
     private void ApplyFilter()
@@ -150,24 +152,33 @@ public partial class SceneLibraryViewModel : ObservableObject
         }
     }
 
-    private void OnSceneStarted(object? sender, AnimatedSceneEventArgs e)
-    {
-        UpdateAnimationState();
-    }
-
-    private void OnSceneStopped(object? sender, AnimatedSceneEventArgs e)
+    private void OnRoomAnimationChanged(object? sender, RoomAnimationChangedEventArgs e)
     {
         UpdateAnimationState();
     }
 
     private void UpdateAnimationState()
     {
-        IsAnimationPlaying = _animationService.IsPlaying;
-        CurrentAnimationName = _animationService.CurrentScene?.Name;
+        // Check if animation is running in the selected room
+        if (SelectedRoom != null)
+        {
+            IsAnimationPlaying = _animationService.IsAnimationRunning(SelectedRoom.Id);
+            CurrentAnimationName = _animationService.GetRunningScene(SelectedRoom.Id)?.Name;
+        }
+        else
+        {
+            IsAnimationPlaying = _animationService.IsAnyAnimationRunning;
+            CurrentAnimationName = null;
+        }
     }
 
     partial void OnSelectedCategoryChanged(string value)
     {
         ApplyFilter();
+    }
+
+    partial void OnSelectedRoomChanged(RoomModel? value)
+    {
+        UpdateAnimationState();
     }
 }
