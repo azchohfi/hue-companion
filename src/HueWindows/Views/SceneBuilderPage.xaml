@@ -346,6 +346,20 @@
                                   ToolTipService.ToolTip="Zoom In"/>
                     </StackPanel>
 
+                    <!-- Snap Toggle -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE80A;" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="Snap:"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   VerticalAlignment="Center"/>
+                        <ToggleSwitch x:Name="SnapToggle"
+                                      IsOn="{x:Bind ViewModel.IsSnapEnabled, Mode=TwoWay}"
+                                      Toggled="SnapToggle_Toggled"
+                                      OnContent=""
+                                      OffContent=""
+                                      ToolTipService.ToolTip="Snap to grid (hold Ctrl to temporarily disable)"/>
+                    </StackPanel>
+
                     <!-- Loop Toggle -->
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE8EE;" FontSize="14" VerticalAlignment="Center"/>

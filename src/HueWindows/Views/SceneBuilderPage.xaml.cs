@@ -170,6 +170,9 @@ public sealed partial class SceneBuilderPage : Page
             KeyframeCanvas.Children.Add(separator);
         }
 
+        // Render snap grid lines
+        RenderGridLines(canvasHeight);
+
         // Render keyframes for each track
         for (int trackIndex = 0; trackIndex < ViewModel.Tracks.Count; trackIndex++)
         {
@@ -238,6 +241,33 @@ public sealed partial class SceneBuilderPage : Page
         };
         _playheadHandle.PointerPressed += PlayheadHandle_PointerPressed;
         KeyframeCanvas.Children.Add(_playheadHandle);
+    }
+
+    private void RenderGridLines(double height)
+    {
+        if (!ViewModel.IsSnapEnabled) return;
+
+        var interval = ViewModel.SnapInterval;
+        var duration = ViewModel.DurationSeconds;
+        var zoom = ViewModel.ZoomLevel;
+
+        // Draw vertical grid lines at each snap interval
+        for (double time = interval; time < duration; time += interval)
+        {
+            var x = time * zoom;
+            var gridLine = new Microsoft.UI.Xaml.Shapes.Line
+            {
+                X1 = x,
+                Y1 = 0,
+                X2 = x,
+                Y2 = height,
+                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(25, 255, 255, 255)),
+                StrokeThickness = 1,
+                IsHitTestVisible = false
+            };
+            KeyframeCanvas.Children.Add(gridLine);
+        }
     }
 
     /// <summary>
@@ -507,6 +537,14 @@ public sealed partial class SceneBuilderPage : Page
         if (timeSeconds < 0) timeSeconds = 0;
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
 
+        // Apply snap unless Ctrl is held
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (!ctrlHeld)
+        {
+            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+        }
+
         // Update keyframe time
         _draggingKeyframe.TimeSeconds = timeSeconds;
 
@@ -672,6 +710,12 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeline();
     }
 
+    private void SnapToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        // Re-render to show/hide grid lines
+        RenderTimeline();
+    }
+
     private void KeyframeCanvas_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel == null)
@@ -790,6 +834,14 @@ public sealed partial class SceneBuilderPage : Page
             ViewModel.SelectedKeyframe = null;
             e.Handled = true;
             return;
+        }
+
+        // Apply snap unless Ctrl is held
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (!ctrlHeld)
+        {
+            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
         }
 
         // Left-click on blank space creates a new keyframe

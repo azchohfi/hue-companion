@@ -50,6 +50,30 @@ public partial class SceneBuilderViewModel : ObservableObject
     [ObservableProperty]
     private double _zoomLevel = 50; // Pixels per second
 
+    [ObservableProperty]
+    private bool _isSnapEnabled = true; // Snap to grid on by default
+
+    /// <summary>
+    /// Gets the current snap interval based on zoom level.
+    /// </summary>
+    public double SnapInterval => ZoomLevel switch
+    {
+        < 40 => 2.0,    // Zoomed out - 2 second grid
+        < 80 => 1.0,    // Medium zoom - 1 second grid
+        < 150 => 0.5,   // Zoomed in - 0.5 second grid
+        _ => 0.25       // Fully zoomed - 0.25 second grid
+    };
+
+    /// <summary>
+    /// Snaps a time value to the nearest grid line if snap is enabled.
+    /// </summary>
+    public double SnapToGrid(double timeSeconds)
+    {
+        if (!IsSnapEnabled) return timeSeconds;
+        var interval = SnapInterval;
+        return Math.Round(timeSeconds / interval) * interval;
+    }
+
     public SceneBuilderViewModel(
         IHueBridgeService bridgeService,
         IAnimationService animationService,
