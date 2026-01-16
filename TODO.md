@@ -145,16 +145,6 @@ Your Hue bridge is connected but has no rooms configured.
 
 ---
 
-### 🟡 Add Loading Skeletons
-**Current**: Spinner with "Loading..." text
-
-**Recommended**: Skeleton placeholders matching content shape
-- Gray pulsing rectangles for room cards
-- Maintains layout stability during load
-- Feels faster than spinner
-
----
-
 ### 🟢 Haptic/Visual Feedback for Brightness Gestures
 Enhancements for drag-to-brightness:
 - Subtle scale animation on drag start (1.0 → 1.02)
