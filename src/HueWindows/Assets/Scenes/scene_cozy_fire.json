@@ -1,0 +1,30 @@
+{
+  "id": "cozy_fire",
+  "name": "Cozy Fire",
+  "description": "Warm flickering fireplace ambiance using native fire effect",
+  "category": "Ambient",
+  "previewColor": {
+    "x": 0.6,
+    "y": 0.38
+  },
+  "paletteColors": [
+    { "x": 0.65, "y": 0.33 },
+    { "x": 0.58, "y": 0.39 },
+    { "x": 0.55, "y": 0.42 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "fire_effect",
+      "name": "fire",
+      "type": "nativeEffect",
+      "lightAssignment": "all",
+      "keyframes": [],
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}

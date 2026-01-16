@@ -143,6 +143,13 @@ public interface IHueBridgeService
     /// <param name="mirek">Color temperature in mirek (153-500).</param>
     Task SetLightTemperatureAsync(Guid lightId, int mirek);
 
+    /// <summary>
+    /// Applies a native Hue effect to a light (fire, candle, etc.).
+    /// </summary>
+    /// <param name="lightId">The light ID.</param>
+    /// <param name="effect">The effect to apply.</param>
+    Task ApplyEffectAsync(Guid lightId, string effect);
+
     // Scene operations
 
     /// <summary>
