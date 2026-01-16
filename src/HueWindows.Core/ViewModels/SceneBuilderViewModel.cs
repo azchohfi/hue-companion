@@ -13,6 +13,9 @@ public partial class SceneBuilderViewModel : ObservableObject
 {
     private readonly IHueBridgeService _bridgeService;
     private readonly IAnimationService _animationService;
+    private readonly ISceneStorageService _storageService;
+
+    private string? _loadedSceneId;
 
     [ObservableProperty]
     private string _sceneName = "Untitled Scene";
@@ -49,10 +52,12 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     public SceneBuilderViewModel(
         IHueBridgeService bridgeService,
-        IAnimationService animationService)
+        IAnimationService animationService,
+        ISceneStorageService storageService)
     {
         _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
+        _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
     }
 
     public async Task InitializeAsync()
@@ -342,6 +347,167 @@ public partial class SceneBuilderViewModel : ObservableObject
             TransitionStyle.Instant => t >= 1 ? 1 : 0,
             _ => t
         };
+    }
+
+    /// <summary>
+    /// Saves the current scene to the user scenes folder.
+    /// </summary>
+    [RelayCommand]
+    public async Task<Result> SaveSceneAsync()
+    {
+        if (SelectedRoom == null || Tracks.Count == 0)
+        {
+            return Result.Failure("No room or tracks to save");
+        }
+
+        // Generate scene ID if new scene
+        var sceneId = _loadedSceneId ?? $"user_{Guid.NewGuid():N}";
+
+        // Build the AnimatedSceneModel
+        var scene = new AnimatedSceneModel
+        {
+            Id = sceneId,
+            Name = SceneName,
+            Description = SceneDescription,
+            Category = "Custom",
+            DefaultTargeting = LightTargeting.Room,
+            TargetId = SelectedRoom.Id,
+            IsBuiltIn = false,
+            Version = "1.0",
+            PaletteColors = ExtractPaletteColors(),
+            Animations = new List<AnimationDefinition>()
+        };
+
+        // Convert each track to an AnimationDefinition
+        for (int i = 0; i < Tracks.Count; i++)
+        {
+            var track = Tracks[i];
+            var animation = new AnimationDefinition
+            {
+                Id = $"track_{i}",
+                Name = track.DisplayName,
+                Type = AnimationType.Keyframe,
+                LightAssignment = LightAssignment.Subset,
+                TargetLightIndices = new List<int> { i },
+                DurationSeconds = DurationSeconds,
+                RepeatMode = IsLooping ? RepeatMode.Loop : RepeatMode.Once,
+                Keyframes = track.Keyframes
+                    .OrderBy(k => k.TimeSeconds)
+                    .Select(k => new AnimationKeyframe
+                    {
+                        TimeSeconds = k.TimeSeconds,
+                        Color = k.Color,
+                        Brightness = k.Brightness,
+                        TransitionStyle = k.Transition
+                    })
+                    .ToList()
+            };
+
+            scene.Animations.Add(animation);
+        }
+
+        // Save using storage service
+        var result = await _storageService.SaveSceneAsync(scene);
+
+        if (result.IsSuccess)
+        {
+            _loadedSceneId = sceneId;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Loads an existing scene for editing.
+    /// </summary>
+    public async Task<Result> LoadSceneAsync(string sceneId)
+    {
+        var sceneResult = await _animationService.GetSceneAsync(sceneId);
+        if (sceneResult.IsFailure || sceneResult.Value == null)
+        {
+            return Result.Failure(sceneResult.Error ?? "Scene not found");
+        }
+
+        var scene = sceneResult.Value;
+
+        // Don't allow editing built-in scenes
+        if (scene.IsBuiltIn)
+        {
+            return Result.Failure("Cannot edit built-in scenes");
+        }
+
+        _loadedSceneId = scene.Id;
+        SceneName = scene.Name;
+        SceneDescription = scene.Description;
+
+        // Find the target room
+        if (scene.TargetId.HasValue)
+        {
+            SelectedRoom = Rooms.FirstOrDefault(r => r.Id == scene.TargetId.Value);
+        }
+
+        if (SelectedRoom == null)
+        {
+            return Result.Failure("Target room not found");
+        }
+
+        // Get duration from first animation
+        if (scene.Animations.Count > 0)
+        {
+            DurationSeconds = scene.Animations[0].DurationSeconds;
+            IsLooping = scene.Animations[0].RepeatMode == RepeatMode.Loop;
+        }
+
+        // Load tracks from animations
+        Tracks.Clear();
+        foreach (var animation in scene.Animations)
+        {
+            // Find the matching light
+            var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+            var light = lightIndex < SelectedRoom.Lights.Count ? SelectedRoom.Lights[lightIndex] : null;
+
+            var track = new TrackViewModel
+            {
+                LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                DisplayName = animation.Name ?? light?.Name ?? $"Track {lightIndex}",
+                Keyframes = new ObservableCollection<KeyframeViewModel>(
+                    animation.Keyframes.Select(k => new KeyframeViewModel
+                    {
+                        TimeSeconds = k.TimeSeconds,
+                        Color = k.Color ?? new HueColor(0.45, 0.41),
+                        Brightness = k.Brightness ?? 1.0,
+                        Transition = k.TransitionStyle
+                    })
+                )
+            };
+
+            Tracks.Add(track);
+        }
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Extracts palette colors from keyframes for preview display.
+    /// </summary>
+    private List<HueColor> ExtractPaletteColors()
+    {
+        var colors = new HashSet<(double, double)>();
+
+        foreach (var track in Tracks)
+        {
+            foreach (var keyframe in track.Keyframes)
+            {
+                // Round to reduce near-duplicates
+                var rounded = (Math.Round(keyframe.Color.X, 2), Math.Round(keyframe.Color.Y, 2));
+                colors.Add(rounded);
+            }
+        }
+
+        return colors
+            .Take(4)
+            .Select(c => new HueColor(c.Item1, c.Item2))
+            .ToList();
     }
 }
 

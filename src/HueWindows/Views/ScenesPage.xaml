@@ -119,21 +119,37 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="models:AnimatedSceneModel">
-                                <Button Click="AnimatedScene_Click"
-                                        Tag="{x:Bind}"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Padding="16">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                        <TextBlock Text="{x:Bind Description}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   MaxLines="2"/>
-                                    </StackPanel>
-                                </Button>
+                                <Grid>
+                                    <Button Click="AnimatedScene_Click"
+                                            Tag="{x:Bind}"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Padding="16">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Spacing="8">
+                                                <TextBlock Text="{x:Bind Name}"
+                                                           Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                                <TextBlock Text="{x:Bind Description}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           TextWrapping="Wrap"
+                                                           MaxLines="2"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1"
+                                                    Click="EditScene_Click"
+                                                    Tag="{x:Bind}"
+                                                    VerticalAlignment="Top"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    ToolTipService.ToolTip="Edit scene">
+                                                <FontIcon Glyph="&#xE70F;" FontSize="14"/>
+                                            </Button>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

@@ -44,6 +44,15 @@ public sealed partial class ScenesPage : Page
         }
     }
 
+    private void EditScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is AnimatedSceneModel scene)
+        {
+            // Navigate to Scene Builder with the scene ID to edit
+            Frame.Navigate(typeof(SceneBuilderPage), scene.Id);
+        }
+    }
+
     public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     public bool HasError(string? error) => !string.IsNullOrWhiteSpace(error);

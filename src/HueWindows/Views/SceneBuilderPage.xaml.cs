@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
 using Windows.UI;
@@ -28,6 +29,8 @@ public sealed partial class SceneBuilderPage : Page
     private Microsoft.UI.Xaml.Shapes.Polygon? _playheadHandle;
     private Microsoft.UI.Xaml.Shapes.Polygon? _rulerPlayheadMarker;
 
+    private string? _sceneIdToLoad;
+
     public SceneBuilderPage()
     {
         this.InitializeComponent();
@@ -40,6 +43,17 @@ public sealed partial class SceneBuilderPage : Page
             Interval = TimeSpan.FromMilliseconds(16) // ~60fps
         };
         _playbackTimer.Tick += PlaybackTimer_Tick;
+    }
+
+    protected override void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        // Check if we're editing an existing scene
+        if (e.Parameter is string sceneId && !string.IsNullOrEmpty(sceneId))
+        {
+            _sceneIdToLoad = sceneId;
+        }
     }
 
     private async void PlaybackTimer_Tick(object? sender, object e)
@@ -87,6 +101,28 @@ public sealed partial class SceneBuilderPage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await ViewModel.InitializeAsync();
+
+        // If we have a scene to load, load it
+        if (!string.IsNullOrEmpty(_sceneIdToLoad))
+        {
+            var result = await ViewModel.LoadSceneAsync(_sceneIdToLoad);
+            if (result.IsFailure)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Load Failed",
+                    Content = result.Error ?? "Failed to load the scene.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+            else
+            {
+                RenderTimeline();
+            }
+        }
+
         UpdateEmptyState();
     }
 
@@ -555,9 +591,34 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
+    private async void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement save
+        var result = await ViewModel.SaveSceneAsync();
+
+        if (result.IsSuccess)
+        {
+            // Show success notification
+            var dialog = new ContentDialog
+            {
+                Title = "Scene Saved",
+                Content = $"'{ViewModel.SceneName}' has been saved to your scene library.",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
+        else
+        {
+            // Show error
+            var dialog = new ContentDialog
+            {
+                Title = "Save Failed",
+                Content = result.Error ?? "An error occurred while saving the scene.",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
     }
 
     private void PlayButton_Click(object sender, RoutedEventArgs e)
