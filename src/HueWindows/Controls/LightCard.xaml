@@ -77,6 +77,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Icon container -->
@@ -106,9 +107,39 @@
                     </TextBlock>
                 </StackPanel>
 
+                <!-- Color SplitButton -->
+                <SplitButton x:Name="ColorSplitButton"
+                             Grid.Column="2"
+                             Style="{StaticResource ColorSplitButtonStyle}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,12,0"
+                             Visibility="{Binding SupportsColor}">
+                    <Border x:Name="ColorButtonContent" CornerRadius="6"
+                            Background="Transparent"
+                            Margin="-16,-12"
+                            Padding="16,12">
+                        <FontIcon Glyph="&#xE790;" FontSize="14" Foreground="White"/>
+                    </Border>
+                    <SplitButton.Flyout>
+                        <Flyout x:Name="ColorPickerFlyout"
+                                Placement="Bottom"
+                                ShouldConstrainToRootBounds="False"
+                                Opening="ColorPickerFlyout_Opening">
+                            <Flyout.FlyoutPresenterStyle>
+                                <Style TargetType="FlyoutPresenter">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="CornerRadius" Value="12"/>
+                                </Style>
+                            </Flyout.FlyoutPresenterStyle>
+                            <local:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
+                        </Flyout>
+                    </SplitButton.Flyout>
+                </SplitButton>
+
                 <!-- Toggle switch -->
                 <ToggleSwitch x:Name="LightToggle"
-                              Grid.Column="2"
+                              Grid.Column="3"
                               Style="{StaticResource GradientToggleSwitchStyle}"
                               IsOn="{Binding IsOn, Mode=TwoWay}"
                               Tapped="LightToggle_Tapped"/>

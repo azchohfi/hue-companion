@@ -20,8 +20,10 @@ public sealed partial class LightCard : UserControl
     private bool _isLoaded;
     private Color _accentColor = Colors.White;
     private Color _currentIconColor = Colors.Gray;
+    private Color _currentColorButtonColor = Colors.Transparent;
     private SolidColorBrush? _iconBrush;
     private SolidColorBrush? _toggleBrush;
+    private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
 
     public LightItemViewModel? ViewModel => DataContext as LightItemViewModel;
@@ -94,6 +96,7 @@ public sealed partial class LightCard : UserControl
         UpdateBorderEffect(isActive);
         UpdateToggleColor(isActive);
         UpdateIconColor(isActive);
+        UpdateColorButtonColor(isActive);
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -158,12 +161,56 @@ public sealed partial class LightCard : UserControl
         _currentIconColor = targetColor;
     }
 
+    private void UpdateColorButtonColor(bool isActive)
+    {
+        if (ColorButtonContent == null) return;
+
+        var targetColor = isActive
+            ? _accentColor
+            : Color.FromArgb(64, 255, 255, 255); // #40FFFFFF when inactive
+
+        // Initialize brush if needed
+        if (_colorButtonBrush == null)
+        {
+            _colorButtonBrush = new SolidColorBrush(_currentColorButtonColor);
+            ColorButtonContent.Background = _colorButtonBrush;
+        }
+
+        // Animate color change
+        AnimationHelper.AnimateColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
+        _currentColorButtonColor = targetColor;
+    }
+
+    private void ColorPickerFlyout_Opening(object sender, object e)
+    {
+        if (ViewModel == null) return;
+
+        // Set initial color when flyout opens
+        var colorRgb = ViewModel.CurrentColorRgb;
+        if (colorRgb.HasValue)
+        {
+            var (r, g, b) = colorRgb.Value;
+            ColorFlyout.InitialColor = Color.FromArgb(255, r, g, b);
+        }
+
+        // Animate the flyout entrance
+        ColorFlyout.AnimateEntrance();
+    }
+
+    private void ColorFlyout_ColorChanged(object sender, Color color)
+    {
+        ViewModel?.SetColorFromRgbCommand.Execute((color.R, color.G, color.B));
+    }
+
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Prevent navigation if clicking the toggle
-        if (e.OriginalSource is DependencyObject obj && obj.IsDescendantOf(LightToggle))
+        // Prevent navigation if clicking the toggle or color button
+        if (e.OriginalSource is DependencyObject obj)
         {
-            return;
+            if (obj.IsDescendantOf(LightToggle))
+                return;
+            if (ColorSplitButton != null && obj.IsDescendantOf(ColorSplitButton))
+                return;
         }
 
         ViewModel?.TapLightCommand.Execute(null);

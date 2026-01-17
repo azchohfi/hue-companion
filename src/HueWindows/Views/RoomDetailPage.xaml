@@ -88,8 +88,10 @@
                                  VerticalAlignment="Center"
                                  Margin="0,0,16,0"
                                  Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}">
-                        <Border x:Name="ColorButtonContent" Width="40" Height="40" CornerRadius="6"
-                                Background="Transparent">
+                        <Border x:Name="ColorButtonContent" CornerRadius="6"
+                                Background="Transparent"
+                                Margin="-12,-8"
+                                Padding="16,12">
                             <FontIcon Glyph="&#xE790;" FontSize="18" Foreground="White"/>
                         </Border>
                         <SplitButton.Flyout>
