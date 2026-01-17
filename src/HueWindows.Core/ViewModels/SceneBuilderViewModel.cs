@@ -386,7 +386,7 @@ public partial class SceneBuilderViewModel : ObservableObject
         var t = (timeSeconds - prev.TimeSeconds) / duration;
 
         // Apply easing based on transition style
-        t = ApplyEasing(t, next.Transition);
+        t = Easing.Apply(t, next.Transition);
 
         // Interpolate color
         var x = prev.Color.X + (next.Color.X - prev.Color.X) * t;
@@ -394,19 +394,6 @@ public partial class SceneBuilderViewModel : ObservableObject
         var brightness = prev.Brightness + (next.Brightness - prev.Brightness) * t;
 
         return (new HueColor(x, y), brightness);
-    }
-
-    private double ApplyEasing(double t, TransitionStyle style)
-    {
-        return style switch
-        {
-            TransitionStyle.Linear => t,
-            TransitionStyle.EaseIn => t * t,
-            TransitionStyle.EaseOut => 1 - (1 - t) * (1 - t),
-            TransitionStyle.EaseInOut => t < 0.5 ? 2 * t * t : 1 - Math.Pow(-2 * t + 2, 2) / 2,
-            TransitionStyle.Instant => t >= 1 ? 1 : 0,
-            _ => t
-        };
     }
 
     /// <summary>

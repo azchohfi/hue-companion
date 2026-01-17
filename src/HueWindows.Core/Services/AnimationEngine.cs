@@ -203,7 +203,7 @@ public class AnimationEngine : IDisposable
         CancellationToken cancellationToken)
     {
         // Apply easing based on transition style
-        progress = ApplyEasing(progress, next.TransitionStyle);
+        progress = Easing.Apply(progress, next.TransitionStyle);
 
         foreach (var lightId in lights)
         {
@@ -433,21 +433,6 @@ public class AnimationEngine : IDisposable
         {
             // Animation was stopped
         }
-    }
-
-    private double ApplyEasing(double progress, TransitionStyle style)
-    {
-        return style switch
-        {
-            TransitionStyle.Linear => progress,
-            TransitionStyle.EaseIn => progress * progress,
-            TransitionStyle.EaseOut => 1 - (1 - progress) * (1 - progress),
-            TransitionStyle.EaseInOut => progress < 0.5
-                ? 2 * progress * progress
-                : 1 - Math.Pow(-2 * progress + 2, 2) / 2,
-            TransitionStyle.Instant => progress >= 1.0 ? 1.0 : 0.0,
-            _ => progress
-        };
     }
 
     public void Dispose()
