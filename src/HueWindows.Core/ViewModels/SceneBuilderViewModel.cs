@@ -63,6 +63,11 @@ public partial class SceneBuilderViewModel : ObservableObject
     private const int PlayheadUpdateThrottleMs = 100; // Minimum time between updates
 
     /// <summary>
+    /// Maximum number of colors to include in the scene palette preview.
+    /// </summary>
+    private const int MaxPaletteColors = 4;
+
+    /// <summary>
     /// Gets the current snap interval based on zoom level.
     /// </summary>
     public double SnapInterval => ZoomLevel switch
@@ -625,7 +630,7 @@ public partial class SceneBuilderViewModel : ObservableObject
         }
 
         return colors
-            .Take(4)
+            .Take(MaxPaletteColors)
             .Select(c => new HueColor(c.Item1, c.Item2))
             .ToList();
     }
