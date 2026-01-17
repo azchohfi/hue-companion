@@ -529,9 +529,15 @@ public partial class SceneBuilderViewModel : ObservableObject
                     DisplayName = animation.Name ?? "Event"
                 };
 
-                // Try to determine preset from trigger states
-                if (animation.EventPattern?.Triggers.Count > 0)
+                // Determine preset from EventPreset property or fallback to inference
+                if (!string.IsNullOrEmpty(animation.EventPreset) && 
+                    Enum.TryParse<EventPreset>(animation.EventPreset, out var preset))
                 {
+                    eventTrack.Preset = preset;
+                }
+                else if (animation.EventPattern?.Triggers.Count > 0)
+                {
+                    // Fallback: infer preset from trigger states for legacy scenes
                     var trigger = animation.EventPattern.Triggers[0];
                     if (trigger.States.Count > 0)
                     {
@@ -708,6 +714,7 @@ public partial class EventTrackViewModel : ObservableObject
             Type = AnimationType.Event,
             LightAssignment = LightAssignment.Random,
             RandomPercentage = 1.0, // One light at a time
+            EventPreset = Preset.ToString(),
             EventPattern = new EventPattern
             {
                 Triggers = triggers,

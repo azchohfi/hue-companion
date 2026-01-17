@@ -69,6 +69,11 @@ public class AnimationDefinition
     /// Effect brightness (0.0-1.0) for native effect animations.
     /// </summary>
     public double? EffectBrightness { get; set; }
+
+    /// <summary>
+    /// Event preset identifier for event-based animations.
+    /// </summary>
+    public string? EventPreset { get; set; }
 }
 
 /// <summary>
