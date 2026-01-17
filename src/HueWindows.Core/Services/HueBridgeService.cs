@@ -599,7 +599,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task ApplyEffectAsync(Guid lightId, string effect)
+    public async Task ApplyEffectAsync(Guid lightId, string effect, double? speed = null, double? brightness = null)
     {
         if (_hueApi == null) return;
 
@@ -624,6 +624,18 @@ public class HueBridgeService : IHueBridgeService
         {
             Effects = new HueApi.Models.Effects { Effect = effectEnum }
         };
+
+        // Add brightness if specified
+        if (brightness.HasValue)
+        {
+            command.Dimming = new HueApi.Models.Dimming
+            {
+                Brightness = brightness.Value * 100 // API expects 0-100
+            };
+        }
+
+        // Note: Speed may require EffectsV2 API - check HueApi support for future enhancement
+
         await _hueApi.Light.UpdateAsync(lightId, command);
     }
 

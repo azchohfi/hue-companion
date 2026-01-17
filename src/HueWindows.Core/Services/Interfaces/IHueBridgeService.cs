@@ -148,7 +148,9 @@ public interface IHueBridgeService
     /// </summary>
     /// <param name="lightId">The light ID.</param>
     /// <param name="effect">The effect to apply.</param>
-    Task ApplyEffectAsync(Guid lightId, string effect);
+    /// <param name="speed">Effect speed (0.0-1.0). Null uses default.</param>
+    /// <param name="brightness">Brightness level (0.0-1.0). Null uses current.</param>
+    Task ApplyEffectAsync(Guid lightId, string effect, double? speed = null, double? brightness = null);
 
     // Scene operations
 
