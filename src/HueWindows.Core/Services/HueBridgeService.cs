@@ -612,6 +612,10 @@ public class HueBridgeService : IHueBridgeService
             "glisten" => Effect.glisten,
             "opal" => Effect.opal,
             "prism" => Effect.prism,
+            "underwater" => Effect.underwater,
+            "cosmos" => Effect.cosmos,
+            "sunbeam" => Effect.sunbeam,
+            "enchant" => Effect.enchant,
             "none" => Effect.no_effect,
             _ => Effect.no_effect
         };
