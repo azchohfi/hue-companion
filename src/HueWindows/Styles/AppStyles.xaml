@@ -288,6 +288,19 @@
         </Setter>
     </Style>
 
+    <!-- Effect Card Button Style - Warmer tint for native effects -->
+    <Style x:Key="EffectCardButtonStyle" TargetType="Button" BasedOn="{StaticResource SceneCardButtonStyle}">
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FF1E1A1A" Offset="0"/>
+                    <GradientStop Color="#FF282225" Offset="0.5"/>
+                    <GradientStop Color="#FF221E1E" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Active Scene Button Style -->
     <Style x:Key="ActiveSceneButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>

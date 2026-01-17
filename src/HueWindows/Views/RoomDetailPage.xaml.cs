@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using HueWindows.Constants;
+using HueWindows.Controls;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
@@ -637,5 +638,47 @@ public sealed partial class RoomDetailPage : Page
         Storyboard.SetTarget(scaleYAnimation, scaleTransform);
         Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
         storyboard.Begin();
+    }
+
+    private void NativeEffect_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is NativeEffectInfo effect)
+        {
+            var flyout = new Flyout
+            {
+                ShouldConstrainToRootBounds = false
+            };
+            flyout.FlyoutPresenterStyle = (Style)Resources["EffectFlyoutPresenterStyle"];
+
+            var flyoutContent = new NativeEffectFlyout { Effect = effect };
+            flyoutContent.ApplyRequested += async (s, args) =>
+            {
+                flyout.Hide();
+                await ApplyNativeEffectAsync(args);
+            };
+            flyoutContent.SaveRequested += async (s, args) =>
+            {
+                flyout.Hide();
+                await SaveNativeEffectAsSceneAsync(args);
+            };
+
+            flyout.Content = flyoutContent;
+            flyout.Opening += (s, args) => flyoutContent.AnimateEntrance();
+            flyout.ShowAt(button);
+        }
+    }
+
+    private async Task ApplyNativeEffectAsync(NativeEffectApplyEventArgs args)
+    {
+        foreach (var light in ViewModel.Lights)
+        {
+            await ViewModel.ApplyEffectToLightAsync(light.LightId, args.Effect.Id, args.Speed, args.Brightness);
+        }
+    }
+
+    private async Task SaveNativeEffectAsSceneAsync(NativeEffectApplyEventArgs args)
+    {
+        // TODO: Implement save dialog (Task 7)
+        await ApplyNativeEffectAsync(args);
     }
 }

@@ -19,6 +19,12 @@
         <converters:HexToVisibilityConverter x:Key="HexToVisibilityConverter"/>
         <converters:HexToGradientBackgroundConverter x:Key="HexToGradientBackgroundConverter"/>
         <converters:HexToGradientBorderConverter x:Key="HexToGradientBorderConverter"/>
+
+        <Style x:Key="EffectFlyoutPresenterStyle" TargetType="FlyoutPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
     </Page.Resources>
 
     <Grid>
@@ -277,6 +283,39 @@
                                         Tag="{x:Bind}">
                                     <StackPanel HorizontalAlignment="Center" Spacing="4">
                                         <FontIcon Glyph="&#xE768;" FontSize="16"/>
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="90"
+                                                   TextAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Hue Effects Section -->
+                <StackPanel>
+                    <TextBlock Text="Hue Effects"
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.NativeEffects}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="110"
+                                               MinItemHeight="88"
+                                               MinRowSpacing="8"
+                                               MinColumnSpacing="8"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:NativeEffectInfo">
+                                <Button Style="{StaticResource EffectCardButtonStyle}"
+                                        Click="NativeEffect_Click"
+                                        Tag="{x:Bind}">
+                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                        <FontIcon Glyph="&#xE7B1;" FontSize="16"
+                                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                         <TextBlock Text="{x:Bind Name}"
                                                    Style="{StaticResource CaptionTextBlockStyle}"
                                                    TextTrimming="CharacterEllipsis"

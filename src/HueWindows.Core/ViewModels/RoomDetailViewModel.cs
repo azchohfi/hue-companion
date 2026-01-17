@@ -51,6 +51,11 @@ public partial class RoomDetailViewModel : ObservableObject
     private string? _runningAnimationName;
 
     /// <summary>
+    /// Gets all available native Hue effects.
+    /// </summary>
+    public IReadOnlyList<NativeEffectInfo> NativeEffects => NativeEffectInfo.All;
+
+    /// <summary>
     /// Event raised when a light is selected for detail view.
     /// </summary>
     public event EventHandler<Guid>? LightSelected;
@@ -282,6 +287,14 @@ public partial class RoomDetailViewModel : ObservableObject
     private async Task StopAnimationAsync()
     {
         await _animationService.StopSceneInRoomAsync(_groupId);
+    }
+
+    /// <summary>
+    /// Applies a native Hue effect to a specific light.
+    /// </summary>
+    public async Task ApplyEffectToLightAsync(Guid lightId, string effect, double speed, double brightness)
+    {
+        await _bridgeService.ApplyEffectAsync(lightId, effect, speed, brightness);
     }
 }
 
