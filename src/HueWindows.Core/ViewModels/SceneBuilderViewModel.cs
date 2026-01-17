@@ -262,8 +262,11 @@ public partial class SceneBuilderViewModel : ObservableObject
         {
             if (track.Keyframes.Contains(keyframe))
             {
-                // Don't delete if it's the only keyframe or one of two keyframes
-                if (track.Keyframes.Count > 2)
+                // Don't delete first or last keyframes
+                var isFirstKeyframe = track.Keyframes.OrderBy(k => k.TimeSeconds).First() == keyframe;
+                var isLastKeyframe = track.Keyframes.OrderByDescending(k => k.TimeSeconds).First() == keyframe;
+
+                if (!isFirstKeyframe && !isLastKeyframe)
                 {
                     track.Keyframes.Remove(keyframe);
                     if (SelectedKeyframe == keyframe)
