@@ -14,6 +14,7 @@ public partial class RoomDetailViewModel : ObservableObject
 {
     private readonly IHueBridgeService _bridgeService;
     private readonly IAnimationService _animationService;
+    private readonly ISceneStorageService _sceneStorageService;
     private Guid _groupId;
     private LightGroupType _groupType = LightGroupType.Room;
 
@@ -77,10 +78,11 @@ public partial class RoomDetailViewModel : ObservableObject
                 .ToList()
         : new();
 
-    public RoomDetailViewModel(IHueBridgeService bridgeService, IAnimationService animationService)
+    public RoomDetailViewModel(IHueBridgeService bridgeService, IAnimationService animationService, ISceneStorageService sceneStorageService)
     {
         _bridgeService = bridgeService;
         _animationService = animationService;
+        _sceneStorageService = sceneStorageService;
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -295,6 +297,18 @@ public partial class RoomDetailViewModel : ObservableObject
     public async Task ApplyEffectToLightAsync(Guid lightId, string effect, double speed, double brightness)
     {
         await _bridgeService.ApplyEffectAsync(lightId, effect, speed, brightness);
+    }
+
+    /// <summary>
+    /// Saves a user-created scene.
+    /// </summary>
+    public async Task SaveUserSceneAsync(AnimatedSceneModel scene)
+    {
+        var result = await _sceneStorageService.SaveSceneAsync(scene);
+        if (!result.IsSuccess)
+        {
+            ErrorMessage = result.Error ?? "Failed to save scene";
+        }
     }
 }
 

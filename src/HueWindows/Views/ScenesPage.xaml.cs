@@ -2,8 +2,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Controls;
-using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
+using HueWindows.Core.ViewModels;
 
 namespace HueWindows.Views;
 
@@ -96,8 +96,44 @@ public sealed partial class ScenesPage : Page
 
     private async Task SaveNativeEffectAsSceneAsync(NativeEffectApplyEventArgs args)
     {
-        // TODO: Implement save dialog (Task 7)
-        await ApplyNativeEffectAsync(args);
+        var dialog = new Dialogs.SaveEffectDialog();
+        dialog.XamlRoot = this.XamlRoot;
+        dialog.SetEffect(args.Effect, args.Speed, args.Brightness);
+
+        var result = await dialog.ShowAsync();
+
+        if (result == ContentDialogResult.Primary)
+        {
+            var scene = new AnimatedSceneModel
+            {
+                Id = $"user_{Guid.NewGuid():N}",
+                Name = dialog.SceneName,
+                Description = $"{args.Effect.Name} effect",
+                Category = "effect",
+                Animations = new List<AnimationDefinition>
+                {
+                    new AnimationDefinition
+                    {
+                        Id = $"{args.Effect.Id}_effect",
+                        Name = args.Effect.Id,
+                        Type = AnimationType.NativeEffect,
+                        LightAssignment = LightAssignment.All,
+                        RepeatMode = RepeatMode.Loop,
+                        EffectSpeed = args.Speed,
+                        EffectBrightness = args.Brightness
+                    }
+                }
+            };
+
+            var errorBefore = ViewModel.ErrorMessage;
+            await ViewModel.SaveUserSceneAsync(scene);
+
+            // Only apply effect if save succeeded (no new error)
+            if (ViewModel.ErrorMessage == errorBefore)
+            {
+                await ApplyNativeEffectAsync(args);
+            }
+        }
     }
 
     public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;

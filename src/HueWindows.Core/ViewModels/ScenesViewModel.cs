@@ -12,6 +12,7 @@ public partial class ScenesViewModel : ObservableObject
 {
     private readonly IHueBridgeService _bridgeService;
     private readonly IAnimationService _animationService;
+    private readonly ISceneStorageService _sceneStorageService;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -47,10 +48,12 @@ public partial class ScenesViewModel : ObservableObject
 
     public ScenesViewModel(
         IHueBridgeService bridgeService,
-        IAnimationService animationService)
+        IAnimationService animationService,
+        ISceneStorageService sceneStorageService)
     {
         _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
+        _sceneStorageService = sceneStorageService ?? throw new ArgumentNullException(nameof(sceneStorageService));
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -179,5 +182,22 @@ public partial class ScenesViewModel : ObservableObject
     {
         // Update animation state for the newly selected room
         UpdateAnimationState();
+    }
+
+    /// <summary>
+    /// Saves a user-created scene.
+    /// </summary>
+    public async Task SaveUserSceneAsync(AnimatedSceneModel scene)
+    {
+        var result = await _sceneStorageService.SaveSceneAsync(scene);
+        if (result.IsSuccess)
+        {
+            // Refresh user scenes list
+            UserScenes = new List<AnimatedSceneModel>(UserScenes) { scene };
+        }
+        else
+        {
+            ErrorMessage = result.Error ?? "Failed to save scene";
+        }
     }
 }

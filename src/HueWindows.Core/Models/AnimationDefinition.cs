@@ -59,6 +59,16 @@ public class AnimationDefinition
     /// Priority/layer for animation execution (higher numbers play on top).
     /// </summary>
     public int Priority { get; set; }
+
+    /// <summary>
+    /// Effect speed (0.0-1.0) for native effect animations.
+    /// </summary>
+    public double? EffectSpeed { get; set; }
+
+    /// <summary>
+    /// Effect brightness (0.0-1.0) for native effect animations.
+    /// </summary>
+    public double? EffectBrightness { get; set; }
 }
 
 /// <summary>
