@@ -218,12 +218,15 @@ public class AnimationEngine : IDisposable
                     await _bridgeService.SetLightBrightnessAsync(lightId, brightness);
                 }
 
-                // Interpolate color
+                // Interpolate color using HSV to avoid muddy colors
                 if (prev.Color != null && next.Color != null)
                 {
-                    var x = prev.Color.X + (next.Color.X - prev.Color.X) * progress;
-                    var y = prev.Color.Y + (next.Color.Y - prev.Color.Y) * progress;
-                    var color = new HueColor(x, y);
+                    var color = ColorConverter.InterpolateHsv(
+                        prev.Color, 
+                        next.Color, 
+                        progress, 
+                        prev.Brightness ?? 1.0, 
+                        next.Brightness ?? 1.0);
                     await _bridgeService.SetLightColorAsync(lightId, color);
                 }
 

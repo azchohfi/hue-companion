@@ -233,10 +233,13 @@ public partial class SceneBuilderViewModel : ObservableObject
             var t = (timeSeconds - prevKeyframe.TimeSeconds) /
                     (nextKeyframe.TimeSeconds - prevKeyframe.TimeSeconds);
 
-            // Simple linear interpolation
-            var x = prevKeyframe.Color.X + (nextKeyframe.Color.X - prevKeyframe.Color.X) * t;
-            var y = prevKeyframe.Color.Y + (nextKeyframe.Color.Y - prevKeyframe.Color.Y) * t;
-            newColor = new HueColor(x, y);
+            // HSV interpolation to avoid muddy colors
+            newColor = ColorConverter.InterpolateHsv(
+                prevKeyframe.Color, 
+                nextKeyframe.Color, 
+                t, 
+                prevKeyframe.Brightness, 
+                nextKeyframe.Brightness);
             newBrightness = prevKeyframe.Brightness + (nextKeyframe.Brightness - prevKeyframe.Brightness) * t;
         }
 
@@ -391,12 +394,11 @@ public partial class SceneBuilderViewModel : ObservableObject
         // Apply easing based on transition style
         t = Easing.Apply(t, next.Transition);
 
-        // Interpolate color
-        var x = prev.Color.X + (next.Color.X - prev.Color.X) * t;
-        var y = prev.Color.Y + (next.Color.Y - prev.Color.Y) * t;
+        // Interpolate color using HSV to avoid muddy colors
+        var color = ColorConverter.InterpolateHsv(prev.Color, next.Color, t, prev.Brightness, next.Brightness);
         var brightness = prev.Brightness + (next.Brightness - prev.Brightness) * t;
 
-        return (new HueColor(x, y), brightness);
+        return (color, brightness);
     }
 
     /// <summary>
