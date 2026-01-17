@@ -141,14 +141,14 @@ public partial class SceneBuilderViewModel : ObservableObject
                     new KeyframeViewModel
                     {
                         TimeSeconds = 0,
-                        Color = new HueColor(0.45, 0.41), // Warm white
+                        Color = HueColors.WarmWhite,
                         Brightness = 1.0,
                         Transition = TransitionStyle.EaseInOut
                     },
                     new KeyframeViewModel
                     {
                         TimeSeconds = DurationSeconds,
-                        Color = new HueColor(0.45, 0.41),
+                        Color = HueColors.WarmWhite,
                         Brightness = 1.0,
                         Transition = TransitionStyle.EaseInOut
                     }
@@ -225,7 +225,7 @@ public partial class SceneBuilderViewModel : ObservableObject
             .FirstOrDefault();
 
         // Interpolate color and brightness
-        var newColor = prevKeyframe?.Color ?? new HueColor(0.45, 0.41);
+        var newColor = prevKeyframe?.Color ?? HueColors.WarmWhite;
         var newBrightness = prevKeyframe?.Brightness ?? 1.0;
 
         if (prevKeyframe != null && nextKeyframe != null)
@@ -354,7 +354,7 @@ public partial class SceneBuilderViewModel : ObservableObject
     private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
     {
         if (track.Keyframes.Count == 0)
-            return (new HueColor(0.45, 0.41), 1.0);
+            return (HueColors.WarmWhite, 1.0);
 
         // Find surrounding keyframes
         var sortedKeyframes = track.Keyframes.OrderBy(k => k.TimeSeconds).ToList();
@@ -584,7 +584,7 @@ public partial class SceneBuilderViewModel : ObservableObject
                         animation.Keyframes.Select(k => new KeyframeViewModel
                         {
                             TimeSeconds = k.TimeSeconds,
-                            Color = k.Color ?? new HueColor(0.45, 0.41),
+                            Color = k.Color ?? HueColors.WarmWhite,
                             Brightness = k.Brightness ?? 1.0,
                             Transition = k.TransitionStyle
                         })
@@ -646,7 +646,7 @@ public partial class KeyframeViewModel : ObservableObject
     private double _timeSeconds;
 
     [ObservableProperty]
-    private HueColor _color = new(0.45, 0.41);
+    private HueColor _color = HueColors.WarmWhite;
 
     [ObservableProperty]
     private double _brightness = 1.0;
@@ -749,7 +749,7 @@ public partial class EventTrackViewModel : ObservableObject
                         {
                             DurationSeconds = 0.1,
                             Brightness = 1.0,
-                            Color = new HueColor(0.31, 0.32), // Cool white
+                            Color = HueColors.CoolWhite,
                             TransitionStyle = TransitionStyle.Instant
                         },
                         // Fade out
@@ -798,7 +798,7 @@ public partial class EventTrackViewModel : ObservableObject
                         {
                             DurationSeconds = 0.15,
                             Brightness = 0.6,
-                            Color = new HueColor(0.57, 0.41), // Warm orange
+                            Color = HueColors.WarmOrange,
                             TransitionStyle = TransitionStyle.EaseIn
                         },
                         // Return
