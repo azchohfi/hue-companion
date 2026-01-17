@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using HueWindows.Controls;
 using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
 
@@ -51,6 +52,52 @@ public sealed partial class ScenesPage : Page
             // Navigate to Scene Builder with the scene ID to edit
             Frame.Navigate(typeof(SceneBuilderPage), scene.Id);
         }
+    }
+
+    private void NativeEffect_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedRoom == null)
+        {
+            ViewModel.ErrorMessage = "Select a room first to apply an effect.";
+            return;
+        }
+
+        if (sender is Button button && button.Tag is NativeEffectInfo effect)
+        {
+            var flyout = new Flyout
+            {
+                ShouldConstrainToRootBounds = false,
+                FlyoutPresenterStyle = (Style)Resources["EffectFlyoutPresenterStyle"]
+            };
+
+            var flyoutContent = new NativeEffectFlyout { Effect = effect };
+            flyoutContent.ApplyRequested += async (s, args) =>
+            {
+                flyout.Hide();
+                await ApplyNativeEffectAsync(args);
+            };
+            flyoutContent.SaveRequested += async (s, args) =>
+            {
+                flyout.Hide();
+                await SaveNativeEffectAsSceneAsync(args);
+            };
+
+            flyout.Content = flyoutContent;
+            flyout.Opening += (s, args) => flyoutContent.AnimateEntrance();
+            flyout.ShowAt(button);
+        }
+    }
+
+    private async Task ApplyNativeEffectAsync(NativeEffectApplyEventArgs args)
+    {
+        if (ViewModel.SelectedRoom == null) return;
+        await ViewModel.ApplyEffectToRoomAsync(args.Effect.Id, args.Speed, args.Brightness);
+    }
+
+    private async Task SaveNativeEffectAsSceneAsync(NativeEffectApplyEventArgs args)
+    {
+        // TODO: Implement save dialog (Task 7)
+        await ApplyNativeEffectAsync(args);
     }
 
     public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;

@@ -34,6 +34,11 @@ public partial class ScenesViewModel : ObservableObject
 
     public bool HasUserScenes => UserScenes.Count > 0;
 
+    /// <summary>
+    /// Gets all available native Hue effects.
+    /// </summary>
+    public IReadOnlyList<NativeEffectInfo> NativeEffects => NativeEffectInfo.All;
+
     [ObservableProperty]
     private bool _isAnimationPlaying;
 
@@ -116,6 +121,37 @@ public partial class ScenesViewModel : ObservableObject
         if (SelectedRoom != null)
         {
             await _animationService.StopSceneInRoomAsync(SelectedRoom.Id);
+        }
+    }
+
+    /// <summary>
+    /// Applies a native Hue effect to all lights in the selected room.
+    /// </summary>
+    /// <param name="effect">The effect identifier (e.g., "fire", "candle").</param>
+    /// <param name="speed">Effect speed (0.0-1.0).</param>
+    /// <param name="brightness">Brightness level (0.0-1.0).</param>
+    public async Task ApplyEffectToRoomAsync(string effect, double speed, double brightness)
+    {
+        if (SelectedRoom == null) return;
+
+        try
+        {
+            var lights = await _bridgeService.GetLightsInRoomAsync(SelectedRoom.Id);
+            if (lights.IsSuccess && lights.Value != null)
+            {
+                foreach (var light in lights.Value)
+                {
+                    await _bridgeService.ApplyEffectAsync(light.Id, effect, speed, brightness);
+                }
+            }
+            else
+            {
+                ErrorMessage = "Failed to get lights for room.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to apply effect: {ex.Message}";
         }
     }
 
