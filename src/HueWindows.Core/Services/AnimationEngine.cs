@@ -13,7 +13,6 @@ public class AnimationEngine : IDisposable
     private readonly List<Guid> _targetLights;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly List<Task> _animationTasks = new();
-    private readonly Random _random = new();
     private bool _isDisposed;
 
     public AnimationEngine(
@@ -102,7 +101,7 @@ public class AnimationEngine : IDisposable
     {
         var percentage = animation.RandomPercentage ?? 0.5;
         var count = Math.Max(1, (int)(_targetLights.Count * percentage));
-        return _targetLights.OrderBy(_ => _random.Next()).Take(count).ToList();
+        return _targetLights.OrderBy(_ => Random.Shared.Next()).Take(count).ToList();
     }
 
     private List<Guid> SelectAlternatingLights()
@@ -297,7 +296,7 @@ public class AnimationEngine : IDisposable
             while (!cancellationToken.IsCancellationRequested)
             {
                 // Calculate next event interval
-                var intervalMs = _random.NextDouble() *
+                var intervalMs = Random.Shared.NextDouble() *
                     (animation.EventPattern.MaxIntervalSeconds - animation.EventPattern.MinIntervalSeconds) * 1000 +
                     animation.EventPattern.MinIntervalSeconds * 1000;
 
@@ -305,7 +304,7 @@ public class AnimationEngine : IDisposable
 
                 // Check probability
                 if (animation.EventPattern.Probability.HasValue &&
-                    _random.NextDouble() > animation.EventPattern.Probability.Value)
+                    Random.Shared.NextDouble() > animation.EventPattern.Probability.Value)
                 {
                     continue;
                 }
@@ -337,7 +336,7 @@ public class AnimationEngine : IDisposable
 
         if (pattern.AllowSimultaneous && pattern.MaxSimultaneous.HasValue)
         {
-            count = _random.Next(1, pattern.MaxSimultaneous.Value + 1);
+            count = Random.Shared.Next(1, pattern.MaxSimultaneous.Value + 1);
         }
 
         // Weighted random selection
@@ -345,7 +344,7 @@ public class AnimationEngine : IDisposable
 
         for (int i = 0; i < count && pattern.Triggers.Count > 0; i++)
         {
-            var randomValue = _random.NextDouble() * totalWeight;
+            var randomValue = Random.Shared.NextDouble() * totalWeight;
             var cumulativeWeight = 0.0;
 
             foreach (var trigger in pattern.Triggers)
@@ -364,7 +363,7 @@ public class AnimationEngine : IDisposable
 
     private Guid SelectRandomLight(List<Guid> lights)
     {
-        return lights[_random.Next(lights.Count)];
+        return lights[Random.Shared.Next(lights.Count)];
     }
 
     private async Task ExecuteTriggerAsync(EventTrigger trigger, Guid lightId, CancellationToken cancellationToken)
