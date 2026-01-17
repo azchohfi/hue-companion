@@ -59,6 +59,9 @@ public partial class SceneBuilderViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSnapEnabled = true; // Snap to grid on by default
 
+    private DateTime _lastPlayheadUpdate = DateTime.MinValue;
+    private const int PlayheadUpdateThrottleMs = 100; // Minimum time between updates
+
     /// <summary>
     /// Gets the current snap interval based on zoom level.
     /// </summary>
@@ -318,11 +321,19 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     /// <summary>
     /// Updates lights to reflect the current playhead position (live preview).
+    /// Throttled to avoid spamming the bridge during scrubbing.
     /// </summary>
     public async Task UpdateLightsForPlayheadAsync()
     {
         if (SelectedRoom == null || Tracks.Count == 0)
             return;
+
+        // Throttle updates to avoid overwhelming the bridge
+        var now = DateTime.UtcNow;
+        if ((now - _lastPlayheadUpdate).TotalMilliseconds < PlayheadUpdateThrottleMs)
+            return;
+
+        _lastPlayheadUpdate = now;
 
         foreach (var track in Tracks)
         {
