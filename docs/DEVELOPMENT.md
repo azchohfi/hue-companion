@@ -332,3 +332,65 @@ Shared build settings for all projects:
 - Some NuGet packages may not support ARM64
 - Check Package.appxmanifest for correct TargetDeviceFamily
 - Try x64 build first to isolate platform-specific issues
+
+## 8. UI & Visual Regression Testing
+
+### Running UI Tests Locally
+
+```powershell
+# Full build + capture all test pages
+.\tools\Run-UITests.ps1
+
+# Quick capture (skip build)
+.\tools\Run-UITests.ps1 -SkipBuild
+
+# Test specific pages
+.\tools\Run-UITests.ps1 -SkipBuild -Pages dashboard,settings
+```
+
+Screenshots are saved to `test-screenshots/`.
+
+### Visual Regression Testing
+
+```powershell
+# Compare current screenshots against baselines
+.\tools\Compare-Screenshots.ps1
+
+# Update baselines (after reviewing changes)
+.\tools\Compare-Screenshots.ps1 -UpdateBaselines
+
+# Use stricter threshold (default is 1%)
+.\tools\Compare-Screenshots.ps1 -Threshold 0.5
+```
+
+**Threshold:** 1% pixel difference allowed by default.
+
+### Baseline Management
+
+Baseline screenshots are stored in `tests/visual-baselines/`. When UI changes are intentional:
+
+1. Run UI tests: `.\tools\Run-UITests.ps1`
+2. Review screenshots in `test-screenshots/`
+3. Update baselines: `.\tools\Compare-Screenshots.ps1 -UpdateBaselines`
+4. Commit: `git add tests/visual-baselines/*.png`
+
+### CI Integration
+
+| Workflow | What it does |
+|----------|--------------|
+| **Main CI** | Captures screenshots, runs regression tests, uploads artifacts |
+| **PR Validation** | Compares screenshots, comments on PR if differences detected |
+
+**Artifacts:** Screenshots and diff images are uploaded for review when tests run.
+
+### Testable Pages
+
+| Page | Command |
+|------|---------|
+| Dashboard | `--page dashboard` |
+| Settings | `--page settings` |
+| Room (with bridge) | `--page room --name <room-name>` |
+| Zone (with bridge) | `--page zone --name <zone-name>` |
+| Light (with bridge) | `--page light --name <light-name>` |
+
+**Note:** Pages requiring room/zone/light need a connected Hue bridge.
