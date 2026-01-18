@@ -19,6 +19,7 @@
         <converters:HexToVisibilityConverter x:Key="HexToVisibilityConverter"/>
         <converters:HexToGradientBackgroundConverter x:Key="HexToGradientBackgroundConverter"/>
         <converters:HexToGradientBorderConverter x:Key="HexToGradientBorderConverter"/>
+        <converters:BoolToOpacityActiveConverter x:Key="BoolToOpacityActiveConverter"/>
 
         <Style x:Key="EffectFlyoutPresenterStyle" TargetType="FlyoutPresenter">
             <Setter Property="Background" Value="Transparent"/>
@@ -264,11 +265,12 @@
                                         </StackPanel>
                                     </Button>
                                     <!-- Active indicator border - uses scene's primary color -->
+                                    <!-- Note: Using Opacity instead of Visibility to avoid layout cycles in ItemsRepeater -->
                                     <Border BorderThickness="2"
                                             BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
                                             CornerRadius="8"
                                             IsHitTestVisible="False"
-                                            Visibility="{x:Bind IsActive, Mode=OneWay}"/>
+                                            Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>

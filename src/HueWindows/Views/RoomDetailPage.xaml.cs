@@ -684,43 +684,64 @@ public sealed partial class RoomDetailPage : Page
 
     private void OnSceneActivatedForPulse(object? sender, Guid sceneId)
     {
-        if (_sceneElements.TryGetValue(sceneId, out var element))
+        // Must run on UI thread - event may come from async continuation on thread pool
+        if (DispatcherQueue?.HasThreadAccess == true)
         {
-            AnimateScenePulse(element);
+            if (_sceneElements.TryGetValue(sceneId, out var element))
+            {
+                AnimateScenePulse(element);
+            }
+        }
+        else
+        {
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (_sceneElements.TryGetValue(sceneId, out var element))
+                {
+                    AnimateScenePulse(element);
+                }
+            });
         }
     }
 
     private void AnimateScenePulse(UIElement element)
     {
-        if (element.RenderTransform is not ScaleTransform scaleTransform)
-            return;
-
-        var scaleXAnimation = new DoubleAnimation
+        try
         {
-            From = 1.0,
-            To = AppConstants.Animation.PulseScaleFactor,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
-            AutoReverse = true,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
+            if (element.RenderTransform is not ScaleTransform scaleTransform)
+                return;
 
-        var scaleYAnimation = new DoubleAnimation
+            var scaleXAnimation = new DoubleAnimation
+            {
+                From = 1.0,
+                To = AppConstants.Animation.PulseScaleFactor,
+                Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+                AutoReverse = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            var scaleYAnimation = new DoubleAnimation
+            {
+                From = 1.0,
+                To = AppConstants.Animation.PulseScaleFactor,
+                Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+                AutoReverse = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(scaleXAnimation);
+            storyboard.Children.Add(scaleYAnimation);
+            Storyboard.SetTarget(scaleXAnimation, scaleTransform);
+            Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
+            Storyboard.SetTarget(scaleYAnimation, scaleTransform);
+            Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
+            storyboard.Begin();
+        }
+        catch
         {
-            From = 1.0,
-            To = AppConstants.Animation.PulseScaleFactor,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
-            AutoReverse = true,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(scaleXAnimation);
-        storyboard.Children.Add(scaleYAnimation);
-        Storyboard.SetTarget(scaleXAnimation, scaleTransform);
-        Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
-        Storyboard.SetTarget(scaleYAnimation, scaleTransform);
-        Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
-        storyboard.Begin();
+            // Animation failure is non-critical - ignore
+        }
     }
 
     private void NativeEffect_Click(object sender, RoutedEventArgs e)

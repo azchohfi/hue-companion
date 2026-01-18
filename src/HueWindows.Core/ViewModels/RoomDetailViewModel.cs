@@ -625,10 +625,21 @@ public partial class SceneItemViewModel : ObservableObject
     [RelayCommand]
     private async Task ActivateAsync()
     {
+        // Capture sync context to ensure event fires on UI thread
+        var syncContext = SynchronizationContext.Current;
         try
         {
             await _bridgeService.ActivateSceneAsync(SceneId);
-            SceneActivated?.Invoke(this, SceneId);
+
+            // Fire event on original (UI) thread to avoid cross-thread XAML updates
+            if (syncContext != null)
+            {
+                syncContext.Post(_ => SceneActivated?.Invoke(this, SceneId), null);
+            }
+            else
+            {
+                SceneActivated?.Invoke(this, SceneId);
+            }
         }
         catch (Exception)
         {

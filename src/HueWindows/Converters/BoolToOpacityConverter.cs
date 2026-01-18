@@ -23,6 +23,23 @@ public class BoolToOpacityConverter : IValueConverter
 }
 
 /// <summary>
+/// Converts a boolean value to an opacity value (1.0 or 0.0).
+/// Used for active indicators to avoid layout cycles with Visibility.
+/// </summary>
+public class BoolToOpacityActiveConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value is true ? 1.0 : 0.0;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
 /// Converts a boolean value to Visibility (true = Visible, false = Collapsed).
 /// </summary>
 public class BoolToVisibilityConverter : IValueConverter
