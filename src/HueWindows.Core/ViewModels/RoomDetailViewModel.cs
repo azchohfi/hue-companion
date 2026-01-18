@@ -625,7 +625,15 @@ public partial class SceneItemViewModel : ObservableObject
     [RelayCommand]
     private async Task ActivateAsync()
     {
-        await _bridgeService.ActivateSceneAsync(SceneId);
-        SceneActivated?.Invoke(this, SceneId);
+        try
+        {
+            await _bridgeService.ActivateSceneAsync(SceneId);
+            SceneActivated?.Invoke(this, SceneId);
+        }
+        catch (Exception)
+        {
+            // Silently fail - the bridge might be temporarily unavailable
+            // UI will update when bridge connection is restored via event stream
+        }
     }
 }
