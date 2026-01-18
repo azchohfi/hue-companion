@@ -689,6 +689,93 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
+    public async Task<Result<Guid>> CreateSceneFromCurrentStateAsync(Guid groupId, string sceneName, bool isZone = false)
+    {
+        if (_hueApi == null)
+            return Result<Guid>.Failure("Not connected to bridge.");
+
+        try
+        {
+            // Get current light states from the room/zone
+            var groupResult = isZone
+                ? await GetZoneAsync(groupId)
+                : await GetRoomAsync(groupId);
+
+            if (!groupResult.IsSuccess || groupResult.Value == null)
+                return Result<Guid>.Failure(groupResult.Error ?? "Failed to get room/zone.");
+
+            var lights = groupResult.Value.Lights;
+            if (lights == null || lights.Count == 0)
+                return Result<Guid>.Failure("No lights found in room/zone.");
+
+            // Build scene actions from current light states
+            var actions = new List<SceneAction>();
+            foreach (var light in lights)
+            {
+                var lightAction = new LightAction
+                {
+                    On = new On { IsOn = light.IsOn },
+                    Dimming = new Dimming { Brightness = light.Brightness * 100 }
+                };
+
+                if (light.CurrentColor != null)
+                {
+                    lightAction.Color = new HueApi.Models.Color
+                    {
+                        Xy = new XyPosition { X = light.CurrentColor.X, Y = light.CurrentColor.Y }
+                    };
+                }
+
+                var action = new SceneAction
+                {
+                    Target = new ResourceIdentifier { Rid = light.Id, Rtype = "light" },
+                    Action = lightAction
+                };
+                actions.Add(action);
+            }
+
+            // Create the scene
+            var metadata = new Metadata { Name = sceneName };
+            var group = new ResourceIdentifier { Rid = groupId, Rtype = isZone ? "zone" : "room" };
+            var createScene = new CreateScene(metadata, group)
+            {
+                Actions = actions
+            };
+
+            var result = await _hueApi.Scene.CreateAsync(createScene);
+            var createdId = result?.Data?.FirstOrDefault()?.Rid;
+
+            if (createdId.HasValue)
+            {
+                return Result<Guid>.Success(createdId.Value);
+            }
+
+            return Result<Guid>.Failure("Failed to create scene - no ID returned.");
+        }
+        catch (Exception ex)
+        {
+            return Result<Guid>.Failure($"Failed to create scene: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> DeleteSceneAsync(Guid sceneId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            await _hueApi.Scene.DeleteAsync(sceneId);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to delete scene: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
     public Task StartEventStreamAsync()
     {
         if (_hueApi == null) return Task.CompletedTask;

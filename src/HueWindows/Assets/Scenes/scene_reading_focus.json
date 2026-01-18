@@ -1,0 +1,51 @@
+{
+  "id": "reading_focus",
+  "name": "Reading Focus",
+  "description": "Warm white light optimized for comfortable reading",
+  "category": "Productivity",
+  "previewColor": {
+    "x": 0.46,
+    "y": 0.42
+  },
+  "paletteColors": [
+    { "x": 0.46, "y": 0.42 },
+    { "x": 0.44, "y": 0.40 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "reading_light",
+      "name": "Reading Light",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.75,
+          "color": { "x": 0.46, "y": 0.42 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 30,
+          "brightness": 0.72,
+          "color": { "x": 0.44, "y": 0.40 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 60,
+          "brightness": 0.75,
+          "color": { "x": 0.46, "y": 0.42 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 60,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}

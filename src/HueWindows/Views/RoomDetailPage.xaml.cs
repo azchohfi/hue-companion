@@ -522,6 +522,36 @@ public sealed partial class RoomDetailPage : Page
     }
 
     /// <summary>
+    /// Helper to check if any items exist.
+    /// </summary>
+    public Visibility HasItems(int count)
+    {
+        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Handles click on a pinned animation card.
+    /// </summary>
+    private async void PinnedAnimation_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is AnimatedSceneModel scene)
+        {
+            await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Unpin in animation context menu.
+    /// </summary>
+    private async void UnpinAnimation_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
+        {
+            await ViewModel.UnpinAnimationCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
     /// Handles click on an animated scene card.
     /// </summary>
     private async void AnimatedScene_Click(object sender, RoutedEventArgs e)
@@ -529,6 +559,59 @@ public sealed partial class RoomDetailPage : Page
         if (sender is Button button && button.Tag is AnimatedSceneModel scene)
         {
             await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Save as Scene button.
+    /// </summary>
+    private async void SaveAsScene_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Save as Scene",
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        var input = new TextBox
+        {
+            PlaceholderText = "Scene name",
+            Text = $"{ViewModel.RoomName} - Custom"
+        };
+        input.SelectAll();
+        dialog.Content = input;
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(input.Text))
+        {
+            await ViewModel.SaveAsSceneCommand.ExecuteAsync(input.Text);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Delete in scene context menu.
+    /// </summary>
+    private async void DeleteScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is SceneItemViewModel scene)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Scene",
+                Content = $"Delete \"{scene.Name}\"? This cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await ViewModel.DeleteSceneCommand.ExecuteAsync(scene);
+            }
         }
     }
 

@@ -135,6 +135,20 @@ public sealed partial class ScenesPage : Page
         }
     }
 
+    private async void PinToRoom_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
+        {
+            if (ViewModel.SelectedRoom == null)
+            {
+                ViewModel.ErrorMessage = "Please select a room first";
+                return;
+            }
+
+            await ViewModel.PinToRoomCommand.ExecuteAsync(scene);
+        }
+    }
+
     private void NativeEffect_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel.SelectedRoom == null)

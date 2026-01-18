@@ -13,6 +13,7 @@ public partial class ScenesViewModel : ObservableObject
     private readonly IHueBridgeService _bridgeService;
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _sceneStorageService;
+    private readonly IRoomSceneAssignmentService _assignmentService;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -49,11 +50,13 @@ public partial class ScenesViewModel : ObservableObject
     public ScenesViewModel(
         IHueBridgeService bridgeService,
         IAnimationService animationService,
-        ISceneStorageService sceneStorageService)
+        ISceneStorageService sceneStorageService,
+        IRoomSceneAssignmentService assignmentService)
     {
         _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
         _sceneStorageService = sceneStorageService ?? throw new ArgumentNullException(nameof(sceneStorageService));
+        _assignmentService = assignmentService ?? throw new ArgumentNullException(nameof(assignmentService));
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -125,6 +128,21 @@ public partial class ScenesViewModel : ObservableObject
         {
             await _animationService.StopSceneInRoomAsync(SelectedRoom.Id);
         }
+    }
+
+    /// <summary>
+    /// Pins an animated scene to the selected room.
+    /// </summary>
+    [RelayCommand]
+    private async Task PinToRoomAsync(AnimatedSceneModel scene)
+    {
+        if (SelectedRoom == null)
+        {
+            ErrorMessage = "Please select a room first";
+            return;
+        }
+
+        await _assignmentService.AssignSceneToRoomAsync(SelectedRoom.Id, scene.Id);
     }
 
     /// <summary>

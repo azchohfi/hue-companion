@@ -6,6 +6,7 @@
     xmlns:local="using:HueWindows.Views"
     xmlns:vm="using:HueWindows.Core.ViewModels"
     xmlns:models="using:HueWindows.Core.Models"
+    xmlns:controls="using:HueWindows.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -134,6 +135,15 @@
                                             HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
                                             Padding="16">
+                                        <Button.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Pin to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE718;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Button.ContextFlyout>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -208,7 +218,19 @@
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
                                         Padding="16">
+                                    <Button.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Pin to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE718;"/>
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Button.ContextFlyout>
                                     <StackPanel Spacing="8">
+                                        <controls:AnimatedPreviewControl Scene="{x:Bind}"
+                                                                         Width="80" Height="40"
+                                                                         HorizontalAlignment="Left"/>
                                         <TextBlock Text="{x:Bind Name}"
                                                    Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                         <TextBlock Text="{x:Bind Description}"
