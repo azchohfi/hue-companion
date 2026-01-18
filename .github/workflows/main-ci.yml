@@ -1,0 +1,84 @@
+name: Main CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build (x64)
+      run: dotnet build src/HueWindows/HueWindows.csproj --configuration Release -p:Platform=x64
+
+    - name: Build (ARM64)
+      run: dotnet build src/HueWindows/HueWindows.csproj --configuration Release -p:Platform=ARM64
+
+    - name: Run unit tests with coverage
+      run: |
+        dotnet test src/HueWindows.Tests `
+          --configuration Release `
+          --verbosity normal `
+          --collect:"XPlat Code Coverage" `
+          --results-directory ./TestResults `
+          --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/
+        retention-days: 30
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./TestResults/**/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-hue-windows
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build-package:
+    runs-on: windows-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build MSIX (x64)
+      run: |
+        dotnet publish src/HueWindows/HueWindows.csproj `
+          --configuration Release `
+          -p:Platform=x64 `
+          --output ./publish/x64
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: hue-windows-x64
+        path: ./publish/x64/
+        retention-days: 7
