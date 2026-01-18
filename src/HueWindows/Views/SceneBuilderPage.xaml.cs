@@ -39,11 +39,17 @@ public sealed partial class SceneBuilderPage : Page
 
     private string? _sceneIdToLoad;
 
+    // Drag-select rectangle state
+    private bool _isDragSelecting;
+    private Windows.Foundation.Point _dragSelectStart;
+    private Microsoft.UI.Xaml.Shapes.Rectangle? _dragSelectRect;
+
     public SceneBuilderPage()
     {
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<SceneBuilderViewModel>();
         Loaded += Page_Loaded;
+        KeyDown += SceneBuilderPage_KeyDown;
 
         // Initialize playback timer
         _playbackTimer = new DispatcherTimer
@@ -51,6 +57,12 @@ public sealed partial class SceneBuilderPage : Page
             Interval = TimeSpan.FromMilliseconds(16) // ~60fps
         };
         _playbackTimer.Tick += PlaybackTimer_Tick;
+
+        // Hook up command history state changes
+        ViewModel.CommandHistory.StateChanged += (s, e) =>
+        {
+            // Update UI when undo/redo state changes
+        };
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -61,6 +73,126 @@ public sealed partial class SceneBuilderPage : Page
         if (e.Parameter is string sceneId && !string.IsNullOrEmpty(sceneId))
         {
             _sceneIdToLoad = sceneId;
+        }
+    }
+
+    /// <summary>
+    /// Handles keyboard shortcuts for timeline editing.
+    /// </summary>
+    private void SceneBuilderPage_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        var ctrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        switch (e.Key)
+        {
+            case Windows.System.VirtualKey.Space:
+                // Play/Pause
+                if (!e.Handled)
+                {
+                    PlayButton_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.Delete:
+            case Windows.System.VirtualKey.Back: // Backspace
+                // Delete selected keyframes
+                if (ViewModel.HasSelectedKeyframes())
+                {
+                    ViewModel.DeleteSelectedKeyframes();
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.Z when ctrl && !shift:
+                // Undo
+                if (ViewModel.CanUndo)
+                {
+                    ViewModel.Undo();
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.Y when ctrl:
+            case Windows.System.VirtualKey.Z when ctrl && shift:
+                // Redo
+                if (ViewModel.CanRedo)
+                {
+                    ViewModel.Redo();
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.C when ctrl:
+                // Copy selected keyframes
+                if (ViewModel.HasSelectedKeyframes())
+                {
+                    ViewModel.CopyKeyframes();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.V when ctrl:
+                // Paste keyframes
+                if (ViewModel.CanPaste())
+                {
+                    ViewModel.PasteKeyframes();
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.A when ctrl:
+                // Select all keyframes in current track
+                if (ViewModel.Tracks.Count > 0)
+                {
+                    ViewModel.SelectedKeyframes.Clear();
+                    foreach (var track in ViewModel.Tracks)
+                    {
+                        foreach (var keyframe in track.Keyframes)
+                        {
+                            ViewModel.SelectedKeyframes.Add(keyframe);
+                        }
+                    }
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.Escape:
+                // Clear selection
+                ViewModel.ClearSelection();
+                RenderTimeline();
+                e.Handled = true;
+                break;
+
+            case Windows.System.VirtualKey.Add when ctrl: // Ctrl + "+"
+            case (Windows.System.VirtualKey)187 when ctrl: // Ctrl + "="
+                // Zoom in
+                if (ViewModel.ZoomLevel < 200)
+                {
+                    ViewModel.ZoomLevel = Math.Min(200, ViewModel.ZoomLevel + 10);
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
+
+            case Windows.System.VirtualKey.Subtract when ctrl: // Ctrl + "-"
+            case (Windows.System.VirtualKey)189 when ctrl:
+                // Zoom out
+                if (ViewModel.ZoomLevel > 20)
+                {
+                    ViewModel.ZoomLevel = Math.Max(20, ViewModel.ZoomLevel - 10);
+                    RenderTimeline();
+                    e.Handled = true;
+                }
+                break;
         }
     }
 
@@ -525,17 +657,22 @@ public sealed partial class SceneBuilderPage : Page
             (byte)(rgb.g * brightness),
             (byte)(rgb.b * brightness));
 
+        // Check if this keyframe is selected
+        var isSelected = ViewModel.SelectedKeyframes.Contains(keyframe);
+
         var circle = new Microsoft.UI.Xaml.Shapes.Ellipse
         {
-            Width = 16,
-            Height = 16,
+            Width = isSelected ? 20 : 16,
+            Height = isSelected ? 20 : 16,
             Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(color),
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White),
-            StrokeThickness = 2
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                isSelected ? Windows.UI.Color.FromArgb(255, 255, 200, 0) : Microsoft.UI.Colors.White),
+            StrokeThickness = isSelected ? 3 : 2
         };
 
-        Canvas.SetLeft(circle, x - 8);
-        Canvas.SetTop(circle, y - 8);
+        var offset = isSelected ? 10 : 8;
+        Canvas.SetLeft(circle, x - offset);
+        Canvas.SetTop(circle, y - offset);
 
         // Store references for selection
         circle.Tag = (keyframe, track);
@@ -576,6 +713,8 @@ public sealed partial class SceneBuilderPage : Page
             ellipse.Tag is (KeyframeViewModel keyframe, TrackViewModel track))
         {
             var props = e.GetCurrentPoint(ellipse).Properties;
+            var shiftHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+                .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
             if (props.IsRightButtonPressed)
             {
@@ -593,18 +732,37 @@ public sealed partial class SceneBuilderPage : Page
 
             if (props.IsLeftButtonPressed)
             {
-                // Start dragging the keyframe
-                _isDraggingKeyframe = true;
-                _draggingKeyframe = keyframe;
-                _draggingTrack = track;
+                // Handle multi-select with Shift key
+                ViewModel.ToggleKeyframeSelection(keyframe, shiftHeld);
 
-                // Capture pointer for dragging
-                KeyframeCanvas.CapturePointer(e.Pointer);
-                KeyframeCanvas.PointerMoved += KeyframeCanvas_KeyframeDrag;
-                KeyframeCanvas.PointerReleased += KeyframeCanvas_KeyframeDragEnd;
+                if (!shiftHeld)
+                {
+                    // Start dragging the keyframe
+                    _isDraggingKeyframe = true;
+                    _draggingKeyframe = keyframe;
+                    _draggingTrack = track;
 
-                // Select the keyframe
-                SelectKeyframe(keyframe);
+                    // Capture pointer for dragging
+                    KeyframeCanvas.CapturePointer(e.Pointer);
+                    KeyframeCanvas.PointerMoved += KeyframeCanvas_KeyframeDrag;
+                    KeyframeCanvas.PointerReleased += KeyframeCanvas_KeyframeDragEnd;
+
+                    // Select the keyframe
+                    SelectKeyframe(keyframe);
+                }
+                else
+                {
+                    // Multi-select mode - show side panel if single selection
+                    if (ViewModel.SelectedKeyframes.Count == 1)
+                    {
+                        SelectKeyframe(keyframe);
+                    }
+                    else
+                    {
+                        SidePanel.Visibility = Visibility.Collapsed;
+                    }
+                    RenderTimeline(); // Re-render to show selection highlights
+                }
             }
             e.Handled = true;
         }
@@ -810,18 +968,69 @@ public sealed partial class SceneBuilderPage : Page
         var point = e.GetCurrentPoint(KeyframeCanvas);
         var delta = point.Properties.MouseWheelDelta;
 
+        // Check if Ctrl is held for finer zoom control
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
         // Zoom in/out based on wheel direction
-        var zoomChange = delta > 0 ? 10 : -10;
-        var newZoom = ViewModel.ZoomLevel + zoomChange;
+        var zoomChange = ctrlHeld ? (delta > 0 ? 5 : -5) : (delta > 0 ? 10 : -10);
+        var oldZoom = ViewModel.ZoomLevel;
+        var newZoom = oldZoom + zoomChange;
 
         // Clamp to slider range
         if (newZoom < 20) newZoom = 20;
         if (newZoom > 200) newZoom = 200;
 
+        if (Math.Abs(newZoom - oldZoom) < 0.1)
+        {
+            e.Handled = true;
+            return; // No change
+        }
+
+        // Calculate the time position under the mouse cursor before zoom
+        var mouseX = point.Position.X;
+        var timeUnderMouse = mouseX / oldZoom;
+
+        // Apply new zoom
         ViewModel.ZoomLevel = newZoom;
+
+        // Calculate how much we need to scroll to keep the same time under the mouse
+        // This creates a "zoom to cursor" effect
+        var newMouseX = timeUnderMouse * newZoom;
+        var scrollDelta = newMouseX - mouseX;
+
+        // Update the zoom slider to reflect the change
+        if (ZoomSlider != null)
+        {
+            ZoomSlider.Value = newZoom;
+        }
+
         RenderTimeline();
 
+        // If the canvas is inside a ScrollViewer, adjust the scroll position
+        // to keep the timeline centered on the mouse cursor
+        if (sender is Microsoft.UI.Xaml.FrameworkElement element)
+        {
+            var scrollViewer = FindParentScrollViewer(element);
+            if (scrollViewer != null && scrollDelta != 0)
+            {
+                scrollViewer.ChangeView(scrollViewer.HorizontalOffset + scrollDelta, null, null, false);
+            }
+        }
+
         e.Handled = true;
+    }
+
+    private ScrollViewer? FindParentScrollViewer(Microsoft.UI.Xaml.DependencyObject element)
+    {
+        var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element);
+        while (parent != null)
+        {
+            if (parent is ScrollViewer scrollViewer)
+                return scrollViewer;
+            parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(parent);
+        }
+        return null;
     }
 
     private void UpdatePlayButtonState()
