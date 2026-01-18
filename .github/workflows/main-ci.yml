@@ -53,6 +53,51 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  ui-tests:
+    runs-on: windows-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build for UI tests
+      run: dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+
+    - name: Run UI tests
+      run: |
+        powershell -ExecutionPolicy Bypass -File ./tools/Run-UITests.ps1 -SkipBuild
+      continue-on-error: true
+
+    - name: Run visual regression tests
+      run: |
+        powershell -ExecutionPolicy Bypass -File ./tools/Compare-Screenshots.ps1
+      continue-on-error: true
+
+    - name: Upload test screenshots
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ui-test-screenshots
+        path: test-screenshots/
+        retention-days: 7
+
+    - name: Upload visual diffs
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: visual-diffs
+        path: visual-diffs/
+        retention-days: 7
+
   build-package:
     runs-on: windows-latest
     needs: build-and-test
