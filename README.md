@@ -117,6 +117,33 @@ dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
 dotnet build src/HueWindows/HueWindows.csproj -p:Platform=ARM64
 ```
 
+## Versioning
+
+This project uses [Semantic Versioning](https://semver.org/) (SemVer).
+
+### Bumping Version
+
+Use the version bump script:
+
+```powershell
+# Patch bump (1.0.0 -> 1.0.1)
+.\tools\Bump-Version.ps1
+
+# Minor bump (1.0.0 -> 1.1.0)
+.\tools\Bump-Version.ps1 -Type minor
+
+# Major bump (1.0.0 -> 2.0.0)
+.\tools\Bump-Version.ps1 -Type major
+
+# Preview changes without applying
+.\tools\Bump-Version.ps1 -DryRun
+```
+
+After bumping, push with tags to trigger the release workflow:
+```bash
+git push origin main --tags
+```
+
 ## Project Structure
 
 ```
