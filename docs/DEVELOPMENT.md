@@ -149,13 +149,19 @@ Version is maintained in two locations:
 ### Version Bump Script
 
 ```powershell
-# See current version and preview bump
+# Preview changes (dry run)
 .\tools\Bump-Version.ps1 -DryRun
 
 # Bump versions
 .\tools\Bump-Version.ps1              # Patch: 1.0.0 → 1.0.1
 .\tools\Bump-Version.ps1 -Type minor  # Minor: 1.0.0 → 1.1.0
 .\tools\Bump-Version.ps1 -Type major  # Major: 1.0.0 → 2.0.0
+
+# With custom release message
+.\tools\Bump-Version.ps1 -Message "Added dark mode support"
+
+# Auto-push after bumping (triggers release workflow)
+.\tools\Bump-Version.ps1 -Push
 ```
 
 The script:
@@ -163,40 +169,90 @@ The script:
 2. Calculates new version
 3. Updates .csproj and Package.appxmanifest
 4. Creates git commit
-5. Creates git tag `vX.Y.Z`
+5. Creates annotated git tag `vX.Y.Z`
+6. Optionally pushes to origin (with `-Push`)
 
 ## 5. Release Process
 
-### Standard Release Flow
+### Release Workflow
+
+When a tag matching `v*.*.*` is pushed, the release workflow automatically:
 
 ```
-1. Ensure all tests pass locally
-   $ dotnet test src/HueWindows.Tests
+Tag pushed (v1.2.3)
+       │
+       ▼
+┌──────────────────┐
+│   Run tests      │  ← Must pass before building
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│  Build packages  │  ← x64 and ARM64 in parallel
+│  (matrix build)  │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Create GitHub    │  ← Automatic release with:
+│    Release       │     - Release notes
+└────────┬─────────┘     - x64 zip attached
+         │               - ARM64 zip attached
+         ▼
+    Release published!
+```
 
-2. Ensure working directory is clean
-   $ git status
+### Creating a Release
 
-3. Bump version (creates commit + tag)
-   $ .\tools\Bump-Version.ps1 -Type <major|minor|patch>
+**Quick release (recommended):**
+```powershell
+# Bump and push in one command
+.\tools\Bump-Version.ps1 -Type patch -Push
+```
 
-4. Push to trigger CI
-   $ git push origin main --tags
+**Manual release:**
+```powershell
+# 1. Ensure clean state
+git status
+dotnet test src/HueWindows.Tests
 
-5. CI automatically:
-   - Runs full test suite
-   - Builds multi-platform packages
-   - Creates artifacts
+# 2. Bump version
+.\tools\Bump-Version.ps1 -Type minor
+
+# 3. Push to trigger workflow
+git push origin main --tags
 ```
 
 ### Release Checklist
 
-- [ ] All tests pass locally
-- [ ] No uncommitted changes
-- [ ] CHANGELOG updated (if applicable)
-- [ ] Version bump executed
-- [ ] Pushed with tags
-- [ ] CI pipeline passed
-- [ ] Artifacts available in GitHub Actions
+- [ ] All tests pass locally (`dotnet test src/HueWindows.Tests`)
+- [ ] Working directory is clean (`git status`)
+- [ ] Version bump executed (`.\tools\Bump-Version.ps1`)
+- [ ] Tag pushed to origin
+- [ ] Release workflow passed (check GitHub Actions)
+- [ ] GitHub Release created with artifacts
+
+### Monitoring Releases
+
+After pushing a tag:
+1. Go to https://github.com/ddrayne/hue-windows/actions
+2. Watch the "Release" workflow
+3. Once complete, check https://github.com/ddrayne/hue-windows/releases
+
+### Failed Release Recovery
+
+If the release workflow fails:
+
+```bash
+# 1. Delete the local and remote tag
+git tag -d v1.2.3
+git push origin :refs/tags/v1.2.3
+
+# 2. Fix the issue
+
+# 3. Re-run version bump (will recreate same version)
+.\tools\Bump-Version.ps1 -Push
+```
 
 ### Hotfix Process
 
@@ -212,11 +268,8 @@ git checkout -b hotfix/1.0.1
 # 3. Make fix, commit
 git commit -m "fix: critical bug"
 
-# 4. Bump patch version
-.\tools\Bump-Version.ps1
-
-# 5. Push hotfix
-git push origin hotfix/1.0.1 --tags
+# 4. Bump patch version and push
+.\tools\Bump-Version.ps1 -Push
 ```
 
 ## 6. Configuration Files
