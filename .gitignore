@@ -81,3 +81,7 @@ tmpclaude-*
 # Screenshot validation
 screenshots/
 tools/screenshot-mcp/node_modules/
+
+# UI test outputs (generated)
+test-screenshots/
+visual-diffs/
