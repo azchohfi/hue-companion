@@ -1,5 +1,5 @@
 /**
- * HueWindows Screenshot MCP Server
+ * Hue Companion Screenshot MCP Server
  *
  * Provides tools for Claude to interact with app screenshots:
  * - list_screenshots: List available screenshots
@@ -73,7 +73,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'list_screenshots',
-        description: 'List all captured screenshots of the HueWindows app with timestamps and file sizes',
+        description: 'List all captured screenshots of the Hue Companion app with timestamps and file sizes',
         inputSchema: {
           type: 'object',
           properties: {
@@ -100,7 +100,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_latest_screenshot',
-        description: 'Get the most recent screenshot of the HueWindows app. Returns the image for visual analysis.',
+        description: 'Get the most recent screenshot of the Hue Companion app. Returns the image for visual analysis.',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -108,7 +108,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'capture_screenshot',
-        description: 'Build and launch the HueWindows app, then capture a screenshot of the window. Returns the captured image.',
+        description: 'Build and launch the Hue Companion app, then capture a screenshot of the window. Returns the captured image.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -281,7 +281,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('HueWindows Screenshot MCP Server running on stdio');
+  console.error('Hue Companion Screenshot MCP Server running on stdio');
 }
 
 main().catch((error) => {

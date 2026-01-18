@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Bumps the version number for HueWindows releases.
+    Bumps the version number for Hue Companion releases.
 
 .DESCRIPTION
     Reads the current version from git tags (or defaults to 1.0.0),

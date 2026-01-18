@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Captures a screenshot of the HueWindows app window.
+    Captures a screenshot of the Hue Companion app window.
 
 .DESCRIPTION
     Builds (optional), launches the app, waits for the window to appear,

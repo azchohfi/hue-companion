@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Deploys HueWindows to the Microsoft Store (placeholder).
+    Deploys Hue Companion to the Microsoft Store (placeholder).
 
 .DESCRIPTION
     This script will deploy the application to the Microsoft Store

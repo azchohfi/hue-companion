@@ -3,7 +3,7 @@
     Runs automated UI tests by navigating to key pages and capturing screenshots.
 
 .DESCRIPTION
-    Launches the app with command-line navigation to each testable page,
+    Launches Hue Companion with command-line navigation to each testable page,
     captures screenshots, and stores them in the test-screenshots folder.
 
 .PARAMETER SkipBuild
@@ -163,7 +163,7 @@ $failed = 0
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  HueWindows UI Test Harness" -ForegroundColor Cyan
+Write-Host "  Hue Companion UI Test Harness" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
