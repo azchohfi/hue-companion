@@ -1,5 +1,9 @@
 # Hue Windows
 
+![Build Status](https://github.com/ddrayne/hue-windows/workflows/PR%20Validation/badge.svg)
+![Main CI](https://github.com/ddrayne/hue-windows/workflows/Main%20CI/badge.svg)
+[![codecov](https://codecov.io/gh/ddrayne/hue-windows/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-windows)
+
 A modern Windows 11 app for controlling Philips Hue smart lights, built with WinUI 3 and Fluent Design.
 
 ## Features
