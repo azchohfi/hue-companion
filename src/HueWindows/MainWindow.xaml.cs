@@ -21,7 +21,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 {
     private readonly INavigationService _navigationService;
     private readonly ISettingsService _settingsService;
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
     private readonly List<NavigationViewItem> _roomNavItems = new();
     private readonly List<NavigationViewItem> _zoneNavItems = new();
@@ -68,7 +68,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         // Get services
         _navigationService = App.Services.GetRequiredService<INavigationService>();
         _settingsService = App.Services.GetRequiredService<ISettingsService>();
-        _bridgeService = App.Services.GetRequiredService<IHueBridgeService>();
+        _multiBridgeService = App.Services.GetRequiredService<IMultiBridgeService>();
         _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
 
         // Subscribe to pinned items changes
@@ -98,58 +98,57 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
         if (hasBridge)
         {
-            // Auto-connect to the saved bridge
-            var bridge = _settingsService.Settings.ConfiguredBridge!;
-            var connectResult = await _bridgeService.ConnectAsync(bridge.IpAddress!, bridge.AppKey!);
+            // Auto-connect to all configured bridges
+            await _multiBridgeService.ConnectAllAsync();
 
-            if (connectResult.IsSuccess)
+            // Get navigation target from command-line args
+            // Note: For multi-bridge, name resolution uses first connected bridge
+            NavigationTarget? navTarget = null;
+            if (cmdArgs.IsValid && cmdArgs.Page != null)
             {
-                // Get navigation target from command-line args
-                // Use async resolution if name is provided (requires bridge connection)
-                NavigationTarget? navTarget = null;
-                if (cmdArgs.IsValid && cmdArgs.Page != null)
+                if (!string.IsNullOrEmpty(cmdArgs.Name))
                 {
-                    if (!string.IsNullOrEmpty(cmdArgs.Name))
+                    // Get first connected bridge service for name resolution
+                    var firstBridge = _multiBridgeService.ConfiguredBridges.FirstOrDefault();
+                    if (firstBridge != null)
                     {
-                        navTarget = await NavigationTarget.ResolveAsync(cmdArgs, _bridgeService);
+                        var bridgeService = _multiBridgeService.GetBridgeService(firstBridge.BridgeId);
+                        if (bridgeService != null)
+                        {
+                            navTarget = await NavigationTarget.ResolveAsync(cmdArgs, bridgeService);
+                        }
                     }
-                    else
-                    {
-                        navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
-                    }
-                }
-
-                if (navTarget != null)
-                {
-                    // Command-line navigation takes precedence
-                    NavigateToTarget(navTarget);
                 }
                 else
                 {
-                    // Default navigation behavior
-                    if (_pinnedItemsService.HasPinnedItems)
-                    {
-                        _navigationService.NavigateTo<MyDashboardPage>();
-                        NavView.SelectedItem = MyDashboardNavItem;
-                    }
-                    else
-                    {
-                        _navigationService.NavigateTo<DashboardPage>();
-                        NavView.SelectedItem = DashboardNavItem;
-                    }
+                    navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
                 }
+            }
 
-                // Set up screenshot mode timer if enabled
-                if (cmdArgs.ScreenshotMode)
-                {
-                    SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
-                }
+            if (navTarget != null)
+            {
+                // Command-line navigation takes precedence
+                NavigateToTarget(navTarget);
             }
             else
             {
-                // Connection failed, go to setup to re-pair
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] Connection failed: {connectResult.Error}");
-                _navigationService.NavigateTo<SetupPage>();
+                // Default navigation behavior
+                if (_pinnedItemsService.HasPinnedItems)
+                {
+                    _navigationService.NavigateTo<MyDashboardPage>();
+                    NavView.SelectedItem = MyDashboardNavItem;
+                }
+                else
+                {
+                    _navigationService.NavigateTo<DashboardPage>();
+                    NavView.SelectedItem = DashboardNavItem;
+                }
+            }
+
+            // Set up screenshot mode timer if enabled
+            if (cmdArgs.ScreenshotMode)
+            {
+                SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
             }
         }
         else
@@ -298,7 +297,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private async void NavView_PaneOpened(NavigationView sender, object args)
     {
         // Load child items when pane opens
-        if (!_itemsLoaded && _bridgeService.IsConnected)
+        if (!_itemsLoaded && _multiBridgeService.ConnectionStatus.Any(kvp => kvp.Value))
         {
             await LoadChildNavigationItemsAsync();
         }
@@ -313,8 +312,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task LoadChildNavigationItemsAsync()
     {
-        // Load zones as children of ZonesNavItem
-        var zonesResult = await _bridgeService.GetZonesAsync();
+        // Load zones from all bridges
+        var zonesResult = await _multiBridgeService.GetAllZonesAsync();
         if (zonesResult.IsSuccess)
         {
             foreach (var zone in zonesResult.Value!)
@@ -329,8 +328,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             System.Diagnostics.Debug.WriteLine($"[MainWindow] Error loading zones: {zonesResult.Error}");
         }
 
-        // Load rooms as children of RoomsNavItem
-        var roomsResult = await _bridgeService.GetRoomsAsync();
+        // Load rooms from all bridges
+        var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
         if (roomsResult.IsSuccess)
         {
             foreach (var room in roomsResult.Value!)

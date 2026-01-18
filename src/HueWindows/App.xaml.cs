@@ -133,7 +133,7 @@ public partial class App : Application
         // Register services
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IBridgeDiscoveryService, BridgeDiscoveryService>();
-        services.AddSingleton<IHueBridgeService, HueBridgeService>();
+        services.AddSingleton<IMultiBridgeService, MultiBridgeService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
         services.AddSingleton<ISceneStorageService, SceneStorageService>();

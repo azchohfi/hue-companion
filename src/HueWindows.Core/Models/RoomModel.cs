@@ -30,6 +30,16 @@ public class RoomModel
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// The bridge ID this room belongs to (for multi-bridge support).
+    /// </summary>
+    public string? BridgeId { get; set; }
+
+    /// <summary>
+    /// The display name of the bridge this room belongs to (for UI).
+    /// </summary>
+    public string? BridgeName { get; set; }
+
+    /// <summary>
     /// The room archetype (e.g., living room, bedroom, kitchen).
     /// </summary>
     public RoomArchetype Archetype { get; set; }

@@ -11,48 +11,59 @@ namespace HueWindows.Core.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settingsService;
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
 
     [ObservableProperty]
     private AppTheme _selectedTheme;
 
     [ObservableProperty]
-    private string _bridgeIpAddress = string.Empty;
-
-    [ObservableProperty]
-    private string _bridgeId = string.Empty;
-
-    [ObservableProperty]
-    private bool _isConnected;
-
-    [ObservableProperty]
     private string _appVersion = "1.0.0";
 
+    [ObservableProperty]
+    private int _bridgeCount;
+
+    [ObservableProperty]
+    private int _connectedBridgeCount;
+
+    [ObservableProperty]
+    private BridgeManagementViewModel? _bridgeManagement;
+
     /// <summary>
-    /// Event raised when user wants to re-pair the bridge.
+    /// Event raised when user wants to navigate to bridge setup.
     /// </summary>
-    public event EventHandler? RepairBridgeRequested;
+    public event EventHandler? BridgeSetupRequested;
 
     public SettingsViewModel(
         ISettingsService settingsService,
-        IHueBridgeService bridgeService)
+        IMultiBridgeService multiBridgeService,
+        IBridgeDiscoveryService discoveryService)
     {
         _settingsService = settingsService;
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
+
+        // Create bridge management view model
+        BridgeManagement = new BridgeManagementViewModel(multiBridgeService, discoveryService);
+
+        // Subscribe to connection changes
+        _multiBridgeService.BridgeConnectionChanged += OnBridgeConnectionChanged;
     }
 
     public void LoadSettings()
     {
         SelectedTheme = _settingsService.Settings.Theme;
 
-        var bridge = _settingsService.Settings.ConfiguredBridge;
-        if (bridge != null)
-        {
-            BridgeIpAddress = bridge.IpAddress;
-            BridgeId = bridge.BridgeId;
-        }
+        UpdateBridgeCounts();
 
-        IsConnected = _bridgeService.IsConnected;
+        // Migrate legacy single bridge to multi-bridge
+        #pragma warning disable CS0618 // Type or member is obsolete
+        if (_settingsService.Settings.ConfiguredBridge != null &&
+            _settingsService.Settings.ConfiguredBridges.Count == 0)
+        {
+            _settingsService.Settings.ConfiguredBridges.Add(_settingsService.Settings.ConfiguredBridge);
+            _settingsService.Settings.ConfiguredBridge = null;
+            _ = _settingsService.SaveAsync();
+        }
+        #pragma warning restore CS0618
 
         // Get app version from assembly
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -61,6 +72,9 @@ public partial class SettingsViewModel : ObservableObject
         {
             AppVersion = $"{version.Major}.{version.Minor}.{version.Build}";
         }
+
+        // Reload bridge management
+        BridgeManagement?.LoadBridges();
     }
 
     partial void OnSelectedThemeChanged(AppTheme value)
@@ -70,25 +84,20 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void RepairBridge()
+    private void ManageBridges()
     {
-        RepairBridgeRequested?.Invoke(this, EventArgs.Empty);
+        // This would navigate to bridge management page or open dialog
+        BridgeSetupRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    [RelayCommand]
-    private async Task DisconnectBridgeAsync()
+    private void UpdateBridgeCounts()
     {
-        _bridgeService.Disconnect();
+        BridgeCount = _multiBridgeService.ConfiguredBridges.Count;
+        ConnectedBridgeCount = _multiBridgeService.ConnectionStatus.Count(kvp => kvp.Value);
+    }
 
-        // Clear saved bridge
-        _settingsService.Settings.ConfiguredBridge = null;
-        await _settingsService.SaveAsync();
-
-        BridgeIpAddress = string.Empty;
-        BridgeId = string.Empty;
-        IsConnected = false;
-
-        // Request re-pair
-        RepairBridgeRequested?.Invoke(this, EventArgs.Empty);
+    private void OnBridgeConnectionChanged(object? sender, BridgeConnectionEventArgs e)
+    {
+        UpdateBridgeCounts();
     }
 }
