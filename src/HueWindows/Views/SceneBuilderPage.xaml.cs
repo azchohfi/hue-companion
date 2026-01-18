@@ -4,7 +4,10 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
+using HueWindows.Core.Models;
 using Windows.UI;
+using Windows.Storage.Pickers;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace HueWindows.Views;
 
@@ -1201,6 +1204,251 @@ public sealed partial class SceneBuilderPage : Page
                 break;
             }
         }
+    }
+
+    #endregion
+
+    #region File Operations
+
+    /// <summary>
+    /// Checks for unsaved changes and prompts user to confirm discard.
+    /// </summary>
+    private async Task<bool> ConfirmDiscardChangesAsync()
+    {
+        if (!ViewModel.HasUnsavedChanges)
+            return true;
+
+        var dialog = new ContentDialog
+        {
+            Title = "Unsaved Changes",
+            Content = "You have unsaved changes. Discard and continue?",
+            PrimaryButtonText = "Discard",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.XamlRoot
+        };
+
+        var result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary;
+    }
+
+    private async void NewScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        ViewModel.NewScene();
+        RenderTimeline();
+        UpdateEmptyState();
+    }
+
+    private async void OpenScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        // Get list of user scenes
+        var scenesResult = await ViewModel.GetUserScenesAsync();
+        if (scenesResult.IsFailure || scenesResult.Value == null || scenesResult.Value.Count == 0)
+        {
+            var noScenesDialog = new ContentDialog
+            {
+                Title = "No Scenes",
+                Content = "You don't have any saved scenes yet. Create one first!",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await noScenesDialog.ShowAsync();
+            return;
+        }
+
+        // Create scene picker dialog with simple list
+        var listView = new ListView
+        {
+            ItemsSource = scenesResult.Value,
+            SelectionMode = ListViewSelectionMode.Single,
+            MaxHeight = 300,
+            DisplayMemberPath = "Name"
+        };
+
+        var dialog = new ContentDialog
+        {
+            Title = "Open Scene",
+            Content = listView,
+            PrimaryButtonText = "Open",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && listView.SelectedItem is AnimatedSceneModel selectedScene)
+        {
+            var loadResult = await ViewModel.LoadSceneAsync(selectedScene.Id);
+            if (loadResult.IsFailure)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Load Failed",
+                    Content = loadResult.Error ?? "Failed to load the scene.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+            else
+            {
+                RenderTimeline();
+                UpdateEmptyState();
+            }
+        }
+    }
+
+    private async void ImportFile_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        var picker = new FileOpenPicker();
+        picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        picker.FileTypeFilter.Add(".json");
+
+        // Initialize picker with window handle
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file == null)
+            return;
+
+        try
+        {
+            var json = await Windows.Storage.FileIO.ReadTextAsync(file);
+            var importResult = await ViewModel.ImportFromJsonAsync(json);
+
+            if (importResult.IsFailure)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Import Failed",
+                    Content = importResult.Error ?? "Failed to import the scene.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+            else
+            {
+                RenderTimeline();
+                UpdateEmptyState();
+
+                var successDialog = new ContentDialog
+                {
+                    Title = "Scene Imported",
+                    Content = $"'{ViewModel.SceneName}' has been imported. Don't forget to save it!",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await successDialog.ShowAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Import Failed",
+                Content = $"Error reading file: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async void ExportFile_Click(object sender, RoutedEventArgs e)
+    {
+        var exportResult = ViewModel.ExportToJson();
+        if (exportResult.IsFailure)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Export Failed",
+                Content = exportResult.Error ?? "Failed to export the scene.",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+            return;
+        }
+
+        var picker = new FileSavePicker();
+        picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        picker.FileTypeChoices.Add("JSON File", new List<string> { ".json" });
+        picker.SuggestedFileName = $"{ViewModel.SceneName.Replace(" ", "_").ToLowerInvariant()}.json";
+
+        // Initialize picker with window handle
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSaveFileAsync();
+        if (file == null)
+            return;
+
+        try
+        {
+            await Windows.Storage.FileIO.WriteTextAsync(file, exportResult.Value);
+
+            var successDialog = new ContentDialog
+            {
+                Title = "Scene Exported",
+                Content = $"Scene saved to {file.Name}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await successDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Export Failed",
+                Content = $"Error writing file: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async void CopyJson_Click(object sender, RoutedEventArgs e)
+    {
+        var exportResult = ViewModel.ExportToJson();
+        if (exportResult.IsFailure)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Copy Failed",
+                Content = exportResult.Error ?? "Failed to export the scene.",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+            return;
+        }
+
+        var dataPackage = new DataPackage();
+        dataPackage.SetText(exportResult.Value);
+        Clipboard.SetContent(dataPackage);
+
+        // Show brief confirmation (could use a teaching tip or info bar instead)
+        var successDialog = new ContentDialog
+        {
+            Title = "Copied",
+            Content = "Scene JSON copied to clipboard.",
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await successDialog.ShowAsync();
     }
 
     #endregion
