@@ -17,6 +17,13 @@
 .PARAMETER DryRun
     Preview changes without modifying files or creating commits/tags.
 
+.PARAMETER Message
+    Optional release message for the git tag annotation.
+    If not provided, uses "Release vX.Y.Z".
+
+.PARAMETER Push
+    Automatically push the commit and tag after creation.
+
 .EXAMPLE
     .\Bump-Version.ps1
     # Patch bump: 1.0.0 -> 1.0.1
@@ -33,7 +40,9 @@
 param(
     [ValidateSet("major", "minor", "patch")]
     [string]$Type = "patch",
-    [switch]$DryRun
+    [switch]$DryRun,
+    [string]$Message,
+    [switch]$Push
 )
 
 $ErrorActionPreference = "Stop"
@@ -170,27 +179,35 @@ function Update-ManifestVersion {
 function New-VersionCommitAndTag {
     param(
         [string]$Version,
+        [string]$TagMessage,
         [switch]$DryRun
     )
 
     $tag = "v$Version"
-    $message = "chore: bump version to $Version"
+    $commitMessage = "chore: bump version to $Version"
+
+    # Use provided message or default
+    if (-not $TagMessage) {
+        $TagMessage = "Release v$Version"
+    }
 
     if ($DryRun) {
-        Write-Host "  Would create commit: $message" -ForegroundColor Yellow
-        Write-Host "  Would create tag: $tag" -ForegroundColor Yellow
+        Write-Host "  Would create commit: $commitMessage" -ForegroundColor Yellow
+        Write-Host "  Would create annotated tag: $tag" -ForegroundColor Yellow
+        Write-Host "  Tag message: $TagMessage" -ForegroundColor Gray
     }
     else {
         # Stage the changed files
         git add $CsprojPath $ManifestPath
 
         # Create commit
-        git commit -m $message
-        Write-Host "  Created commit: $message" -ForegroundColor Green
+        git commit -m $commitMessage
+        Write-Host "  Created commit: $commitMessage" -ForegroundColor Green
 
-        # Create tag
-        git tag $tag
-        Write-Host "  Created tag: $tag" -ForegroundColor Green
+        # Create annotated tag with message
+        git tag -a $tag -m $TagMessage
+        Write-Host "  Created annotated tag: $tag" -ForegroundColor Green
+        Write-Host "  Tag message: $TagMessage" -ForegroundColor Gray
     }
 }
 
@@ -243,7 +260,16 @@ Update-ManifestVersion -Path $ManifestPath -Version $newVersionStr -DryRun:$DryR
 # Step 5: Create commit and tag
 Write-Host ""
 Write-Host "Creating commit and tag..." -ForegroundColor Cyan
-New-VersionCommitAndTag -Version $newVersionStr -DryRun:$DryRun
+New-VersionCommitAndTag -Version $newVersionStr -TagMessage $Message -DryRun:$DryRun
+
+# Step 6: Push if requested
+if ($Push -and -not $DryRun) {
+    Write-Host ""
+    Write-Host "Pushing to origin..." -ForegroundColor Cyan
+    git push origin main
+    git push origin "v$newVersionStr"
+    Write-Host "  Pushed commit and tag to origin" -ForegroundColor Green
+}
 
 # Done
 Write-Host ""
@@ -252,8 +278,20 @@ if ($DryRun) {
     Write-Host "Run without -DryRun to apply changes." -ForegroundColor Gray
 }
 else {
-    Write-Host "Version bump complete: $currentVersionStr -> $newVersionStr" -ForegroundColor Green
-    Write-Host "Don't forget to push the tag: git push origin v$newVersionStr" -ForegroundColor Gray
+    Write-Host "=== VERSION BUMP COMPLETE ===" -ForegroundColor Green
+    Write-Host "  $currentVersionStr -> $newVersionStr" -ForegroundColor White
+    Write-Host ""
+    if (-not $Push) {
+        Write-Host "To trigger the release workflow, push with:" -ForegroundColor Cyan
+        Write-Host "  git push origin main --tags" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Or run with -Push to auto-push:" -ForegroundColor Gray
+        Write-Host "  .\Bump-Version.ps1 -Type $Type -Push" -ForegroundColor Gray
+    }
+    else {
+        Write-Host "Release workflow should now be running at:" -ForegroundColor Cyan
+        Write-Host "  https://github.com/ddrayne/hue-windows/actions" -ForegroundColor Yellow
+    }
 }
 Write-Host ""
 
