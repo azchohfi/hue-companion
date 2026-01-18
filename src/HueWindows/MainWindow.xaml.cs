@@ -94,10 +94,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private async void NavigateToInitialPage()
     {
         var hasBridge = await _settingsService.HasConfiguredBridgeAsync();
-
-        // Get navigation target from command-line args
         var cmdArgs = App.CommandLineArgs;
-        var navTarget = cmdArgs.IsValid ? NavigationTarget.FromCommandLineArgs(cmdArgs) : null;
 
         if (hasBridge)
         {
@@ -107,6 +104,21 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
             if (connectResult.IsSuccess)
             {
+                // Get navigation target from command-line args
+                // Use async resolution if name is provided (requires bridge connection)
+                NavigationTarget? navTarget = null;
+                if (cmdArgs.IsValid && cmdArgs.Page != null)
+                {
+                    if (!string.IsNullOrEmpty(cmdArgs.Name))
+                    {
+                        navTarget = await NavigationTarget.ResolveAsync(cmdArgs, _bridgeService);
+                    }
+                    else
+                    {
+                        navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
+                    }
+                }
+
                 if (navTarget != null)
                 {
                     // Command-line navigation takes precedence
@@ -142,7 +154,14 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            // No bridge configured - can still navigate to setup/settings if requested
+            // No bridge configured - can only navigate to setup/settings (no name resolution possible)
+            NavigationTarget? navTarget = null;
+            if (cmdArgs.IsValid && cmdArgs.Page != null)
+            {
+                // Only use sync resolution (can't resolve names without bridge connection)
+                navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
+            }
+
             if (navTarget != null && (navTarget.PageType == typeof(SetupPage) || navTarget.PageType == typeof(SettingsPage)))
             {
                 NavigateToTarget(navTarget);

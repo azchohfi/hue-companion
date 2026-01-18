@@ -16,6 +16,12 @@ public record CommandLineArgs
     public Guid? Id { get; init; }
 
     /// <summary>
+    /// The human-readable name for rooms/zones/lights (alternative to ID).
+    /// Will be resolved to an ID at runtime by querying the bridge.
+    /// </summary>
+    public string? Name { get; init; }
+
+    /// <summary>
     /// Whether screenshot mode is enabled (auto-close after navigation).
     /// </summary>
     public bool ScreenshotMode { get; init; }

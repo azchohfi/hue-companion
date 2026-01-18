@@ -1,4 +1,4 @@
-# Hue Windows
+# Hue Companion for Windows
 
 ![Build Status](https://github.com/ddrayne/hue-windows/workflows/PR%20Validation/badge.svg)
 ![Main CI](https://github.com/ddrayne/hue-windows/workflows/Main%20CI/badge.svg)
@@ -43,7 +43,7 @@ Create custom animated light scenes with a DAW-style timeline editor.
 
 ## Command-Line Deep Linking
 
-Launch the app directly to specific pages using command-line arguments. Useful for automation and screenshot capture.
+Launch the app directly to specific pages using command-line arguments. Useful for automation, shortcuts, and screenshot capture.
 
 ### Usage
 
@@ -51,18 +51,32 @@ Launch the app directly to specific pages using command-line arguments. Useful f
 # Navigate to specific pages
 HueWindows.exe --page dashboard
 HueWindows.exe --page settings
+
+# Navigate by human-readable name (recommended)
+HueWindows.exe --page room --name bathroom
+HueWindows.exe --page room --name "living room"
+HueWindows.exe --page zone --name upstairs
+HueWindows.exe --page light --name "desk lamp"
+
+# Navigate by ID (for automation with known GUIDs)
 HueWindows.exe --page room --id "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 HueWindows.exe --page light --id "12345678-90ab-cdef-1234-567890abcdef"
 
 # Screenshot mode (auto-close after delay)
 HueWindows.exe --page dashboard --screenshot
-HueWindows.exe --page room --id "..." --screenshot --delay 8000
+HueWindows.exe --page room --name bathroom --screenshot --delay 8000
 ```
+
+### Name Matching
+
+Names are matched case-insensitively with flexible formatting:
+- `bathroom`, `Bathroom`, `BATHROOM` → all match "Bathroom"
+- `living-room`, `living_room`, `"living room"` → all match "Living Room"
 
 ### Supported Pages
 
-| Page | Requires `--id` | Description |
-|------|-----------------|-------------|
+| Page | Requires `--id` or `--name` | Description |
+|------|----------------------------|-------------|
 | `dashboard` | No | Main dashboard with all rooms |
 | `mydashboard` | No | Pinned items dashboard |
 | `rooms` | No | Rooms list |
@@ -78,7 +92,8 @@ HueWindows.exe --page room --id "..." --screenshot --delay 8000
 | Option | Short | Description |
 |--------|-------|-------------|
 | `--page <name>` | `-p` | Target page to navigate to |
-| `--id <guid>` | | ID for pages that require it |
+| `--name <text>` | `-n` | Human-readable name (room/zone/light) |
+| `--id <guid>` | | GUID for pages that require it |
 | `--screenshot` | `-s` | Auto-close app after delay |
 | `--delay <ms>` | | Delay before auto-close (default: 5000ms) |
 
