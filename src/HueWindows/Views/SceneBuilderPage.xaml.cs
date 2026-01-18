@@ -1048,9 +1048,9 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void CheckEventTriggers()
+    private async void CheckEventTriggers()
     {
-        if (ViewModel.EventTracks.Count == 0)
+        if (ViewModel.EventTracks.Count == 0 || ViewModel.Tracks.Count == 0)
             return;
 
         var currentTime = ViewModel.PlayheadPosition;
@@ -1064,8 +1064,17 @@ public sealed partial class SceneBuilderPage : Page
 
             if (currentTime >= nextFireTime)
             {
-                // Event fires - show visual pulse
+                // Pick a random light track
+                var targetTrackIndex = _random.Next(ViewModel.Tracks.Count);
+
+                // Show visual pulse on event track row
                 ShowEventPulse(eventTrack, lightTracksHeight, trackHeight);
+
+                // Show visual indicator on the targeted light track
+                ShowLightTrackPulse(targetTrackIndex, trackHeight);
+
+                // Fire the event on that specific light
+                _ = ViewModel.FireEventAsync(eventTrack, targetTrackIndex);
 
                 // Schedule next event
                 var (min, max) = eventTrack.GetInterval();
@@ -1073,6 +1082,52 @@ public sealed partial class SceneBuilderPage : Page
                 _nextEventFireTimes[eventTrack.Id] = currentTime + interval;
             }
         }
+    }
+
+    private void ShowLightTrackPulse(int trackIndex, double trackHeight)
+    {
+        var y = trackIndex * trackHeight + trackHeight / 2;
+        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+
+        // Create a highlight pulse on the light track
+        var pulse = new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Width = 24,
+            Height = 24,
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(180, 255, 255, 255)),
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(255, 255, 220, 100)),
+            StrokeThickness = 2,
+            IsHitTestVisible = false
+        };
+        Canvas.SetLeft(pulse, x - 12);
+        Canvas.SetTop(pulse, y - 12);
+        KeyframeCanvas.Children.Add(pulse);
+
+        // Animate expansion and fade out
+        var fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        var scale = 1.0;
+        var opacity = 1.0;
+        fadeTimer.Tick += (s, e) =>
+        {
+            scale += 0.15;
+            opacity -= 0.12;
+            if (opacity <= 0)
+            {
+                fadeTimer.Stop();
+                KeyframeCanvas.Children.Remove(pulse);
+            }
+            else
+            {
+                pulse.Width = 24 * scale;
+                pulse.Height = 24 * scale;
+                Canvas.SetLeft(pulse, x - (12 * scale));
+                Canvas.SetTop(pulse, y - (12 * scale));
+                pulse.Opacity = opacity;
+            }
+        };
+        fadeTimer.Start();
     }
 
     private void ShowEventPulse(EventTrackViewModel eventTrack, double lightTracksHeight, double trackHeight)

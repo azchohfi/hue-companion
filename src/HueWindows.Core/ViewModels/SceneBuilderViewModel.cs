@@ -452,6 +452,43 @@ public partial class SceneBuilderViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Fires an event effect on a specific light track.
+    /// </summary>
+    /// <param name="eventTrack">The event track to fire.</param>
+    /// <param name="trackIndex">The index of the light track to affect.</param>
+    public async Task FireEventAsync(EventTrackViewModel eventTrack, int trackIndex)
+    {
+        if (SelectedRoom == null || Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count)
+            return;
+
+        var track = Tracks[trackIndex];
+
+        if (!Guid.TryParse(track.LightId, out var lightId))
+            return;
+
+        // Get event parameters based on preset
+        var (flashColor, flashBrightness, returnBrightness) = eventTrack.Preset switch
+        {
+            EventPreset.LightningFlash => (new HueColor(0.31, 0.32), 1.0, 0.3),   // Cool white flash
+            EventPreset.Sparkle => (new HueColor(0.33, 0.34), 1.0, 0.5),          // Bright white sparkle
+            EventPreset.CandleFlicker => (new HueColor(0.57, 0.41), 0.6, 0.8),    // Warm orange dip
+            _ => (new HueColor(0.31, 0.32), 1.0, 0.5)
+        };
+
+        // Flash the light
+        await _bridgeService.SetLightColorAsync(lightId, flashColor);
+        await _bridgeService.SetLightBrightnessAsync(lightId, flashBrightness);
+
+        // Brief delay then return to interpolated state
+        await Task.Delay(100);
+
+        // Return to the current playhead state for this track
+        var (currentColor, currentBrightness) = InterpolateAtTime(track, PlayheadPosition);
+        await _bridgeService.SetLightColorAsync(lightId, currentColor);
+        await _bridgeService.SetLightBrightnessAsync(lightId, currentBrightness);
+    }
+
     private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
     {
         if (track.Keyframes.Count == 0)
