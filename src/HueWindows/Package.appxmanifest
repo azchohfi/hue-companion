@@ -9,7 +9,7 @@
   <Identity
     Name="HueWindows"
     Publisher="CN=HueWindows"
-    Version="1.0.1.0" />
+    Version="0.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="A1B2C3D4-E5F6-7890-ABCD-EF1234567890" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -20,7 +20,7 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="1.0.1.0" MaxVersionTested="10.0.22621.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
 
   <Resources>
