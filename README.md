@@ -104,6 +104,43 @@ Names are matched case-insensitively with flexible formatting:
 - Philips Hue Bridge on the same local network
 - .NET 8.0 Runtime
 
+## CI/CD & Releases
+
+### Automated Testing
+
+Every pull request and push to main triggers automated testing:
+
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| **PR Validation** | Pull requests | Build, test, coverage upload to Codecov |
+| **Main CI** | Push to main | Multi-platform build (x64/ARM64), UI screenshot capture |
+| **Release** | Version tag (`v*.*.*`) | Build, test, create GitHub Release, optional Store publish |
+
+### Creating a Release
+
+```powershell
+# Bump version and trigger release workflow
+.\tools\Bump-Version.ps1 -Push
+
+# Or specify version type
+.\tools\Bump-Version.ps1 -Type minor -Push
+```
+
+This automatically:
+1. Updates version in project files
+2. Creates git tag (e.g., `v0.2.0`)
+3. Pushes to trigger release workflow
+4. Builds x64 and ARM64 packages
+5. Creates GitHub Release with ZIP and MSIX artifacts
+
+### Microsoft Store Deployment
+
+Releases can automatically publish to the Microsoft Store when configured. See [docs/STORE-SETUP.md](docs/STORE-SETUP.md) for setup instructions.
+
+### Full Documentation
+
+For detailed CI/CD documentation including test coverage, versioning, and troubleshooting, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
 ## Building
 
 ### Prerequisites
