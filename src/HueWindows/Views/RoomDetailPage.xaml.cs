@@ -648,7 +648,12 @@ public sealed partial class RoomDetailPage : Page
             {
                 ShouldConstrainToRootBounds = false
             };
-            flyout.FlyoutPresenterStyle = (Style)Resources["EffectFlyoutPresenterStyle"];
+
+            // Safely get style from resources
+            if (Resources.TryGetValue("EffectFlyoutPresenterStyle", out var style) && style is Style flyoutStyle)
+            {
+                flyout.FlyoutPresenterStyle = flyoutStyle;
+            }
 
             var flyoutContent = new NativeEffectFlyout { Effect = effect };
             flyoutContent.ApplyRequested += async (s, args) =>

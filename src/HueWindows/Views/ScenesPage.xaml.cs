@@ -147,9 +147,14 @@ public sealed partial class ScenesPage : Page
         {
             var flyout = new Flyout
             {
-                ShouldConstrainToRootBounds = false,
-                FlyoutPresenterStyle = (Style)Resources["EffectFlyoutPresenterStyle"]
+                ShouldConstrainToRootBounds = false
             };
+
+            // Safely get style from resources
+            if (Resources.TryGetValue("EffectFlyoutPresenterStyle", out var style) && style is Style flyoutStyle)
+            {
+                flyout.FlyoutPresenterStyle = flyoutStyle;
+            }
 
             var flyoutContent = new NativeEffectFlyout { Effect = effect };
             flyoutContent.ApplyRequested += async (s, args) =>
