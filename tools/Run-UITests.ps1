@@ -15,6 +15,10 @@
 .PARAMETER Pages
     Array of pages to test (default: dashboard, settings).
 
+.PARAMETER NamedPages
+    Hashtable of named pages to test. Key format: "type:name" (e.g., "room:bathroom").
+    Example: @{ "room:bathroom" = "Bathroom"; "zone:upstairs" = "Upstairs" }
+
 .PARAMETER Delay
     Milliseconds to wait after launch before capturing (default: 5000).
 
@@ -25,12 +29,17 @@
 .EXAMPLE
     .\Run-UITests.ps1 -SkipBuild -Pages dashboard,settings
     # Quick test specific pages
+
+.EXAMPLE
+    .\Run-UITests.ps1 -SkipBuild -NamedPages @{ "room:bathroom" = "Bathroom" }
+    # Test specific room by name
 #>
 
 param(
     [switch]$SkipBuild,
     [string]$OutputDir = "$PSScriptRoot\..\test-screenshots",
     [string[]]$Pages = @("dashboard", "settings"),
+    [hashtable]$NamedPages = @{},
     [int]$Delay = 5000
 )
 
@@ -281,7 +290,99 @@ foreach ($page in $Pages) {
     $results += $testResult
 }
 
-# Step 5: Print summary
+# Step 5: Test named pages (rooms/zones/lights by name)
+foreach ($entry in $NamedPages.GetEnumerator()) {
+    $parts = $entry.Key -split ":"
+    if ($parts.Count -ne 2) {
+        Write-Host "[SKIP] Invalid key format: $($entry.Key) (expected 'type:name')" -ForegroundColor Yellow
+        continue
+    }
+
+    $pageType = $parts[0]  # room, zone, light
+    $pageName = $entry.Value
+
+    Write-Host "----------------------------------------" -ForegroundColor DarkGray
+    Write-Host "[TEST] Testing page: $pageType ($pageName)" -ForegroundColor Yellow
+
+    $testResult = @{
+        Page = "$pageType-$pageName"
+        Status = "UNKNOWN"
+        Screenshot = $null
+        Error = $null
+    }
+
+    try {
+        # Build safe filename from name
+        $safePageName = $pageName -replace '\s+', '-' -replace '[^\w\-]', ''
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $filename = "$pageType-$safePageName-$timestamp.png"
+        $filepath = Join-Path $OutputDir $filename
+
+        # Launch app with name-based navigation and screenshot mode
+        $appArgs = "--page $pageType --name `"$pageName`" --screenshot --delay $($Delay + 3000)"
+        Write-Host "       Launching: $ExePath $appArgs" -ForegroundColor Gray
+
+        $process = Start-Process -FilePath $ExePath -ArgumentList $appArgs -PassThru
+
+        # Wait for window to initialize
+        Write-Host "       Waiting for window..." -ForegroundColor Gray
+        Start-Sleep -Seconds $waitSeconds
+
+        # Find the window by process ID
+        $hwnd = [WindowCapture]::FindWindowByProcessId([uint32]$process.Id)
+
+        if ($hwnd -eq [IntPtr]::Zero) {
+            throw "Could not find application window"
+        }
+
+        # Bring window to foreground
+        [WindowCapture]::SetForegroundWindow($hwnd) | Out-Null
+        Start-Sleep -Milliseconds 500
+
+        # Capture screenshot
+        Write-Host "       Capturing screenshot..." -ForegroundColor Gray
+        $bitmap = [WindowCapture]::CaptureWindow($hwnd)
+
+        # Save to output directory
+        $bitmap.Save($filepath, [System.Drawing.Imaging.ImageFormat]::Png)
+        $bitmap.Dispose()
+
+        # Wait for app to close
+        if (-not $process.HasExited) {
+            $null = $process.WaitForExit(5000)
+            if (-not $process.HasExited) {
+                $process | Stop-Process -Force
+            }
+        }
+
+        $testResult.Status = "PASS"
+        $testResult.Screenshot = $filepath
+        $passed++
+
+        Write-Host "[PASS] $pageType ($pageName) - Screenshot saved: $filename" -ForegroundColor Green
+    }
+    catch {
+        $testResult.Status = "FAIL"
+        $testResult.Error = $_.Exception.Message
+        $failed++
+
+        Write-Host "[FAIL] $pageType ($pageName) - $($_.Exception.Message)" -ForegroundColor Red
+
+        # Clean up process if still running
+        if ($process -and -not $process.HasExited) {
+            try {
+                $process | Stop-Process -Force
+            }
+            catch {
+                # Ignore cleanup errors
+            }
+        }
+    }
+
+    $results += $testResult
+}
+
+# Step 6: Print summary
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Test Summary" -ForegroundColor Cyan
