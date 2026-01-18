@@ -1,0 +1,185 @@
+{
+  "id": "enchanted_forest",
+  "name": "Enchanted Forest",
+  "description": "Mystical forest ambiance with soft green glow and dancing firefly lights",
+  "category": "Nature",
+  "previewColor": {
+    "x": 0.28,
+    "y": 0.52
+  },
+  "paletteColors": [
+    { "x": 0.28, "y": 0.52 },
+    { "x": 0.35, "y": 0.55 },
+    { "x": 0.40, "y": 0.50 },
+    { "x": 0.32, "y": 0.45 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "forest_ambient",
+      "name": "Forest Glow",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.25,
+          "color": { "x": 0.28, "y": 0.52 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 8,
+          "brightness": 0.35,
+          "color": { "x": 0.35, "y": 0.55 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 16,
+          "brightness": 0.30,
+          "color": { "x": 0.32, "y": 0.50 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 24,
+          "brightness": 0.28,
+          "color": { "x": 0.30, "y": 0.48 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 32,
+          "brightness": 0.25,
+          "color": { "x": 0.28, "y": 0.52 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 32,
+      "repeatMode": "loop",
+      "priority": 1
+    },
+    {
+      "id": "fireflies",
+      "name": "Fireflies",
+      "type": "event",
+      "lightAssignment": "random",
+      "randomPercentage": 0.25,
+      "eventPattern": {
+        "triggers": [
+          {
+            "weight": 3.0,
+            "states": [
+              {
+                "durationSeconds": 0.3,
+                "brightness": 0.7,
+                "color": { "x": 0.40, "y": 0.50 },
+                "isOn": true,
+                "transitionStyle": "easeIn"
+              },
+              {
+                "durationSeconds": 0.5,
+                "brightness": 0.85,
+                "color": { "x": 0.42, "y": 0.52 },
+                "isOn": true,
+                "transitionStyle": "easeInOut"
+              },
+              {
+                "durationSeconds": 0.4,
+                "brightness": 0.6,
+                "color": { "x": 0.40, "y": 0.50 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              },
+              {
+                "durationSeconds": 0.8,
+                "brightness": 0.25,
+                "color": { "x": 0.28, "y": 0.52 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              }
+            ]
+          },
+          {
+            "weight": 2.0,
+            "states": [
+              {
+                "durationSeconds": 0.2,
+                "brightness": 0.65,
+                "color": { "x": 0.38, "y": 0.48 },
+                "isOn": true,
+                "transitionStyle": "easeIn"
+              },
+              {
+                "durationSeconds": 0.3,
+                "brightness": 0.75,
+                "color": { "x": 0.40, "y": 0.50 },
+                "isOn": true,
+                "transitionStyle": "linear"
+              },
+              {
+                "durationSeconds": 0.6,
+                "brightness": 0.25,
+                "color": { "x": 0.28, "y": 0.52 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              }
+            ]
+          },
+          {
+            "weight": 1.0,
+            "states": [
+              {
+                "durationSeconds": 0.15,
+                "brightness": 0.55,
+                "color": { "x": 0.36, "y": 0.46 },
+                "isOn": true,
+                "transitionStyle": "easeIn"
+              },
+              {
+                "durationSeconds": 0.25,
+                "brightness": 0.7,
+                "color": { "x": 0.38, "y": 0.48 },
+                "isOn": true,
+                "transitionStyle": "easeInOut"
+              },
+              {
+                "durationSeconds": 0.15,
+                "brightness": 0.6,
+                "color": { "x": 0.36, "y": 0.46 },
+                "isOn": true,
+                "transitionStyle": "linear"
+              },
+              {
+                "durationSeconds": 0.25,
+                "brightness": 0.72,
+                "color": { "x": 0.40, "y": 0.50 },
+                "isOn": true,
+                "transitionStyle": "easeInOut"
+              },
+              {
+                "durationSeconds": 0.5,
+                "brightness": 0.25,
+                "color": { "x": 0.28, "y": 0.52 },
+                "isOn": true,
+                "transitionStyle": "easeOut"
+              }
+            ]
+          }
+        ],
+        "minIntervalSeconds": 1.5,
+        "maxIntervalSeconds": 4.0,
+        "probability": 0.7,
+        "allowSimultaneous": true,
+        "maxSimultaneous": 3
+      },
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 2
+    }
+  ],
+  "author": "HueWindows",
+  "version": "1.0"
+}

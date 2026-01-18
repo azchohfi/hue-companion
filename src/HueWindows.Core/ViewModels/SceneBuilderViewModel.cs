@@ -18,6 +18,8 @@ public partial class SceneBuilderViewModel : ObservableObject
     private readonly ISceneStorageService _storageService;
 
     private string? _loadedSceneId;
+    private bool _isLoadingScene; // Prevents default track creation during scene load
+    private AnimatedSceneModel? _loadedSceneModel; // Stored to re-apply when room changes
 
     [ObservableProperty]
     private string _sceneName = "Untitled Scene";
@@ -136,13 +138,85 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     partial void OnSelectedRoomChanged(RoomModel? value)
     {
+        // Don't create default tracks when loading a scene - LoadSceneFromModelAsync handles it
+        if (_isLoadingScene)
+            return;
+
         if (value != null)
         {
-            CreateTracksForRoom(value);
+            // If we have a loaded scene, re-apply its tracks for the new room
+            if (_loadedSceneModel != null)
+            {
+                ApplyLoadedSceneToRoom(value);
+            }
+            else
+            {
+                CreateTracksForRoom(value);
+            }
         }
         else
         {
             Tracks.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Applies the loaded scene's animations to a room's lights.
+    /// </summary>
+    private void ApplyLoadedSceneToRoom(RoomModel room)
+    {
+        Tracks.Clear();
+
+        foreach (var animation in _loadedSceneModel!.Animations)
+        {
+            if (animation.Type == AnimationType.Keyframe)
+            {
+                if (animation.LightAssignment == LightAssignment.All)
+                {
+                    // Expand to one track per light
+                    foreach (var light in room.Lights)
+                    {
+                        var track = new TrackViewModel
+                        {
+                            LightId = light.Id.ToString(),
+                            DisplayName = light.Name,
+                            Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                animation.Keyframes.Select(k => new KeyframeViewModel
+                                {
+                                    TimeSeconds = k.TimeSeconds,
+                                    Color = k.Color ?? new HueColor(0.45, 0.41),
+                                    Brightness = k.Brightness ?? 1.0,
+                                    Transition = k.TransitionStyle
+                                })
+                            )
+                        };
+                        Tracks.Add(track);
+                    }
+                }
+                else
+                {
+                    // Load as single keyframe track (subset or specific light)
+                    var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+                    var light = lightIndex < room.Lights.Count ? room.Lights[lightIndex] : null;
+
+                    var track = new TrackViewModel
+                    {
+                        LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                        DisplayName = light?.Name ?? $"Track {lightIndex}",
+                        Keyframes = new ObservableCollection<KeyframeViewModel>(
+                            animation.Keyframes.Select(k => new KeyframeViewModel
+                            {
+                                TimeSeconds = k.TimeSeconds,
+                                Color = k.Color ?? new HueColor(0.45, 0.41),
+                                Brightness = k.Brightness ?? 1.0,
+                                Transition = k.TransitionStyle
+                            })
+                        )
+                    };
+
+                    Tracks.Add(track);
+                }
+            }
         }
     }
 
@@ -585,6 +659,7 @@ public partial class SceneBuilderViewModel : ObservableObject
     public void NewScene()
     {
         _loadedSceneId = null;
+        _loadedSceneModel = null; // Clear stored scene so room changes create default tracks
         SceneName = "Untitled Scene";
         SceneDescription = "";
         DurationSeconds = 16;
@@ -670,103 +745,150 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// </summary>
     private async Task LoadSceneFromModelAsync(AnimatedSceneModel scene)
     {
-        _loadedSceneId = scene.Id;
-        SceneName = scene.Name;
-        SceneDescription = scene.Description;
-
-        // Find the target room
-        if (scene.TargetId.HasValue)
+        _isLoadingScene = true;
+        try
         {
-            SelectedRoom = Rooms.FirstOrDefault(r => r.Id == scene.TargetId.Value);
-        }
+            _loadedSceneId = scene.Id;
+            _loadedSceneModel = scene; // Store for re-applying when room changes
+            SceneName = scene.Name;
+            SceneDescription = scene.Description;
 
-        // If room not found, leave it unselected (user can pick one)
-        if (SelectedRoom == null && Rooms.Count > 0)
-        {
-            // Don't auto-select, let user choose
-        }
-
-        // Get duration from first animation
-        if (scene.Animations.Count > 0)
-        {
-            DurationSeconds = scene.Animations[0].DurationSeconds;
-            IsLooping = scene.Animations[0].RepeatMode == RepeatMode.Loop;
-        }
-
-        // Load tracks from animations
-        Tracks.Clear();
-        EventTracks.Clear();
-
-        foreach (var animation in scene.Animations)
-        {
-            if (animation.Type == AnimationType.Event)
+            // Find the target room
+            if (scene.TargetId.HasValue)
             {
-                // Load as event track
-                var eventTrack = new EventTrackViewModel
-                {
-                    Id = animation.Id,
-                    DisplayName = animation.Name ?? "Event"
-                };
+                SelectedRoom = Rooms.FirstOrDefault(r => r.Id == scene.TargetId.Value);
+            }
 
-                // Try to determine preset from trigger states
-                if (animation.EventPattern?.Triggers.Count > 0)
+            // If room not found, leave it unselected (user can pick one)
+            if (SelectedRoom == null && Rooms.Count > 0)
+            {
+                // Don't auto-select, let user choose
+            }
+
+            // Get duration from first keyframe animation
+            var firstKeyframeAnim = scene.Animations.FirstOrDefault(a => a.Type == AnimationType.Keyframe);
+            if (firstKeyframeAnim != null)
+            {
+                DurationSeconds = firstKeyframeAnim.DurationSeconds > 0 ? firstKeyframeAnim.DurationSeconds : 16;
+                IsLooping = firstKeyframeAnim.RepeatMode == RepeatMode.Loop;
+            }
+
+            // Load tracks from animations
+            Tracks.Clear();
+            EventTracks.Clear();
+
+            foreach (var animation in scene.Animations)
+            {
+                if (animation.Type == AnimationType.Event || animation.Type == AnimationType.NativeEffect)
                 {
-                    var trigger = animation.EventPattern.Triggers[0];
-                    if (trigger.States.Count > 0)
+                    // Load as event track
+                    var eventTrack = new EventTrackViewModel
                     {
-                        var firstState = trigger.States[0];
-                        // Infer preset from color/brightness patterns
-                        if (firstState.Color?.X < 0.35)
-                            eventTrack.Preset = EventPreset.LightningFlash;
-                        else if (firstState.Color?.X > 0.5)
-                            eventTrack.Preset = EventPreset.CandleFlicker;
-                        else
-                            eventTrack.Preset = EventPreset.Sparkle;
+                        Id = animation.Id,
+                        DisplayName = animation.Name ?? "Event"
+                    };
+
+                    // Try to determine preset from trigger states or native effect name
+                    if (animation.Type == AnimationType.NativeEffect)
+                    {
+                        // Map native effect names to presets
+                        eventTrack.Preset = animation.Name?.ToLowerInvariant() switch
+                        {
+                            "fire" or "candle" => EventPreset.CandleFlicker,
+                            "sparkle" => EventPreset.Sparkle,
+                            _ => EventPreset.Sparkle
+                        };
+                        eventTrack.DisplayName = animation.Name ?? "Effect";
+                    }
+                    else if (animation.EventPattern?.Triggers.Count > 0)
+                    {
+                        var trigger = animation.EventPattern.Triggers[0];
+                        if (trigger.States.Count > 0)
+                        {
+                            var firstState = trigger.States[0];
+                            // Infer preset from color/brightness patterns
+                            if (firstState.Color?.X < 0.35)
+                                eventTrack.Preset = EventPreset.LightningFlash;
+                            else if (firstState.Color?.X > 0.5)
+                                eventTrack.Preset = EventPreset.CandleFlicker;
+                            else
+                                eventTrack.Preset = EventPreset.Sparkle;
+                        }
+                    }
+
+                    // Infer frequency from intervals
+                    if (animation.EventPattern != null)
+                    {
+                        var avgInterval = (animation.EventPattern.MinIntervalSeconds + animation.EventPattern.MaxIntervalSeconds) / 2;
+                        eventTrack.Frequency = avgInterval switch
+                        {
+                            > 10 => 0.0,
+                            > 4 => 0.5,
+                            _ => 1.0
+                        };
+                    }
+
+                    EventTracks.Add(eventTrack);
+                }
+                else if (animation.Type == AnimationType.Keyframe)
+                {
+                    // Check if this animation targets all lights
+                    if (animation.LightAssignment == LightAssignment.All && SelectedRoom != null)
+                    {
+                        // Expand to one track per light in the room
+                        foreach (var light in SelectedRoom.Lights)
+                        {
+                            var track = new TrackViewModel
+                            {
+                                LightId = light.Id.ToString(),
+                                DisplayName = light.Name,
+                                Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                    animation.Keyframes.Select(k => new KeyframeViewModel
+                                    {
+                                        TimeSeconds = k.TimeSeconds,
+                                        Color = k.Color ?? new HueColor(0.45, 0.41),
+                                        Brightness = k.Brightness ?? 1.0,
+                                        Transition = k.TransitionStyle
+                                    })
+                                )
+                            };
+                            Tracks.Add(track);
+                        }
+                    }
+                    else
+                    {
+                        // Load as single keyframe track (subset or specific light)
+                        var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+                        var light = SelectedRoom != null && lightIndex < SelectedRoom.Lights.Count
+                            ? SelectedRoom.Lights[lightIndex]
+                            : null;
+
+                        var track = new TrackViewModel
+                        {
+                            LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                            DisplayName = light?.Name ?? $"Track {lightIndex}",
+                            Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                animation.Keyframes.Select(k => new KeyframeViewModel
+                                {
+                                    TimeSeconds = k.TimeSeconds,
+                                    Color = k.Color ?? new HueColor(0.45, 0.41),
+                                    Brightness = k.Brightness ?? 1.0,
+                                    Transition = k.TransitionStyle
+                                })
+                            )
+                        };
+
+                        Tracks.Add(track);
                     }
                 }
-
-                // Infer frequency from intervals
-                if (animation.EventPattern != null)
-                {
-                    var avgInterval = (animation.EventPattern.MinIntervalSeconds + animation.EventPattern.MaxIntervalSeconds) / 2;
-                    eventTrack.Frequency = avgInterval switch
-                    {
-                        > 10 => 0.0,
-                        > 4 => 0.5,
-                        _ => 1.0
-                    };
-                }
-
-                EventTracks.Add(eventTrack);
             }
-            else
-            {
-                // Load as keyframe track
-                var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
-                var light = SelectedRoom != null && lightIndex < SelectedRoom.Lights.Count
-                    ? SelectedRoom.Lights[lightIndex]
-                    : null;
 
-                var track = new TrackViewModel
-                {
-                    LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
-                    DisplayName = animation.Name ?? light?.Name ?? $"Track {lightIndex}",
-                    Keyframes = new ObservableCollection<KeyframeViewModel>(
-                        animation.Keyframes.Select(k => new KeyframeViewModel
-                        {
-                            TimeSeconds = k.TimeSeconds,
-                            Color = k.Color ?? new HueColor(0.45, 0.41),
-                            Brightness = k.Brightness ?? 1.0,
-                            Transition = k.TransitionStyle
-                        })
-                    )
-                };
-
-                Tracks.Add(track);
-            }
+            OnPropertyChanged(nameof(IsEditingExistingScene));
         }
-
-        OnPropertyChanged(nameof(IsEditingExistingScene));
+        finally
+        {
+            _isLoadingScene = false;
+        }
     }
 }
 
