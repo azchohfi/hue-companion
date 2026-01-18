@@ -394,3 +394,55 @@ Baseline screenshots are stored in `tests/visual-baselines/`. When UI changes ar
 | Light (with bridge) | `--page light --name <light-name>` |
 
 **Note:** Pages requiring room/zone/light need a connected Hue bridge.
+
+## 9. MSIX Packaging
+
+### Local Development (Self-Signed)
+
+For local testing with signed MSIX packages:
+
+```powershell
+# Create a self-signed certificate (one-time)
+.\tools\Create-SelfSignedCert.ps1
+
+# Optionally export to file
+.\tools\Create-SelfSignedCert.ps1 -OutputPath .\dev-cert.pfx
+
+# Build with signing (if needed)
+dotnet publish src/HueWindows/HueWindows.csproj `
+  -p:Platform=x64 `
+  -p:AppxPackageSigningEnabled=true `
+  -p:PackageCertificateThumbprint=<thumbprint>
+```
+
+### Production Signing Options
+
+For signed releases:
+
+1. **EV Code Signing Certificate** - Purchase from a trusted CA (DigiCert, Sectigo)
+2. **Windows Store Signing** - Automatic when publishing to Microsoft Store
+3. **Self-Signed (Dev Only)** - Works locally with Developer Mode enabled
+
+### Release Workflow
+
+The automated release workflow:
+1. Builds for x64 and ARM64
+2. Creates zip archives with the app files
+3. Generates release notes
+4. Creates GitHub Release with artifacts attached
+
+To create a release:
+```powershell
+.\tools\Bump-Version.ps1 -Push
+```
+
+### Artifact Structure
+
+Downloaded release zips contain:
+```
+HueWindows-{version}-{platform}.zip
+├── HueWindows.exe          # Main executable
+├── HueWindows.dll          # Core library
+├── *.dll                   # Dependencies
+└── Assets/                 # App resources
+```

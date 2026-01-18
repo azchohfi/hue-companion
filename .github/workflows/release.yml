@@ -115,13 +115,45 @@ jobs:
         VERSION=${GITHUB_REF_NAME#v}
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+    - name: Generate release notes
+      run: |
+        cat > release-notes.md << 'EOF'
+        ## Installation
+
+        ### Option 1: Download and Extract (Recommended)
+        1. Download the zip file for your platform:
+           - **x64 (Intel/AMD)**: `HueCompanion-${{ steps.version.outputs.version }}-x64.zip`
+           - **ARM64**: `HueCompanion-${{ steps.version.outputs.version }}-ARM64.zip`
+        2. Extract to a folder of your choice
+        3. Run `HueWindows.exe`
+
+        ### Option 2: Developer Mode (for unsigned MSIX)
+        1. Enable Developer Mode in Windows Settings > Privacy & Security > For developers
+        2. Extract the zip and run the app
+
+        ## Requirements
+        - Windows 10 version 1809 or later
+        - Windows 11 recommended for full visual experience
+        - Philips Hue Bridge on the same local network
+
+        ## First Run
+        1. Launch the app
+        2. Select your Hue bridge from the discovered list
+        3. Press the link button on your Hue bridge when prompted
+        4. Enjoy controlling your lights!
+
+        ---
+
+        **Full Changelog**: https://github.com/ddrayne/hue-windows/compare/${{ github.event.before }}...v${{ steps.version.outputs.version }}
+        EOF
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        name: HueWindows v${{ steps.version.outputs.version }}
+        name: Hue Companion v${{ steps.version.outputs.version }}
         draft: false
         prerelease: ${{ contains(github.ref_name, '-') }}
-        generate_release_notes: true
+        body_path: release-notes.md
         files: |
           ./artifacts/HueWindows-${{ steps.version.outputs.version }}-x64.zip
           ./artifacts/HueWindows-${{ steps.version.outputs.version }}-ARM64.zip
