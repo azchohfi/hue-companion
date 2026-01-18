@@ -70,9 +70,10 @@
         </StackPanel>
 
         <!-- Content -->
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer x:Name="ContentScrollViewer"
+                      Grid.Row="1"
                       Visibility="{x:Bind InvertBool(ViewModel.IsLoading), Mode=OneWay}">
-            <StackPanel Padding="36,0,36,36" Spacing="32">
+            <StackPanel Padding="36,0,36,60" Spacing="32">
 
                 <!-- Error Message -->
                 <InfoBar IsOpen="{x:Bind HasError(ViewModel.ErrorMessage), Mode=OneWay}"
@@ -168,37 +169,13 @@
                     <TextBlock Text="Hue Effects"
                                Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.NativeEffects}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="200"
-                                               MinItemHeight="100"
-                                               MinRowSpacing="12"
-                                               MinColumnSpacing="12"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="models:NativeEffectInfo">
-                                <Button Click="NativeEffect_Click"
-                                        Tag="{x:Bind}"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Padding="16"
-                                        Style="{StaticResource EffectCardButtonStyle}">
-                                    <StackPanel Spacing="8">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE7B1;" FontSize="16"
-                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                            <TextBlock Text="{x:Bind Name}"
-                                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                        </StackPanel>
-                                        <TextBlock Text="{x:Bind Description}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                    <!-- Fixed 2-column grid populated from code-behind for stable layout -->
+                    <Grid x:Name="HueEffectsGrid" ColumnSpacing="12" RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
                 </StackPanel>
 
                 <!-- Preset Scenes Section (Built-In) -->

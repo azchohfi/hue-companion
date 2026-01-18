@@ -23,6 +23,87 @@ public sealed partial class ScenesPage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await ViewModel.InitializeAsync();
+        PopulateHueEffectsGrid();
+    }
+
+    private void PopulateHueEffectsGrid()
+    {
+        HueEffectsGrid.Children.Clear();
+        HueEffectsGrid.RowDefinitions.Clear();
+
+        var effects = ViewModel.NativeEffects;
+        int rowCount = (effects.Count + 1) / 2; // 2 columns
+
+        // Add row definitions
+        for (int i = 0; i < rowCount; i++)
+        {
+            HueEffectsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        }
+
+        // Add buttons
+        for (int i = 0; i < effects.Count; i++)
+        {
+            var effect = effects[i];
+            var button = CreateEffectButton(effect);
+            Grid.SetRow(button, i / 2);
+            Grid.SetColumn(button, i % 2);
+            HueEffectsGrid.Children.Add(button);
+        }
+    }
+
+    private Button CreateEffectButton(NativeEffectInfo effect)
+    {
+        var icon = new FontIcon
+        {
+            Glyph = "\uE7B1",
+            FontSize = 16
+        };
+        // Try to get accent color from theme resources
+        if (Application.Current.Resources.TryGetValue("AccentTextFillColorPrimaryBrush", out var accentBrush))
+        {
+            icon.Foreground = accentBrush as Microsoft.UI.Xaml.Media.Brush;
+        }
+
+        var nameText = new TextBlock
+        {
+            Text = effect.Name,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        };
+
+        var headerPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8
+        };
+        headerPanel.Children.Add(icon);
+        headerPanel.Children.Add(nameText);
+
+        var descText = new TextBlock
+        {
+            Text = effect.Description,
+            FontSize = 12
+        };
+        // Try to get secondary text color from theme resources
+        if (Application.Current.Resources.TryGetValue("TextFillColorSecondaryBrush", out var secondaryBrush))
+        {
+            descText.Foreground = secondaryBrush as Microsoft.UI.Xaml.Media.Brush;
+        }
+
+        var contentPanel = new StackPanel { Spacing = 4 };
+        contentPanel.Children.Add(headerPanel);
+        contentPanel.Children.Add(descText);
+
+        var button = new Button
+        {
+            Content = contentPanel,
+            Tag = effect,
+            Padding = new Thickness(16),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MinHeight = 80
+        };
+        button.Click += NativeEffect_Click;
+
+        return button;
     }
 
     private void BrowseAnimatedScenes_Click(object sender, RoutedEventArgs e)
