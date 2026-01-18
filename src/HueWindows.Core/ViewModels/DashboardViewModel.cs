@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using System.ComponentModel;
+using static HueWindows.Core.Services.Interfaces.UIDispatcher;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -125,17 +126,21 @@ public partial class DashboardViewModel : ObservableObject
 
     private void OnLightStateChanged(object? sender, LightStateChangedEventArgs e)
     {
-        // Update room cards when light states change
-        foreach (var roomCard in RoomCards)
+        // Marshal to UI thread since event comes from background thread
+        RunOnUIThread(() =>
         {
-            roomCard.OnLightStateChanged(e);
-        }
+            // Update room cards when light states change
+            foreach (var roomCard in RoomCards)
+            {
+                roomCard.OnLightStateChanged(e);
+            }
 
-        // Update zone cards when light states change
-        foreach (var zoneCard in ZoneCards)
-        {
-            zoneCard.OnLightStateChanged(e);
-        }
+            // Update zone cards when light states change
+            foreach (var zoneCard in ZoneCards)
+            {
+                zoneCard.OnLightStateChanged(e);
+            }
+        });
     }
 }
 

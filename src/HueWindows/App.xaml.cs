@@ -118,6 +118,9 @@ public partial class App : Application
         // Create and activate main window
         MainWindow = new MainWindow();
         MainWindow.Activate();
+
+        // Initialize dispatcher helper for UI thread marshaling
+        DispatcherHelper.Initialize(MainWindow.DispatcherQueue);
     }
 
     /// <summary>
@@ -135,6 +138,7 @@ public partial class App : Application
         services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
         services.AddSingleton<ISceneStorageService, SceneStorageService>();
         services.AddSingleton<IAnimationService, AnimationService>();
+        services.AddSingleton<IRoomSceneAssignmentService, RoomSceneAssignmentService>();
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using static HueWindows.Core.Services.Interfaces.UIDispatcher;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -148,10 +149,14 @@ public partial class CustomDashboardViewModel : ObservableObject
 
     private void OnLightStateChanged(object? sender, LightStateChangedEventArgs e)
     {
-        foreach (var card in PinnedCards)
+        // Marshal to UI thread since event comes from background thread
+        UIDispatcher.RunOnUIThread(() =>
         {
-            card.OnLightStateChanged(e);
-        }
+            foreach (var card in PinnedCards)
+            {
+                card.OnLightStateChanged(e);
+            }
+        });
     }
 
     private async void OnPinnedItemsChanged(object? sender, EventArgs e)
