@@ -33,7 +33,8 @@
 
         <!-- Main card container -->
         <Grid x:Name="CardRoot"
-              CornerRadius="8"
+              CornerRadius="16"
+              MinHeight="120"
               Tapped="CardRoot_Tapped">
 
             <!-- Dark gradient background -->
@@ -48,19 +49,19 @@
             <!-- Colored outline borders - two for cross-fade animation -->
             <Border x:Name="OutlineBorder"
                     Canvas.ZIndex="0"
-                    CornerRadius="8"
+                    CornerRadius="16"
                     BorderThickness="2"
                     IsHitTestVisible="False"
                     Opacity="0"/>
             <Border x:Name="OutlineBorder2"
                     Canvas.ZIndex="0"
-                    CornerRadius="8"
+                    CornerRadius="16"
                     BorderThickness="2"
                     IsHitTestVisible="False"
                     Opacity="0"/>
 
-            <!-- Content with margin instead of padding on parent -->
-            <Grid Canvas.ZIndex="1" Margin="16,12">
+            <!-- Content -->
+            <Grid Canvas.ZIndex="1" Margin="16">
                 <Grid.ContextFlyout>
                     <MenuFlyout>
                         <MenuFlyoutItem x:Name="AddToDashboardMenuItem"
@@ -73,76 +74,98 @@
                     </MenuFlyout>
                 </Grid.ContextFlyout>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Icon container -->
-                <Border x:Name="IconContainer"
-                        Grid.Column="0"
-                        Width="36" Height="36"
-                        CornerRadius="18"
-                        Background="#20FFFFFF"
-                        Margin="0,0,14,0">
-                    <FontIcon x:Name="LightIcon"
-                              Glyph="&#xE781;"
-                              FontSize="16"
-                              Foreground="#80FFFFFF"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                </Border>
+                <!-- Top row: Icon + Name + Brightness -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Name and brightness -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                    <TextBlock x:Name="LightNameText"
-                               Text="{Binding Name}"
-                               Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                        <Run Text="{Binding BrightnessPercent}"/>
-                        <Run Text="% brightness"/>
-                    </TextBlock>
-                </StackPanel>
-
-                <!-- Color SplitButton -->
-                <SplitButton x:Name="ColorSplitButton"
-                             Grid.Column="2"
-                             Style="{StaticResource ColorSplitButtonStyle}"
-                             VerticalAlignment="Center"
-                             Margin="0,0,12,0"
-                             Visibility="{Binding SupportsColor}">
-                    <Border x:Name="ColorButtonContent" CornerRadius="6"
-                            Background="Transparent"
-                            Margin="-16,-12"
-                            Padding="16,12">
-                        <FontIcon Glyph="&#xE790;" FontSize="14" Foreground="White"/>
+                    <!-- Icon container -->
+                    <Border x:Name="IconContainer"
+                            Grid.Column="0"
+                            Width="40" Height="40"
+                            CornerRadius="20"
+                            Background="#20FFFFFF">
+                        <FontIcon x:Name="LightIcon"
+                                  Glyph="&#xE781;"
+                                  FontSize="18"
+                                  Foreground="#80FFFFFF"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
                     </Border>
-                    <SplitButton.Flyout>
-                        <Flyout x:Name="ColorPickerFlyout"
-                                Placement="Bottom"
-                                ShouldConstrainToRootBounds="False"
-                                Opening="ColorPickerFlyout_Opening">
-                            <Flyout.FlyoutPresenterStyle>
-                                <Style TargetType="FlyoutPresenter">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="CornerRadius" Value="12"/>
-                                </Style>
-                            </Flyout.FlyoutPresenterStyle>
-                            <local:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
-                        </Flyout>
-                    </SplitButton.Flyout>
-                </SplitButton>
 
-                <!-- Toggle switch -->
-                <ToggleSwitch x:Name="LightToggle"
-                              Grid.Column="3"
-                              Style="{StaticResource GradientToggleSwitchStyle}"
-                              IsOn="{Binding IsOn, Mode=TwoWay}"
-                              Tapped="LightToggle_Tapped"/>
+                    <!-- Name and brightness -->
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="LightNameText"
+                                   Text="{Binding Name}"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Foreground="#FFFFFFFF"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock FontSize="12"
+                                   Foreground="#80FFFFFF"
+                                   Margin="0,2,0,0">
+                            <Run Text="{Binding BrightnessPercent}"/>
+                            <Run Text="% brightness"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Middle spacer -->
+                <Grid Grid.Row="1"/>
+
+                <!-- Bottom row: Color button + Toggle -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Color SplitButton -->
+                    <SplitButton x:Name="ColorSplitButton"
+                                 Grid.Column="0"
+                                 Style="{StaticResource ColorSplitButtonStyle}"
+                                 VerticalAlignment="Center"
+                                 MinHeight="32"
+                                 Visibility="{Binding SupportsColor}">
+                        <Border x:Name="ColorButtonContent" CornerRadius="7,0,0,7"
+                                Background="Transparent"
+                                Margin="-16,-16,-8,-16"
+                                Padding="16,0">
+                            <FontIcon Glyph="&#xE790;" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
+                        </Border>
+                        <SplitButton.Flyout>
+                            <Flyout x:Name="ColorPickerFlyout"
+                                    Placement="Bottom"
+                                    ShouldConstrainToRootBounds="False"
+                                    Opening="ColorPickerFlyout_Opening">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="CornerRadius" Value="12"/>
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <local:ColorPickerFlyout x:Name="ColorFlyout" ColorChanged="ColorFlyout_ColorChanged"/>
+                            </Flyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+
+                    <!-- Toggle switch -->
+                    <ToggleSwitch x:Name="LightToggle"
+                                  Grid.Column="2"
+                                  Style="{StaticResource GradientToggleSwitchStyle}"
+                                  IsOn="{Binding IsOn, Mode=TwoWay}"
+                                  Tapped="LightToggle_Tapped"/>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

@@ -176,7 +176,11 @@
                     <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
                                     ElementPrepared="LightsRepeater_ElementPrepared">
                         <ItemsRepeater.Layout>
-                            <StackLayout Orientation="Vertical" Spacing="8"/>
+                            <UniformGridLayout MinItemWidth="180"
+                                               MinItemHeight="120"
+                                               MinRowSpacing="8"
+                                               MinColumnSpacing="8"
+                                               ItemsStretch="Fill"/>
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:LightItemViewModel">
