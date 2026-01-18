@@ -168,6 +168,24 @@
         <ScrollViewer Grid.Row="1">
             <StackPanel Padding="36,0,36,36" Spacing="28">
 
+                <!-- Lights Section -->
+                <StackPanel>
+                    <TextBlock Text="Lights"
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                    <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
+                                    ElementPrepared="LightsRepeater_ElementPrepared">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Orientation="Vertical" Spacing="8"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LightItemViewModel">
+                                <controls:LightCard/>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
                 <!-- Scenes Section -->
                 <StackPanel Visibility="{x:Bind HasScenes(ViewModel.Scenes.Count), Mode=OneWay}">
                     <TextBlock Text="Scenes"
@@ -324,24 +342,6 @@
                                                    HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                </StackPanel>
-
-                <!-- Lights Section -->
-                <StackPanel>
-                    <TextBlock Text="Lights"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                    <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
-                                    ElementPrepared="LightsRepeater_ElementPrepared">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Orientation="Vertical" Spacing="8"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LightItemViewModel">
-                                <controls:LightCard/>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
