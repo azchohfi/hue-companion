@@ -52,3 +52,55 @@ jobs:
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  visual-regression:
+    runs-on: windows-latest
+    needs: build-and-test
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore and build
+      run: |
+        dotnet restore
+        dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+
+    - name: Capture UI screenshots
+      run: |
+        powershell -ExecutionPolicy Bypass -File ./tools/Run-UITests.ps1 -SkipBuild
+      continue-on-error: true
+
+    - name: Compare against baselines
+      id: visual-compare
+      run: |
+        powershell -ExecutionPolicy Bypass -File ./tools/Compare-Screenshots.ps1
+      continue-on-error: true
+
+    - name: Upload screenshots for review
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pr-screenshots
+        path: |
+          test-screenshots/
+          visual-diffs/
+        retention-days: 7
+
+    - name: Comment on PR with visual diff status
+      if: steps.visual-compare.outcome == 'failure'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '⚠️ **Visual Regression Detected**\n\nUI screenshots differ from baselines. Please review the `pr-screenshots` artifact.\n\nIf changes are intentional, update baselines with:\n```powershell\n.\\tools\\Compare-Screenshots.ps1 -UpdateBaselines\n```'
+          })
