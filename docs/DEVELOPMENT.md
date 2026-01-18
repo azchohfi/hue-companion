@@ -438,11 +438,80 @@ To create a release:
 
 ### Artifact Structure
 
-Downloaded release zips contain:
+Downloaded releases include both ZIP and MSIX formats:
+
 ```
-HueWindows-{version}-{platform}.zip
-├── HueWindows.exe          # Main executable
-├── HueWindows.dll          # Core library
-├── *.dll                   # Dependencies
-└── Assets/                 # App resources
+HueWindows-{version}-{platform}.zip     # Portable (extract and run)
+├── HueWindows.exe
+├── HueWindows.dll
+├── *.dll
+└── Assets/
+
+HueWindows-{version}-{platform}.msix    # Installable package
 ```
+
+## 10. Microsoft Store Deployment
+
+### Overview
+
+The release workflow can automatically publish to the Microsoft Store when configured.
+
+```
+Push tag v0.1.0
+       │
+       ▼
+┌──────────────┐
+│  Run Tests   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────────────┐
+│  Build MSIX + ZIP    │
+└──────┬───────────────┘
+       │
+       ▼
+┌──────────────────────┐
+│  GitHub Release      │
+└──────┬───────────────┘
+       │
+       ▼
+┌──────────────────────┐
+│  STORE_ENABLED?      │──no──> Done
+└──────┬───────────────┘
+       │ yes
+       ▼
+┌──────────────────────┐
+│  Publish to Store    │
+└──────────────────────┘
+```
+
+### Setup
+
+To enable Store deployment, follow the setup guide: [STORE-SETUP.md](STORE-SETUP.md)
+
+**Required secrets:**
+- `STORE_TENANT_ID` - Azure AD tenant ID
+- `STORE_CLIENT_ID` - Azure AD application ID
+- `STORE_CLIENT_SECRET` - Azure AD client secret
+- `STORE_PRODUCT_ID` - Partner Center product ID
+
+**Required variable:**
+- `STORE_ENABLED` = `true`
+
+### Enabling/Disabling
+
+Store deployment is controlled by the `STORE_ENABLED` repository variable:
+
+- Set to `true` → Releases publish to Store
+- Set to `false` or delete → Releases only go to GitHub
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Store job doesn't run | Check `STORE_ENABLED` is `true` (case-sensitive) |
+| Authentication failed | Verify secrets match Azure AD app |
+| Package validation failed | Check MSIX manifest matches Partner Center identity |
+| Version rejected | Ensure version is higher than current Store version |
+
+For detailed troubleshooting, see [STORE-SETUP.md](STORE-SETUP.md#troubleshooting).
