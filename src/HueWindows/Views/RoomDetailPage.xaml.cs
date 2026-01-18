@@ -522,6 +522,36 @@ public sealed partial class RoomDetailPage : Page
     }
 
     /// <summary>
+    /// Helper to check if any items exist.
+    /// </summary>
+    public Visibility HasItems(int count)
+    {
+        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Handles click on a pinned animation card.
+    /// </summary>
+    private async void PinnedAnimation_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is AnimatedSceneModel scene)
+        {
+            await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Unpin in animation context menu.
+    /// </summary>
+    private async void UnpinAnimation_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
+        {
+            await ViewModel.UnpinAnimationCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
     /// Handles click on an animated scene card.
     /// </summary>
     private async void AnimatedScene_Click(object sender, RoutedEventArgs e)
@@ -529,6 +559,59 @@ public sealed partial class RoomDetailPage : Page
         if (sender is Button button && button.Tag is AnimatedSceneModel scene)
         {
             await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Save as Scene button.
+    /// </summary>
+    private async void SaveAsScene_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Save as Scene",
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        var input = new TextBox
+        {
+            PlaceholderText = "Scene name",
+            Text = $"{ViewModel.RoomName} - Custom"
+        };
+        input.SelectAll();
+        dialog.Content = input;
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(input.Text))
+        {
+            await ViewModel.SaveAsSceneCommand.ExecuteAsync(input.Text);
+        }
+    }
+
+    /// <summary>
+    /// Handles click on Delete in scene context menu.
+    /// </summary>
+    private async void DeleteScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is SceneItemViewModel scene)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Scene",
+                Content = $"Delete \"{scene.Name}\"? This cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await ViewModel.DeleteSceneCommand.ExecuteAsync(scene);
+            }
         }
     }
 
@@ -601,43 +684,64 @@ public sealed partial class RoomDetailPage : Page
 
     private void OnSceneActivatedForPulse(object? sender, Guid sceneId)
     {
-        if (_sceneElements.TryGetValue(sceneId, out var element))
+        // Must run on UI thread - event may come from async continuation on thread pool
+        if (DispatcherQueue?.HasThreadAccess == true)
         {
-            AnimateScenePulse(element);
+            if (_sceneElements.TryGetValue(sceneId, out var element))
+            {
+                AnimateScenePulse(element);
+            }
+        }
+        else
+        {
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (_sceneElements.TryGetValue(sceneId, out var element))
+                {
+                    AnimateScenePulse(element);
+                }
+            });
         }
     }
 
     private void AnimateScenePulse(UIElement element)
     {
-        if (element.RenderTransform is not ScaleTransform scaleTransform)
-            return;
-
-        var scaleXAnimation = new DoubleAnimation
+        try
         {
-            From = 1.0,
-            To = AppConstants.Animation.PulseScaleFactor,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
-            AutoReverse = true,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
+            if (element.RenderTransform is not ScaleTransform scaleTransform)
+                return;
 
-        var scaleYAnimation = new DoubleAnimation
+            var scaleXAnimation = new DoubleAnimation
+            {
+                From = 1.0,
+                To = AppConstants.Animation.PulseScaleFactor,
+                Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+                AutoReverse = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            var scaleYAnimation = new DoubleAnimation
+            {
+                From = 1.0,
+                To = AppConstants.Animation.PulseScaleFactor,
+                Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
+                AutoReverse = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(scaleXAnimation);
+            storyboard.Children.Add(scaleYAnimation);
+            Storyboard.SetTarget(scaleXAnimation, scaleTransform);
+            Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
+            Storyboard.SetTarget(scaleYAnimation, scaleTransform);
+            Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
+            storyboard.Begin();
+        }
+        catch
         {
-            From = 1.0,
-            To = AppConstants.Animation.PulseScaleFactor,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.FastDurationMs)),
-            AutoReverse = true,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(scaleXAnimation);
-        storyboard.Children.Add(scaleYAnimation);
-        Storyboard.SetTarget(scaleXAnimation, scaleTransform);
-        Storyboard.SetTargetProperty(scaleXAnimation, "ScaleX");
-        Storyboard.SetTarget(scaleYAnimation, scaleTransform);
-        Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
-        storyboard.Begin();
+            // Animation failure is non-critical - ignore
+        }
     }
 
     private void NativeEffect_Click(object sender, RoutedEventArgs e)
@@ -648,7 +752,12 @@ public sealed partial class RoomDetailPage : Page
             {
                 ShouldConstrainToRootBounds = false
             };
-            flyout.FlyoutPresenterStyle = (Style)Resources["EffectFlyoutPresenterStyle"];
+
+            // Safely get style from resources
+            if (Resources.TryGetValue("EffectFlyoutPresenterStyle", out var style) && style is Style flyoutStyle)
+            {
+                flyout.FlyoutPresenterStyle = flyoutStyle;
+            }
 
             var flyoutContent = new NativeEffectFlyout { Effect = effect };
             flyoutContent.ApplyRequested += async (s, args) =>

@@ -1,8 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
+using HueWindows.Core.Services;
 using HueWindows.Core.Services.Interfaces;
 using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -16,6 +19,8 @@ public partial class SceneBuilderViewModel : ObservableObject
     private readonly ISceneStorageService _storageService;
 
     private string? _loadedSceneId;
+    private bool _isLoadingScene; // Prevents default track creation during scene load
+    private AnimatedSceneModel? _loadedSceneModel; // Stored to re-apply when room changes
 
     [ObservableProperty]
     private string _sceneName = "Untitled Scene";
@@ -58,6 +63,22 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSnapEnabled = true; // Snap to grid on by default
+
+    [ObservableProperty]
+    private bool _hasUnsavedChanges;
+
+    /// <summary>
+    /// Whether we're editing an existing scene (vs creating new).
+    /// </summary>
+    public bool IsEditingExistingScene => _loadedSceneId != null;
+
+    private readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     private DateTime _lastPlayheadUpdate = DateTime.MinValue;
     private const int PlayheadUpdateThrottleMs = 100; // Minimum time between updates
@@ -103,6 +124,9 @@ public partial class SceneBuilderViewModel : ObservableObject
         await LoadRoomsAsync();
     }
 
+    partial void OnSceneNameChanged(string value) => MarkDirty();
+    partial void OnSceneDescriptionChanged(string value) => MarkDirty();
+
     private async Task LoadRoomsAsync()
     {
         var roomsResult = await _bridgeService.GetRoomsAsync();
@@ -123,13 +147,85 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     partial void OnSelectedRoomChanged(RoomModel? value)
     {
+        // Don't create default tracks when loading a scene - LoadSceneFromModelAsync handles it
+        if (_isLoadingScene)
+            return;
+
         if (value != null)
         {
-            CreateTracksForRoom(value);
+            // If we have a loaded scene, re-apply its tracks for the new room
+            if (_loadedSceneModel != null)
+            {
+                ApplyLoadedSceneToRoom(value);
+            }
+            else
+            {
+                CreateTracksForRoom(value);
+            }
         }
         else
         {
             Tracks.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Applies the loaded scene's animations to a room's lights.
+    /// </summary>
+    private void ApplyLoadedSceneToRoom(RoomModel room)
+    {
+        Tracks.Clear();
+
+        foreach (var animation in _loadedSceneModel!.Animations)
+        {
+            if (animation.Type == AnimationType.Keyframe)
+            {
+                if (animation.LightAssignment == LightAssignment.All)
+                {
+                    // Expand to one track per light
+                    foreach (var light in room.Lights)
+                    {
+                        var track = new TrackViewModel
+                        {
+                            LightId = light.Id.ToString(),
+                            DisplayName = light.Name,
+                            Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                animation.Keyframes.Select(k => new KeyframeViewModel
+                                {
+                                    TimeSeconds = k.TimeSeconds,
+                                    Color = k.Color ?? HueColors.WarmWhite,
+                                    Brightness = k.Brightness ?? 1.0,
+                                    Transition = k.TransitionStyle
+                                })
+                            )
+                        };
+                        Tracks.Add(track);
+                    }
+                }
+                else
+                {
+                    // Load as single keyframe track (subset or specific light)
+                    var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+                    var light = lightIndex < room.Lights.Count ? room.Lights[lightIndex] : null;
+
+                    var track = new TrackViewModel
+                    {
+                        LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                        DisplayName = light?.Name ?? $"Track {lightIndex}",
+                        Keyframes = new ObservableCollection<KeyframeViewModel>(
+                            animation.Keyframes.Select(k => new KeyframeViewModel
+                            {
+                                TimeSeconds = k.TimeSeconds,
+                                Color = k.Color ?? HueColors.WarmWhite,
+                                Brightness = k.Brightness ?? 1.0,
+                                Transition = k.TransitionStyle
+                            })
+                        )
+                    };
+
+                    Tracks.Add(track);
+                }
+            }
         }
     }
 
@@ -181,6 +277,7 @@ public partial class SceneBuilderViewModel : ObservableObject
                 }
             }
         }
+        MarkDirty();
     }
 
     [RelayCommand]
@@ -207,6 +304,7 @@ public partial class SceneBuilderViewModel : ObservableObject
         };
         EventTracks.Add(eventTrack);
         SelectEventTrack(eventTrack);
+        MarkDirty();
     }
 
     [RelayCommand]
@@ -217,6 +315,7 @@ public partial class SceneBuilderViewModel : ObservableObject
         {
             SelectedEventTrack = null;
         }
+        MarkDirty();
     }
 
     public void AddKeyframe(TrackViewModel track, double timeSeconds)
@@ -264,6 +363,7 @@ public partial class SceneBuilderViewModel : ObservableObject
         track.Keyframes.Insert(index, newKeyframe);
 
         SelectedKeyframe = newKeyframe;
+        MarkDirty();
     }
 
     [RelayCommand]
@@ -284,6 +384,7 @@ public partial class SceneBuilderViewModel : ObservableObject
                     {
                         SelectedKeyframe = null;
                     }
+                    MarkDirty();
                 }
                 break;
             }
@@ -319,6 +420,7 @@ public partial class SceneBuilderViewModel : ObservableObject
                 track.Keyframes.Insert(insertIndex, duplicate);
 
                 SelectedKeyframe = duplicate;
+                MarkDirty();
                 break;
             }
         }
@@ -371,6 +473,43 @@ public partial class SceneBuilderViewModel : ObservableObject
                 break;
             }
         }
+    }
+
+    /// <summary>
+    /// Fires an event effect on a specific light track.
+    /// </summary>
+    /// <param name="eventTrack">The event track to fire.</param>
+    /// <param name="trackIndex">The index of the light track to affect.</param>
+    public async Task FireEventAsync(EventTrackViewModel eventTrack, int trackIndex)
+    {
+        if (SelectedRoom == null || Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count)
+            return;
+
+        var track = Tracks[trackIndex];
+
+        if (!Guid.TryParse(track.LightId, out var lightId))
+            return;
+
+        // Get event parameters based on preset
+        var (flashColor, flashBrightness, returnBrightness) = eventTrack.Preset switch
+        {
+            EventPreset.LightningFlash => (new HueColor(0.31, 0.32), 1.0, 0.3),   // Cool white flash
+            EventPreset.Sparkle => (new HueColor(0.33, 0.34), 1.0, 0.5),          // Bright white sparkle
+            EventPreset.CandleFlicker => (new HueColor(0.57, 0.41), 0.6, 0.8),    // Warm orange dip
+            _ => (new HueColor(0.31, 0.32), 1.0, 0.5)
+        };
+
+        // Flash the light
+        await _bridgeService.SetLightColorAsync(lightId, flashColor);
+        await _bridgeService.SetLightBrightnessAsync(lightId, flashBrightness);
+
+        // Brief delay then return to interpolated state
+        await Task.Delay(100);
+
+        // Return to the current playhead state for this track
+        var (currentColor, currentBrightness) = InterpolateAtTime(track, PlayheadPosition);
+        await _bridgeService.SetLightColorAsync(lightId, currentColor);
+        await _bridgeService.SetLightBrightnessAsync(lightId, currentBrightness);
     }
 
     private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
@@ -428,10 +567,174 @@ public partial class SceneBuilderViewModel : ObservableObject
             return Result.Failure("No room or tracks to save");
         }
 
-        // Generate scene ID if new scene
+        var scene = BuildSceneModel();
+
+        // Save using storage service
+        var result = await _storageService.SaveSceneAsync(scene);
+
+        if (result.IsSuccess)
+        {
+            _loadedSceneId = scene.Id;
+            HasUnsavedChanges = false;
+            OnPropertyChanged(nameof(IsEditingExistingScene));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Loads an existing scene for editing.
+    /// </summary>
+    public async Task<Result> LoadSceneAsync(string sceneId)
+    {
+        var sceneResult = await _animationService.GetSceneAsync(sceneId);
+        if (sceneResult.IsFailure || sceneResult.Value == null)
+        {
+            return Result.Failure(sceneResult.Error ?? "Scene not found");
+        }
+
+        var scene = sceneResult.Value;
+
+        // Don't allow editing built-in scenes
+        if (scene.IsBuiltIn)
+        {
+            return Result.Failure("Cannot edit built-in scenes");
+        }
+
+        await LoadSceneFromModelAsync(scene);
+        HasUnsavedChanges = false; // Just loaded, no changes yet
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Extracts palette colors from keyframes for preview display.
+    /// </summary>
+    private List<HueColor> ExtractPaletteColors()
+    {
+        var colors = new HashSet<(double, double)>();
+
+        foreach (var track in Tracks)
+        {
+            foreach (var keyframe in track.Keyframes)
+            {
+                // Round to reduce near-duplicates
+                var rounded = (Math.Round(keyframe.Color.X, 2), Math.Round(keyframe.Color.Y, 2));
+                colors.Add(rounded);
+            }
+        }
+
+        return colors
+            .Take(MaxPaletteColors)
+            .Select(c => new HueColor(c.Item1, c.Item2))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Exports the current scene to JSON string.
+    /// </summary>
+    public Result<string> ExportToJson()
+    {
+        if (SelectedRoom == null || Tracks.Count == 0)
+        {
+            return Result<string>.Failure("No room or tracks to export");
+        }
+
+        try
+        {
+            var scene = BuildSceneModel();
+            var json = JsonSerializer.Serialize(scene, _jsonOptions);
+            return Result<string>.Success(json);
+        }
+        catch (Exception ex)
+        {
+            return Result<string>.Failure($"Failed to export scene: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Imports a scene from JSON string.
+    /// </summary>
+    public async Task<Result> ImportFromJsonAsync(string json)
+    {
+        try
+        {
+            var scene = JsonSerializer.Deserialize<AnimatedSceneModel>(json, _jsonOptions);
+            if (scene == null)
+            {
+                return Result.Failure("Failed to parse scene JSON");
+            }
+
+            // Validate the scene
+            var validationResult = _storageService.ValidateScene(scene);
+            if (validationResult.IsFailure)
+            {
+                return Result.Failure($"Invalid scene: {validationResult.Error}");
+            }
+
+            // Generate new ID for imported scene (treat as new)
+            scene.Id = $"user_{Guid.NewGuid():N}";
+            scene.IsBuiltIn = false;
+
+            // Load into editor
+            await LoadSceneFromModelAsync(scene);
+
+            HasUnsavedChanges = true; // Imported scenes need to be saved
+            return Result.Success();
+        }
+        catch (JsonException ex)
+        {
+            return Result.Failure($"Invalid JSON: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to import scene: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Gets all user-created scenes for the scene picker.
+    /// </summary>
+    public async Task<Result<IReadOnlyList<AnimatedSceneModel>>> GetUserScenesAsync()
+    {
+        return await _storageService.LoadUserScenesAsync();
+    }
+
+    /// <summary>
+    /// Resets the editor to a new blank scene.
+    /// </summary>
+    public void NewScene()
+    {
+        _loadedSceneId = null;
+        _loadedSceneModel = null; // Clear stored scene so room changes create default tracks
+        SceneName = "Untitled Scene";
+        SceneDescription = "";
+        DurationSeconds = 16;
+        SelectedRoom = null;
+        Tracks.Clear();
+        EventTracks.Clear();
+        SelectedKeyframe = null;
+        SelectedEventTrack = null;
+        PlayheadPosition = 0;
+        IsPlaying = false;
+        HasUnsavedChanges = false;
+        OnPropertyChanged(nameof(IsEditingExistingScene));
+    }
+
+    /// <summary>
+    /// Marks the scene as having unsaved changes.
+    /// </summary>
+    public void MarkDirty()
+    {
+        HasUnsavedChanges = true;
+    }
+
+    /// <summary>
+    /// Builds an AnimatedSceneModel from the current editor state.
+    /// </summary>
+    private AnimatedSceneModel BuildSceneModel()
+    {
         var sceneId = _loadedSceneId ?? $"user_{Guid.NewGuid():N}";
 
-        // Build the AnimatedSceneModel
         var scene = new AnimatedSceneModel
         {
             Id = sceneId,
@@ -439,7 +742,7 @@ public partial class SceneBuilderViewModel : ObservableObject
             Description = SceneDescription,
             Category = "Custom",
             DefaultTargeting = LightTargeting.Room,
-            TargetId = SelectedRoom.Id,
+            TargetId = SelectedRoom?.Id,
             IsBuiltIn = false,
             Version = "1.0",
             PaletteColors = ExtractPaletteColors(),
@@ -480,159 +783,165 @@ public partial class SceneBuilderViewModel : ObservableObject
             scene.Animations.Add(eventTrack.ToAnimationDefinition());
         }
 
-        // Save using storage service
-        var result = await _storageService.SaveSceneAsync(scene);
-
-        if (result.IsSuccess)
-        {
-            _loadedSceneId = sceneId;
-        }
-
-        return result;
+        return scene;
     }
 
     /// <summary>
-    /// Loads an existing scene for editing.
+    /// Loads an AnimatedSceneModel into the editor.
     /// </summary>
-    public async Task<Result> LoadSceneAsync(string sceneId)
+    private async Task LoadSceneFromModelAsync(AnimatedSceneModel scene)
     {
-        var sceneResult = await _animationService.GetSceneAsync(sceneId);
-        if (sceneResult.IsFailure || sceneResult.Value == null)
+        _isLoadingScene = true;
+        try
         {
-            return Result.Failure(sceneResult.Error ?? "Scene not found");
-        }
+            _loadedSceneId = scene.Id;
+            _loadedSceneModel = scene; // Store for re-applying when room changes
+            SceneName = scene.Name;
+            SceneDescription = scene.Description;
 
-        var scene = sceneResult.Value;
-
-        // Don't allow editing built-in scenes
-        if (scene.IsBuiltIn)
-        {
-            return Result.Failure("Cannot edit built-in scenes");
-        }
-
-        _loadedSceneId = scene.Id;
-        SceneName = scene.Name;
-        SceneDescription = scene.Description;
-
-        // Find the target room
-        if (scene.TargetId.HasValue)
-        {
-            SelectedRoom = Rooms.FirstOrDefault(r => r.Id == scene.TargetId.Value);
-        }
-
-        if (SelectedRoom == null)
-        {
-            return Result.Failure("Target room not found");
-        }
-
-        // Get duration from first animation
-        if (scene.Animations.Count > 0)
-        {
-            DurationSeconds = scene.Animations[0].DurationSeconds;
-            IsLooping = scene.Animations[0].RepeatMode == RepeatMode.Loop;
-        }
-
-        // Load tracks from animations
-        Tracks.Clear();
-        EventTracks.Clear();
-
-        foreach (var animation in scene.Animations)
-        {
-            if (animation.Type == AnimationType.Event)
+            // Find the target room
+            if (scene.TargetId.HasValue)
             {
-                // Load as event track
-                var eventTrack = new EventTrackViewModel
-                {
-                    Id = animation.Id,
-                    DisplayName = animation.Name ?? "Event"
-                };
+                SelectedRoom = Rooms.FirstOrDefault(r => r.Id == scene.TargetId.Value);
+            }
 
-                // Determine preset from EventPreset property or fallback to inference
-                if (!string.IsNullOrEmpty(animation.EventPreset) && 
-                    Enum.TryParse<EventPreset>(animation.EventPreset, out var preset))
+            // If room not found, leave it unselected (user can pick one)
+            if (SelectedRoom == null && Rooms.Count > 0)
+            {
+                // Don't auto-select, let user choose
+            }
+
+            // Get duration from first keyframe animation
+            var firstKeyframeAnim = scene.Animations.FirstOrDefault(a => a.Type == AnimationType.Keyframe);
+            if (firstKeyframeAnim != null)
+            {
+                DurationSeconds = firstKeyframeAnim.DurationSeconds > 0 ? firstKeyframeAnim.DurationSeconds : 16;
+                IsLooping = firstKeyframeAnim.RepeatMode == RepeatMode.Loop;
+            }
+
+            // Load tracks from animations
+            Tracks.Clear();
+            EventTracks.Clear();
+
+            foreach (var animation in scene.Animations)
+            {
+                if (animation.Type == AnimationType.Event || animation.Type == AnimationType.NativeEffect)
                 {
-                    eventTrack.Preset = preset;
-                }
-                else if (animation.EventPattern?.Triggers.Count > 0)
-                {
-                    // Fallback: infer preset from trigger states for legacy scenes
-                    var trigger = animation.EventPattern.Triggers[0];
-                    if (trigger.States.Count > 0)
+                    // Load as event track
+                    var eventTrack = new EventTrackViewModel
                     {
-                        var firstState = trigger.States[0];
-                        // Infer preset from color/brightness patterns
-                        if (firstState.Color?.X < 0.35) // Cool white = lightning
-                            eventTrack.Preset = EventPreset.LightningFlash;
-                        else if (firstState.Color?.X > 0.5) // Warm = candle
-                            eventTrack.Preset = EventPreset.CandleFlicker;
-                        else
-                            eventTrack.Preset = EventPreset.Sparkle;
+                        Id = animation.Id,
+                        DisplayName = animation.Name ?? "Event"
+                    };
+
+                    // Try to determine preset from EventPreset property, native effect, or trigger inference
+                    if (!string.IsNullOrEmpty(animation.EventPreset) &&
+                        Enum.TryParse<EventPreset>(animation.EventPreset, out var preset))
+                    {
+                        // Explicit preset stored in animation
+                        eventTrack.Preset = preset;
+                    }
+                    else if (animation.Type == AnimationType.NativeEffect)
+                    {
+                        // Map native effect names to presets
+                        eventTrack.Preset = animation.Name?.ToLowerInvariant() switch
+                        {
+                            "fire" or "candle" => EventPreset.CandleFlicker,
+                            "sparkle" => EventPreset.Sparkle,
+                            _ => EventPreset.Sparkle
+                        };
+                        eventTrack.DisplayName = animation.Name ?? "Effect";
+                    }
+                    else if (animation.EventPattern?.Triggers.Count > 0)
+                    {
+                        // Fallback: infer preset from trigger states for legacy scenes
+                        var trigger = animation.EventPattern.Triggers[0];
+                        if (trigger.States.Count > 0)
+                        {
+                            var firstState = trigger.States[0];
+                            // Infer preset from color/brightness patterns
+                            if (firstState.Color?.X < 0.35)
+                                eventTrack.Preset = EventPreset.LightningFlash;
+                            else if (firstState.Color?.X > 0.5)
+                                eventTrack.Preset = EventPreset.CandleFlicker;
+                            else
+                                eventTrack.Preset = EventPreset.Sparkle;
+                        }
+                    }
+
+                    // Infer frequency from intervals
+                    if (animation.EventPattern != null)
+                    {
+                        var avgInterval = (animation.EventPattern.MinIntervalSeconds + animation.EventPattern.MaxIntervalSeconds) / 2;
+                        eventTrack.Frequency = avgInterval switch
+                        {
+                            > 10 => 0.0,
+                            > 4 => 0.5,
+                            _ => 1.0
+                        };
+                    }
+
+                    EventTracks.Add(eventTrack);
+                }
+                else if (animation.Type == AnimationType.Keyframe)
+                {
+                    // Check if this animation targets all lights
+                    if (animation.LightAssignment == LightAssignment.All && SelectedRoom != null)
+                    {
+                        // Expand to one track per light in the room
+                        foreach (var light in SelectedRoom.Lights)
+                        {
+                            var track = new TrackViewModel
+                            {
+                                LightId = light.Id.ToString(),
+                                DisplayName = light.Name,
+                                Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                    animation.Keyframes.Select(k => new KeyframeViewModel
+                                    {
+                                        TimeSeconds = k.TimeSeconds,
+                                        Color = k.Color ?? HueColors.WarmWhite,
+                                        Brightness = k.Brightness ?? 1.0,
+                                        Transition = k.TransitionStyle
+                                    })
+                                )
+                            };
+                            Tracks.Add(track);
+                        }
+                    }
+                    else
+                    {
+                        // Load as single keyframe track (subset or specific light)
+                        var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
+                        var light = SelectedRoom != null && lightIndex < SelectedRoom.Lights.Count
+                            ? SelectedRoom.Lights[lightIndex]
+                            : null;
+
+                        var track = new TrackViewModel
+                        {
+                            LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
+                            DisplayName = light?.Name ?? $"Track {lightIndex}",
+                            Keyframes = new ObservableCollection<KeyframeViewModel>(
+                                animation.Keyframes.Select(k => new KeyframeViewModel
+                                {
+                                    TimeSeconds = k.TimeSeconds,
+                                    Color = k.Color ?? HueColors.WarmWhite,
+                                    Brightness = k.Brightness ?? 1.0,
+                                    Transition = k.TransitionStyle
+                                })
+                            )
+                        };
+
+                        Tracks.Add(track);
                     }
                 }
-
-                // Infer frequency from intervals
-                if (animation.EventPattern != null)
-                {
-                    var avgInterval = (animation.EventPattern.MinIntervalSeconds + animation.EventPattern.MaxIntervalSeconds) / 2;
-                    eventTrack.Frequency = avgInterval switch
-                    {
-                        > 10 => 0.0,
-                        > 4 => 0.5,
-                        _ => 1.0
-                    };
-                }
-
-                EventTracks.Add(eventTrack);
             }
-            else
-            {
-                // Load as keyframe track
-                var lightIndex = animation.TargetLightIndices.Count > 0 ? animation.TargetLightIndices[0] : 0;
-                var light = lightIndex < SelectedRoom.Lights.Count ? SelectedRoom.Lights[lightIndex] : null;
 
-                var track = new TrackViewModel
-                {
-                    LightId = light?.Id.ToString() ?? Guid.NewGuid().ToString(),
-                    DisplayName = animation.Name ?? light?.Name ?? $"Track {lightIndex}",
-                    Keyframes = new ObservableCollection<KeyframeViewModel>(
-                        animation.Keyframes.Select(k => new KeyframeViewModel
-                        {
-                            TimeSeconds = k.TimeSeconds,
-                            Color = k.Color ?? HueColors.WarmWhite,
-                            Brightness = k.Brightness ?? 1.0,
-                            Transition = k.TransitionStyle
-                        })
-                    )
-                };
-
-                Tracks.Add(track);
-            }
+            OnPropertyChanged(nameof(IsEditingExistingScene));
         }
-
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Extracts palette colors from keyframes for preview display.
-    /// </summary>
-    private List<HueColor> ExtractPaletteColors()
-    {
-        var colors = new HashSet<(double, double)>();
-
-        foreach (var track in Tracks)
+        finally
         {
-            foreach (var keyframe in track.Keyframes)
-            {
-                // Round to reduce near-duplicates
-                var rounded = (Math.Round(keyframe.Color.X, 2), Math.Round(keyframe.Color.Y, 2));
-                colors.Add(rounded);
-            }
+            _isLoadingScene = false;
         }
-
-        return colors
-            .Take(MaxPaletteColors)
-            .Select(c => new HueColor(c.Item1, c.Item2))
-            .ToList();
     }
 }
 

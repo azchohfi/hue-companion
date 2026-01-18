@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Messaging;
@@ -28,6 +29,10 @@ public partial class App : Application
     /// </summary>
     public static CommandLineArgs CommandLineArgs { get; private set; } = null!;
 
+    private static readonly string CrashLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "HueWindows", "crash.log");
+
     /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
@@ -35,6 +40,61 @@ public partial class App : Application
     {
         this.InitializeComponent();
         Services = ConfigureServices();
+
+        // Set up unhandled exception handlers for crash logging
+        this.UnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    }
+
+    private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        LogCrash("UnhandledException", e.Exception);
+        e.Handled = false; // Let it crash but we have the log
+    }
+
+    private void OnDomainUnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+    {
+        LogCrash("DomainUnhandledException", e.ExceptionObject as Exception);
+    }
+
+    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        LogCrash("UnobservedTaskException", e.Exception);
+    }
+
+    private static void LogCrash(string source, Exception? ex)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(CrashLogPath);
+            if (dir != null && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            var message = $"""
+                ============ CRASH LOG ============
+                Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+                Source: {source}
+                Exception: {ex?.GetType().FullName ?? "Unknown"}
+                Message: {ex?.Message ?? "No message"}
+
+                Stack Trace:
+                {ex?.StackTrace ?? "No stack trace"}
+
+                Inner Exception:
+                {ex?.InnerException?.Message ?? "None"}
+                {ex?.InnerException?.StackTrace ?? ""}
+                ===================================
+
+                """;
+
+            File.AppendAllText(CrashLogPath, message);
+            System.Diagnostics.Debug.WriteLine(message);
+        }
+        catch
+        {
+            // Can't log the crash log failure
+        }
     }
 
     /// <summary>
@@ -58,6 +118,9 @@ public partial class App : Application
         // Create and activate main window
         MainWindow = new MainWindow();
         MainWindow.Activate();
+
+        // Initialize dispatcher helper for UI thread marshaling
+        DispatcherHelper.Initialize(MainWindow.DispatcherQueue);
     }
 
     /// <summary>
@@ -75,6 +138,7 @@ public partial class App : Application
         services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
         services.AddSingleton<ISceneStorageService, SceneStorageService>();
         services.AddSingleton<IAnimationService, AnimationService>();
+        services.AddSingleton<IRoomSceneAssignmentService, RoomSceneAssignmentService>();
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();

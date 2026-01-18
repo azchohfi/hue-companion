@@ -19,6 +19,7 @@
         <converters:HexToVisibilityConverter x:Key="HexToVisibilityConverter"/>
         <converters:HexToGradientBackgroundConverter x:Key="HexToGradientBackgroundConverter"/>
         <converters:HexToGradientBorderConverter x:Key="HexToGradientBorderConverter"/>
+        <converters:BoolToOpacityActiveConverter x:Key="BoolToOpacityActiveConverter"/>
 
         <Style x:Key="EffectFlyoutPresenterStyle" TargetType="FlyoutPresenter">
             <Setter Property="Background" Value="Transparent"/>
@@ -65,6 +66,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
@@ -117,8 +119,17 @@
                         </SplitButton.Flyout>
                     </SplitButton>
 
+                    <Button Grid.Column="3"
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTipService.ToolTip="Save as Scene"
+                            Click="SaveAsScene_Click"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                        <FontIcon Glyph="&#xE74E;" FontSize="16"/>
+                    </Button>
+
                     <ToggleSwitch x:Name="RoomToggle"
-                                  Grid.Column="3"
+                                  Grid.Column="4"
                                   Style="{StaticResource GradientToggleSwitchStyle}"
                                   VerticalAlignment="Center"
                                   IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
@@ -168,6 +179,28 @@
         <ScrollViewer Grid.Row="1">
             <StackPanel Padding="36,0,36,36" Spacing="28">
 
+                <!-- Lights Section -->
+                <StackPanel>
+                    <TextBlock Text="Lights"
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                    <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
+                                    ElementPrepared="LightsRepeater_ElementPrepared">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="180"
+                                               MinItemHeight="120"
+                                               MinRowSpacing="8"
+                                               MinColumnSpacing="8"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LightItemViewModel">
+                                <controls:LightCard/>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
                 <!-- Scenes Section -->
                 <StackPanel Visibility="{x:Bind HasScenes(ViewModel.Scenes.Count), Mode=OneWay}">
                     <TextBlock Text="Scenes"
@@ -191,6 +224,17 @@
                                     <Button Style="{StaticResource SceneCardButtonStyle}"
                                             Background="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBackgroundConverter}}"
                                             Command="{x:Bind ActivateCommand}">
+                                        <Button.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Delete"
+                                                                Click="DeleteScene_Click"
+                                                                Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE74D;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Button.ContextFlyout>
                                         <StackPanel HorizontalAlignment="Center" Spacing="4">
                                             <FontIcon Glyph="&#xE91B;" FontSize="16"
                                                       Foreground="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"/>
@@ -221,12 +265,52 @@
                                         </StackPanel>
                                     </Button>
                                     <!-- Active indicator border - uses scene's primary color -->
+                                    <!-- Note: Using Opacity instead of Visibility to avoid layout cycles in ItemsRepeater -->
                                     <Border BorderThickness="2"
                                             BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
                                             CornerRadius="8"
                                             IsHitTestVisible="False"
-                                            Visibility="{x:Bind IsActive, Mode=OneWay}"/>
+                                            Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
                                 </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Pinned Animations Section -->
+                <StackPanel Visibility="{x:Bind HasItems(ViewModel.PinnedAnimations.Count), Mode=OneWay}">
+                    <TextBlock Text="Pinned Animations"
+                               Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.PinnedAnimations, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="110" MinItemHeight="88"
+                                               MinRowSpacing="8" MinColumnSpacing="8"
+                                               ItemsStretch="Fill"/>
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:AnimatedSceneModel">
+                                <Button Style="{StaticResource SceneCardButtonStyle}"
+                                        Click="PinnedAnimation_Click"
+                                        Tag="{x:Bind}">
+                                    <Button.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Unpin" Click="UnpinAnimation_Click" Tag="{x:Bind}">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE77A;"/>
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Button.ContextFlyout>
+                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                        <FontIcon Glyph="&#xE768;" FontSize="16"
+                                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="90" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
@@ -324,24 +408,6 @@
                                                    HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                </StackPanel>
-
-                <!-- Lights Section -->
-                <StackPanel>
-                    <TextBlock Text="Lights"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                    <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
-                                    ElementPrepared="LightsRepeater_ElementPrepared">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Orientation="Vertical" Spacing="8"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LightItemViewModel">
-                                <controls:LightCard/>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

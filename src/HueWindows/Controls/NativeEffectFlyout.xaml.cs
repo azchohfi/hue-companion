@@ -66,6 +66,11 @@ public sealed partial class NativeEffectFlyout : UserControl
 
     private void UpdateValueLabels()
     {
+        // Guard against calls during XAML initialization
+        if (SpeedValueText == null || BrightnessValueText == null ||
+            SpeedSlider == null || BrightnessSlider == null)
+            return;
+
         SpeedValueText.Text = $"{(int)SpeedSlider.Value}%";
         BrightnessValueText.Text = $"{(int)BrightnessSlider.Value}%";
     }

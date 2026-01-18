@@ -164,6 +164,20 @@ public interface IHueBridgeService
     /// </summary>
     Task ActivateSceneAsync(Guid sceneId);
 
+    /// <summary>
+    /// Creates a new scene from the current state of lights in a room/zone.
+    /// </summary>
+    /// <param name="groupId">The room or zone ID.</param>
+    /// <param name="sceneName">Name for the new scene.</param>
+    /// <param name="isZone">True if groupId is a zone, false for room.</param>
+    /// <returns>The created scene ID on success.</returns>
+    Task<Result<Guid>> CreateSceneFromCurrentStateAsync(Guid groupId, string sceneName, bool isZone = false);
+
+    /// <summary>
+    /// Deletes a scene from the bridge.
+    /// </summary>
+    Task<Result> DeleteSceneAsync(Guid sceneId);
+
     // Event stream
 
     /// <summary>

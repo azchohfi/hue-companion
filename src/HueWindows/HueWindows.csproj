@@ -18,6 +18,7 @@
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxBundle>Never</AppxBundle>
     <PublishProfile Condition="'$(Platform)'!='' and '$(Platform)'!='AnyCPU'">win-$(Platform).pubxml</PublishProfile>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

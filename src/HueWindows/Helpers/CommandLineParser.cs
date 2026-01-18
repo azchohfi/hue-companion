@@ -28,6 +28,7 @@ public static class CommandLineParser
 
         string? page = null;
         Guid? id = null;
+        string? name = null;
         bool screenshotMode = false;
         int screenshotDelayMs = 5000;
 
@@ -57,6 +58,15 @@ public static class CommandLineParser
                 }
                 id = parsedId;
             }
+            else if (arg.Equals("--name", StringComparison.OrdinalIgnoreCase) ||
+                     arg.Equals("-n", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 >= argsToProcess.Length)
+                {
+                    return InvalidArgs("--name requires a value");
+                }
+                name = argsToProcess[++i];
+            }
             else if (arg.Equals("--screenshot", StringComparison.OrdinalIgnoreCase) ||
                      arg.Equals("-s", StringComparison.OrdinalIgnoreCase))
             {
@@ -82,16 +92,17 @@ public static class CommandLineParser
             return InvalidArgs($"Unknown page: {page}. Valid pages: {string.Join(", ", ValidPages)}");
         }
 
-        // Validate ID requirement
-        if (page != null && PagesRequiringId.Contains(page) && !id.HasValue)
+        // Validate ID or name requirement
+        if (page != null && PagesRequiringId.Contains(page) && !id.HasValue && string.IsNullOrEmpty(name))
         {
-            return InvalidArgs($"Page '{page}' requires --id parameter");
+            return InvalidArgs($"Page '{page}' requires --id or --name parameter");
         }
 
         return new CommandLineArgs
         {
             Page = page,
             Id = id,
+            Name = name,
             ScreenshotMode = screenshotMode,
             ScreenshotDelayMs = screenshotDelayMs,
             IsValid = true

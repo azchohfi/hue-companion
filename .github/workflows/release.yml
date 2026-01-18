@@ -1,0 +1,252 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run unit tests
+      run: |
+        dotnet test src/HueWindows.Tests `
+          --no-build `
+          --configuration Release `
+          --verbosity normal `
+          --logger "trx;LogFileName=test-results.trx"
+
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: windows-latest
+    needs: test
+
+    strategy:
+      matrix:
+        platform: [x64, ARM64]
+        include:
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Extract version from tag
+      id: version
+      shell: bash
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish ${{ matrix.platform }}
+      run: |
+        dotnet publish src/HueWindows/HueWindows.csproj `
+          --configuration Release `
+          -p:Platform=${{ matrix.platform }} `
+          -p:Version=${{ steps.version.outputs.version }} `
+          --output ./publish/${{ matrix.platform }}
+
+    - name: Create zip archive
+      shell: pwsh
+      run: |
+        Compress-Archive -Path ./publish/${{ matrix.platform }}/* -DestinationPath ./HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
+
+    - name: Build MSIX package
+      shell: pwsh
+      run: |
+        # Build MSIX for Store submission
+        msbuild src/HueWindows/HueWindows.csproj `
+          /p:Configuration=Release `
+          /p:Platform=${{ matrix.platform }} `
+          /p:Version=${{ steps.version.outputs.version }} `
+          /p:GenerateAppxPackageOnBuild=true `
+          /p:AppxPackageDir=.\packages\ `
+          /p:AppxBundle=Never `
+          /p:UapAppxPackageBuildMode=SideloadOnly `
+          /p:AppxPackageSigningEnabled=false
+
+    - name: Find and rename MSIX
+      id: msix
+      shell: pwsh
+      run: |
+        $msix = Get-ChildItem -Path ./packages -Filter "*.msix" -Recurse | Select-Object -First 1
+        if ($msix) {
+          $newName = "HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.msix"
+          $newPath = "./packages/$newName"
+          Copy-Item $msix.FullName $newPath
+          echo "msix_path=$newPath" >> $env:GITHUB_OUTPUT
+          echo "msix_name=$newName" >> $env:GITHUB_OUTPUT
+        } else {
+          Write-Error "No MSIX file found"
+          exit 1
+        }
+
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: HueWindows-${{ matrix.platform }}-zip
+        path: ./HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
+        retention-days: 1
+
+    - name: Upload MSIX artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: HueWindows-${{ matrix.platform }}-msix
+        path: ${{ steps.msix.outputs.msix_path }}
+        retention-days: 1
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download x64 ZIP artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-x64-zip
+        path: ./artifacts
+
+    - name: Download ARM64 ZIP artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-ARM64-zip
+        path: ./artifacts
+
+    - name: Download x64 MSIX artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-x64-msix
+        path: ./artifacts
+
+    - name: Download ARM64 MSIX artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-ARM64-msix
+        path: ./artifacts
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Generate release notes
+      run: |
+        cat > release-notes.md << 'EOF'
+        ## Installation
+
+        ### Option 1: Microsoft Store (Recommended)
+        Install from the [Microsoft Store](https://apps.microsoft.com/detail/TODO) for automatic updates.
+
+        ### Option 2: Download ZIP (Portable)
+        1. Download the zip file for your platform:
+           - **x64 (Intel/AMD)**: `HueWindows-${{ steps.version.outputs.version }}-x64.zip`
+           - **ARM64**: `HueWindows-${{ steps.version.outputs.version }}-ARM64.zip`
+        2. Extract to a folder of your choice
+        3. Run `HueWindows.exe`
+
+        ### Option 3: MSIX Package (Developer Mode)
+        1. Enable Developer Mode in Windows Settings > Privacy & Security > For developers
+        2. Download the MSIX file for your platform
+        3. Double-click to install
+
+        ## Requirements
+        - Windows 10 version 1809 or later
+        - Windows 11 recommended for full visual experience
+        - Philips Hue Bridge on the same local network
+
+        ## First Run
+        1. Launch the app
+        2. Select your Hue bridge from the discovered list
+        3. Press the link button on your Hue bridge when prompted
+        4. Enjoy controlling your lights!
+
+        ---
+
+        **Full Changelog**: https://github.com/ddrayne/hue-windows/compare/${{ github.event.before }}...v${{ steps.version.outputs.version }}
+        EOF
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Hue Companion v${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
+        body_path: release-notes.md
+        files: |
+          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-x64.zip
+          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-ARM64.zip
+          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-x64.msix
+          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-ARM64.msix
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  store-publish:
+    name: Publish to Microsoft Store
+    runs-on: windows-latest
+    needs: release
+    if: vars.STORE_ENABLED == 'true'
+
+    steps:
+    - name: Download x64 MSIX artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-x64-msix
+        path: ./packages
+
+    - name: Download ARM64 MSIX artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: HueWindows-ARM64-msix
+        path: ./packages
+
+    - name: Extract version from tag
+      id: version
+      shell: bash
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Publish to Store
+      uses: microsoft/store-submission@v1
+      with:
+        command: publish
+        product-id: ${{ secrets.STORE_PRODUCT_ID }}
+        tenant-id: ${{ secrets.STORE_TENANT_ID }}
+        client-id: ${{ secrets.STORE_CLIENT_ID }}
+        client-secret: ${{ secrets.STORE_CLIENT_SECRET }}
+        package-path: ./packages/

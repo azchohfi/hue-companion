@@ -15,6 +15,7 @@ public partial class RoomDetailViewModel : ObservableObject
     private readonly IHueBridgeService _bridgeService;
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _sceneStorageService;
+    private readonly IRoomSceneAssignmentService _assignmentService;
     private Guid _groupId;
     private LightGroupType _groupType = LightGroupType.Room;
 
@@ -38,6 +39,9 @@ public partial class RoomDetailViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<AnimatedSceneModel> _animatedScenes = new();
+
+    [ObservableProperty]
+    private ObservableCollection<AnimatedSceneModel> _pinnedAnimations = new();
 
     [ObservableProperty]
     private bool _isLoading;
@@ -78,11 +82,16 @@ public partial class RoomDetailViewModel : ObservableObject
                 .ToList()
         : new();
 
-    public RoomDetailViewModel(IHueBridgeService bridgeService, IAnimationService animationService, ISceneStorageService sceneStorageService)
+    public RoomDetailViewModel(
+        IHueBridgeService bridgeService,
+        IAnimationService animationService,
+        ISceneStorageService sceneStorageService,
+        IRoomSceneAssignmentService assignmentService)
     {
         _bridgeService = bridgeService;
         _animationService = animationService;
         _sceneStorageService = sceneStorageService;
+        _assignmentService = assignmentService;
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -161,6 +170,9 @@ public partial class RoomDetailViewModel : ObservableObject
             }
         }
 
+        // Load pinned animations for this room
+        await LoadPinnedAnimationsAsync();
+
         // Update animation state for this room
         IsAnimationRunning = _animationService.IsAnimationRunning(groupId);
         RunningAnimationName = _animationService.GetRunningScene(groupId)?.Name;
@@ -169,6 +181,68 @@ public partial class RoomDetailViewModel : ObservableObject
 
         // Notify SupportsColor after lights are loaded so binding updates
         OnPropertyChanged(nameof(SupportsColor));
+    }
+
+    /// <summary>
+    /// Reloads just the scenes list without reloading lights.
+    /// </summary>
+    private async Task LoadScenesAsync()
+    {
+        var scenesResult = _groupType == LightGroupType.Room
+            ? await _bridgeService.GetScenesForRoomAsync(_groupId)
+            : await _bridgeService.GetScenesForZoneAsync(_groupId);
+
+        Scenes.Clear();
+        if (scenesResult.IsSuccess)
+        {
+            foreach (var scene in scenesResult.Value!)
+            {
+                var sceneVm = new SceneItemViewModel(scene, _bridgeService);
+                sceneVm.SceneActivated += OnSceneActivated;
+                Scenes.Add(sceneVm);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Loads pinned animations for the current room.
+    /// </summary>
+    private async Task LoadPinnedAnimationsAsync()
+    {
+        var assignedIds = await _assignmentService.GetAssignedScenesAsync(_groupId);
+
+        // Load all available scenes (both built-in and user)
+        var allScenes = new List<AnimatedSceneModel>();
+        var builtInResult = await _sceneStorageService.LoadBuiltInScenesAsync();
+        if (builtInResult.IsSuccess && builtInResult.Value != null)
+        {
+            allScenes.AddRange(builtInResult.Value);
+        }
+        var userResult = await _sceneStorageService.LoadUserScenesAsync();
+        if (userResult.IsSuccess && userResult.Value != null)
+        {
+            allScenes.AddRange(userResult.Value);
+        }
+
+        PinnedAnimations.Clear();
+        foreach (var id in assignedIds)
+        {
+            var scene = allScenes.FirstOrDefault(s => s.Id == id);
+            if (scene != null)
+            {
+                PinnedAnimations.Add(scene);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unpins an animation from this room.
+    /// </summary>
+    [RelayCommand]
+    private async Task UnpinAnimationAsync(AnimatedSceneModel scene)
+    {
+        await _assignmentService.RemoveSceneFromRoomAsync(_groupId, scene.Id);
+        PinnedAnimations.Remove(scene);
     }
 
     partial void OnIsOnChanged(bool value)
@@ -222,6 +296,40 @@ public partial class RoomDetailViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(LightColors));
+    }
+
+    [RelayCommand]
+    private async Task SaveAsSceneAsync(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+            return;
+
+        var isZone = _groupType == LightGroupType.Zone;
+        var result = await _bridgeService.CreateSceneFromCurrentStateAsync(_groupId, sceneName, isZone);
+
+        if (result.IsSuccess)
+        {
+            // Refresh scenes list
+            await LoadScenesAsync();
+        }
+        else
+        {
+            ErrorMessage = result.Error;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteSceneAsync(SceneItemViewModel scene)
+    {
+        var result = await _bridgeService.DeleteSceneAsync(scene.SceneId);
+        if (result.IsSuccess)
+        {
+            Scenes.Remove(scene);
+        }
+        else
+        {
+            ErrorMessage = result.Error;
+        }
     }
 
     private async void OnSceneActivated(object? sender, Guid sceneId)
@@ -517,7 +625,26 @@ public partial class SceneItemViewModel : ObservableObject
     [RelayCommand]
     private async Task ActivateAsync()
     {
-        await _bridgeService.ActivateSceneAsync(SceneId);
-        SceneActivated?.Invoke(this, SceneId);
+        // Capture sync context to ensure event fires on UI thread
+        var syncContext = SynchronizationContext.Current;
+        try
+        {
+            await _bridgeService.ActivateSceneAsync(SceneId);
+
+            // Fire event on original (UI) thread to avoid cross-thread XAML updates
+            if (syncContext != null)
+            {
+                syncContext.Post(_ => SceneActivated?.Invoke(this, SceneId), null);
+            }
+            else
+            {
+                SceneActivated?.Invoke(this, SceneId);
+            }
+        }
+        catch (Exception)
+        {
+            // Silently fail - the bridge might be temporarily unavailable
+            // UI will update when bridge connection is restored via event stream
+        }
     }
 }
