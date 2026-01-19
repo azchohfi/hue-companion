@@ -33,6 +33,11 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public event EventHandler? BridgeSetupRequested;
 
+    /// <summary>
+    /// Event raised when user wants to repair bridge connection.
+    /// </summary>
+    public event EventHandler? RepairBridgeRequested;
+
     public SettingsViewModel(
         ISettingsService settingsService,
         IMultiBridgeService multiBridgeService,
