@@ -21,8 +21,10 @@ public sealed partial class LightCard : UserControl
     private bool _isHovering;
     private Color _accentColor = Colors.White;
     private Color _currentIconColor = Colors.Gray;
+    private Color _currentIconGlowColor = Colors.Transparent;
     private Color _currentColorButtonColor = Colors.Transparent;
     private SolidColorBrush? _iconBrush;
+    private SolidColorBrush? _iconGlowBrush;
     private SolidColorBrush? _toggleBrush;
     private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
@@ -239,6 +241,21 @@ public sealed partial class LightCard : UserControl
         // Animate color change
         AnimationHelper.AnimateColor(_iconBrush, _currentIconColor, targetColor);
         _currentIconColor = targetColor;
+
+        if (IconGlow == null) return;
+
+        var glowTarget = isActive
+            ? Color.FromArgb(80, _accentColor.R, _accentColor.G, _accentColor.B)
+            : Colors.Transparent;
+
+        if (_iconGlowBrush == null)
+        {
+            _iconGlowBrush = new SolidColorBrush(_currentIconGlowColor);
+            IconGlow.Background = _iconGlowBrush;
+        }
+
+        AnimationHelper.AnimateColor(_iconGlowBrush, _currentIconGlowColor, glowTarget);
+        _currentIconGlowColor = glowTarget;
     }
 
     private void UpdateColorButtonColor(bool isActive)

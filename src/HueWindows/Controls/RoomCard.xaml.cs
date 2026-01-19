@@ -29,6 +29,8 @@ public sealed partial class RoomCard : UserControl
 
     // Current accent color
     private Color _accentColor = Colors.White;
+    private SolidColorBrush? _iconGlowBrush;
+    private Color _currentIconGlowColor = Colors.Transparent;
 
     public IRoomCardViewModel? ViewModel => DataContext as IRoomCardViewModel;
 
@@ -279,6 +281,21 @@ public sealed partial class RoomCard : UserControl
                 : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
             RoomIcon.Foreground = new SolidColorBrush(inactiveColor);
         }
+
+        if (IconGlow == null) return;
+
+        var glowTarget = isActive
+            ? Color.FromArgb(80, _accentColor.R, _accentColor.G, _accentColor.B)
+            : Colors.Transparent;
+
+        if (_iconGlowBrush == null)
+        {
+            _iconGlowBrush = new SolidColorBrush(_currentIconGlowColor);
+            IconGlow.Background = _iconGlowBrush;
+        }
+
+        AnimationHelper.AnimateColor(_iconGlowBrush, _currentIconGlowColor, glowTarget);
+        _currentIconGlowColor = glowTarget;
     }
 
     private void UpdateBrightnessBar()

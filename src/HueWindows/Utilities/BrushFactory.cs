@@ -1,5 +1,6 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
+using System.Linq;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -22,35 +23,36 @@ public static class BrushFactory
         Point? startPoint = null,
         Point? endPoint = null)
     {
+        var normalizedColors = NormalizeGradientColors(colors);
         var gradient = new LinearGradientBrush
         {
             StartPoint = startPoint ?? new Point(0, 0),
             EndPoint = endPoint ?? new Point(1, 1)
         };
 
-        if (colors.Count == 0)
+        if (normalizedColors.Count == 0)
         {
             // Fallback to gray
             gradient.GradientStops.Add(new GradientStop { Color = Colors.Gray, Offset = 0 });
             gradient.GradientStops.Add(new GradientStop { Color = Colors.Gray, Offset = 1 });
         }
-        else if (colors.Count == 1)
+        else if (normalizedColors.Count == 1)
         {
-            var (r, g, b) = colors[0];
+            var (r, g, b) = normalizedColors[0];
             var color = Color.FromArgb(255, r, g, b);
             gradient.GradientStops.Add(new GradientStop { Color = color, Offset = 0 });
             gradient.GradientStops.Add(new GradientStop { Color = color, Offset = 1 });
         }
         else
         {
-            for (int i = 0; i < colors.Count; i++)
+            for (int i = 0; i < normalizedColors.Count; i++)
             {
-                var (r, g, b) = colors[i];
+                var (r, g, b) = normalizedColors[i];
                 var color = Color.FromArgb(255, r, g, b);
                 gradient.GradientStops.Add(new GradientStop
                 {
                     Color = color,
-                    Offset = (double)i / (colors.Count - 1)
+                    Offset = (double)i / (normalizedColors.Count - 1)
                 });
             }
         }
@@ -88,5 +90,30 @@ public static class BrushFactory
     public static SolidColorBrush CreateSolid(Color color)
     {
         return new SolidColorBrush(color);
+    }
+
+    private static IReadOnlyList<(byte r, byte g, byte b)> NormalizeGradientColors(
+        IReadOnlyList<(byte r, byte g, byte b)> colors)
+    {
+        if (colors.Count <= 1)
+        {
+            return colors;
+        }
+
+        var distinctColors = colors.Distinct().ToList();
+        if (distinctColors.Count <= 1)
+        {
+            return distinctColors;
+        }
+
+        distinctColors.Sort((left, right) =>
+            ComputeLuminance(left).CompareTo(ComputeLuminance(right)));
+
+        return distinctColors;
+    }
+
+    private static double ComputeLuminance((byte r, byte g, byte b) color)
+    {
+        return (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
     }
 }

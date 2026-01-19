@@ -26,6 +26,11 @@
             <SolidColorBrush x:Key="CardTertiaryTextBrush" Color="#60FFFFFF"/>
             <SolidColorBrush x:Key="CardTrackBackgroundBrush" Color="#30FFFFFF"/>
             <SolidColorBrush x:Key="CardTrackFillBrush" Color="#60FFFFFF"/>
+            <Color x:Key="CardInnerHighlightColor">#40FFFFFF</Color>
+            <Color x:Key="CardInnerShadowColor">#40000000</Color>
+            <Color x:Key="CardCornerGlowColor">#33FFFFFF</Color>
+            <Color x:Key="CardCornerShadowColor">#4D000000</Color>
+            <Color x:Key="CardEdgeGlowColor">#26FFFFFF</Color>
             <!-- Toggle off track -->
             <SolidColorBrush x:Key="ToggleOffTrackFillBrush" Color="#20FFFFFF"/>
             <SolidColorBrush x:Key="ToggleOffTrackBorderBrush" Color="#20FFFFFF"/>
@@ -53,6 +58,11 @@
             <SolidColorBrush x:Key="CardTertiaryTextBrush" Color="#60000000"/>
             <SolidColorBrush x:Key="CardTrackBackgroundBrush" Color="#20000000"/>
             <SolidColorBrush x:Key="CardTrackFillBrush" Color="#40000000"/>
+            <Color x:Key="CardInnerHighlightColor">#22FFFFFF</Color>
+            <Color x:Key="CardInnerShadowColor">#30000000</Color>
+            <Color x:Key="CardCornerGlowColor">#26FFFFFF</Color>
+            <Color x:Key="CardCornerShadowColor">#33000000</Color>
+            <Color x:Key="CardEdgeGlowColor">#1FFFFFFF</Color>
             <!-- Toggle off track -->
             <SolidColorBrush x:Key="ToggleOffTrackFillBrush" Color="#20000000"/>
             <SolidColorBrush x:Key="ToggleOffTrackBorderBrush" Color="#20000000"/>

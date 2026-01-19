@@ -26,6 +26,46 @@
               MinHeight="120"
               Tapped="CardRoot_Tapped">
             <!-- Background set in code-behind for theme-aware gradients -->
+            <Grid.Shadow>
+                <ThemeShadow BlurRadius="20" Opacity="0.3"/>
+            </Grid.Shadow>
+
+            <Grid x:Name="LightingEffects" CornerRadius="16" IsHitTestVisible="False">
+                <Border CornerRadius="16" Margin="1" Opacity="0.7">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{ThemeResource CardInnerHighlightColor}" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.55"/>
+                            <GradientStop Color="{ThemeResource CardInnerShadowColor}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Border CornerRadius="16" Margin="1" Opacity="0.6">
+                    <Border.Background>
+                        <RadialGradientBrush Center="0,0" RadiusX="1" RadiusY="1">
+                            <GradientStop Color="{ThemeResource CardCornerGlowColor}" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.65"/>
+                        </RadialGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Border CornerRadius="16" Margin="1" Opacity="0.55">
+                    <Border.Background>
+                        <RadialGradientBrush Center="1,1" RadiusX="1" RadiusY="1">
+                            <GradientStop Color="{ThemeResource CardCornerShadowColor}" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.7"/>
+                        </RadialGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Border CornerRadius="16" Margin="1" BorderThickness="1" Opacity="0.55">
+                    <Border.BorderBrush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{ThemeResource CardEdgeGlowColor}" Offset="0"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.45"/>
+                            <GradientStop Color="{ThemeResource CardInnerShadowColor}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.BorderBrush>
+                </Border>
+            </Grid>
 
             <!-- Colored outline borders - two for cross-fade animation -->
             <Border x:Name="OutlineBorder"
@@ -74,12 +114,18 @@
                             Width="40" Height="40"
                             CornerRadius="20"
                             Background="{ThemeResource CardIconBackgroundBrush}">
-                        <FontIcon x:Name="LightIcon"
-                                  Glyph="&#xE781;"
-                                  FontSize="18"
-                                  Foreground="{ThemeResource CardIconForegroundBrush}"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center"/>
+                        <Grid>
+                            <Border x:Name="IconGlow"
+                                    CornerRadius="20"
+                                    Background="Transparent"
+                                    Opacity="0.7"/>
+                            <FontIcon x:Name="LightIcon"
+                                      Glyph="&#xE781;"
+                                      FontSize="18"
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
 
                     <!-- Name and brightness -->
