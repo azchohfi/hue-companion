@@ -79,9 +79,9 @@ public partial class SceneBuilderViewModel : ObservableObject
     private ObservableCollection<KeyframeViewModel> _selectedKeyframes = new();
 
     /// <summary>
-    /// Clipboard for copy/paste operations.
+    /// Clipboard for copy/paste operations. Stores track index to preserve track association.
     /// </summary>
-    private List<(double TimeOffset, HueColor Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
+    private List<(int TrackIndex, double TimeOffset, HueColor Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
 
     /// <summary>
     /// Whether we're editing an existing scene (vs creating new).
@@ -1077,19 +1077,31 @@ public partial class SceneBuilderViewModel : ObservableObject
         // Find the earliest time to use as reference point
         var minTime = SelectedKeyframes.Min(k => k.TimeSeconds);
 
-        // Store keyframes with relative time offsets
-        _clipboardKeyframes = SelectedKeyframes
-            .Select(k => (
-                TimeOffset: k.TimeSeconds - minTime,
-                Color: k.Color,
-                Brightness: k.Brightness,
-                Transition: k.Transition
-            ))
-            .ToList();
+        // Store keyframes with track index and relative time offsets
+        _clipboardKeyframes = new List<(int, double, HueColor, double, TransitionStyle)>();
+
+        foreach (var keyframe in SelectedKeyframes)
+        {
+            // Find which track this keyframe belongs to
+            for (int trackIndex = 0; trackIndex < Tracks.Count; trackIndex++)
+            {
+                if (Tracks[trackIndex].Keyframes.Contains(keyframe))
+                {
+                    _clipboardKeyframes.Add((
+                        TrackIndex: trackIndex,
+                        TimeOffset: keyframe.TimeSeconds - minTime,
+                        Color: keyframe.Color,
+                        Brightness: keyframe.Brightness,
+                        Transition: keyframe.Transition
+                    ));
+                    break;
+                }
+            }
+        }
     }
 
     /// <summary>
-    /// Paste keyframes from clipboard to selected tracks.
+    /// Paste keyframes from clipboard to their original tracks.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanPaste))]
     public void PasteKeyframes()
@@ -1101,25 +1113,27 @@ public partial class SceneBuilderViewModel : ObservableObject
         // Paste at playhead position
         var pasteTime = PlayheadPosition;
 
-        foreach (var track in Tracks)
+        foreach (var clipKeyframe in _clipboardKeyframes)
         {
-            foreach (var clipKeyframe in _clipboardKeyframes)
+            // Only paste if the track index is valid
+            if (clipKeyframe.TrackIndex < 0 || clipKeyframe.TrackIndex >= Tracks.Count)
+                continue;
+
+            var track = Tracks[clipKeyframe.TrackIndex];
+            var newTime = pasteTime + clipKeyframe.TimeOffset;
+
+            // Ensure within bounds
+            if (newTime < 0 || newTime > DurationSeconds) continue;
+
+            var newKeyframe = new KeyframeViewModel
             {
-                var newTime = pasteTime + clipKeyframe.TimeOffset;
-                
-                // Ensure within bounds
-                if (newTime < 0 || newTime > DurationSeconds) continue;
+                TimeSeconds = newTime,
+                Color = clipKeyframe.Color ?? HueColors.WarmWhite,
+                Brightness = clipKeyframe.Brightness,
+                Transition = clipKeyframe.Transition
+            };
 
-                var newKeyframe = new KeyframeViewModel
-                {
-                    TimeSeconds = newTime,
-                    Color = clipKeyframe.Color,
-                    Brightness = clipKeyframe.Brightness,
-                    Transition = clipKeyframe.Transition
-                };
-
-                commands.Add(new AddKeyframeCommand(track, newKeyframe));
-            }
+            commands.Add(new AddKeyframeCommand(track, newKeyframe));
         }
 
         if (commands.Count > 0)
@@ -1144,9 +1158,9 @@ public partial class SceneBuilderViewModel : ObservableObject
             {
                 if (track.Keyframes.Contains(keyframe))
                 {
-                    // Don't delete first or last keyframes
-                    var isFirstKeyframe = track.Keyframes.OrderBy(k => k.TimeSeconds).First() == keyframe;
-                    var isLastKeyframe = track.Keyframes.OrderByDescending(k => k.TimeSeconds).First() == keyframe;
+                    // Don't delete first or last keyframes (keyframes are maintained in sorted order)
+                    var isFirstKeyframe = track.Keyframes.Count > 0 && track.Keyframes[0] == keyframe;
+                    var isLastKeyframe = track.Keyframes.Count > 0 && track.Keyframes[^1] == keyframe;
 
                     if (!isFirstKeyframe && !isLastKeyframe)
                     {

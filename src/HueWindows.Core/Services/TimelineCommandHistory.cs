@@ -7,7 +7,8 @@ namespace HueWindows.Core.Services;
 /// </summary>
 public class TimelineCommandHistory
 {
-    private readonly Stack<ITimelineCommand> _undoStack = new();
+    // Using LinkedList for undo stack enables O(1) removal from front when trimming history
+    private readonly LinkedList<ITimelineCommand> _undoStack = new();
     private readonly Stack<ITimelineCommand> _redoStack = new();
     private const int MaxHistorySize = 100;
 
@@ -32,21 +33,15 @@ public class TimelineCommandHistory
     public void Execute(ITimelineCommand command)
     {
         command.Execute();
-        _undoStack.Push(command);
-        
+        _undoStack.AddLast(command);
+
         // Clear redo stack when a new command is executed
         _redoStack.Clear();
 
-        // Limit history size
+        // Limit history size - O(1) removal from front
         if (_undoStack.Count > MaxHistorySize)
         {
-            // Remove oldest command
-            var temp = new Stack<ITimelineCommand>(_undoStack.Reverse().Skip(1));
-            _undoStack.Clear();
-            foreach (var cmd in temp.Reverse())
-            {
-                _undoStack.Push(cmd);
-            }
+            _undoStack.RemoveFirst();
         }
 
         OnStateChanged();
@@ -59,10 +54,11 @@ public class TimelineCommandHistory
     {
         if (!CanUndo) return;
 
-        var command = _undoStack.Pop();
+        var command = _undoStack.Last!.Value;
+        _undoStack.RemoveLast();
         command.Undo();
         _redoStack.Push(command);
-        
+
         OnStateChanged();
     }
 
@@ -75,8 +71,8 @@ public class TimelineCommandHistory
 
         var command = _redoStack.Pop();
         command.Execute();
-        _undoStack.Push(command);
-        
+        _undoStack.AddLast(command);
+
         OnStateChanged();
     }
 
@@ -93,7 +89,7 @@ public class TimelineCommandHistory
     /// <summary>
     /// Get a description of the command that would be undone.
     /// </summary>
-    public string? GetUndoDescription() => CanUndo ? _undoStack.Peek().Description : null;
+    public string? GetUndoDescription() => CanUndo ? _undoStack.Last!.Value.Description : null;
 
     /// <summary>
     /// Get a description of the command that would be redone.

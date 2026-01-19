@@ -82,7 +82,8 @@ public class DeleteKeyframesCommand : ITimelineCommand
 
     public void Execute()
     {
-        foreach (var (track, keyframe, _) in _deletedKeyframes)
+        // Delete in descending index order so indices remain valid
+        foreach (var (track, keyframe, _) in _deletedKeyframes.OrderByDescending(x => x.Index))
         {
             track.Keyframes.Remove(keyframe);
         }
@@ -90,8 +91,8 @@ public class DeleteKeyframesCommand : ITimelineCommand
 
     public void Undo()
     {
-        // Restore in reverse order to maintain proper indices
-        foreach (var (track, keyframe, index) in _deletedKeyframes.AsEnumerable().Reverse())
+        // Restore in ascending index order (reverse of delete order)
+        foreach (var (track, keyframe, index) in _deletedKeyframes.OrderBy(x => x.Index))
         {
             track.Keyframes.Insert(index, keyframe);
         }

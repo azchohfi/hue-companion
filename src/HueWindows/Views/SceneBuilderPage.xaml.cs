@@ -39,11 +39,6 @@ public sealed partial class SceneBuilderPage : Page
 
     private string? _sceneIdToLoad;
 
-    // Drag-select rectangle state
-    private bool _isDragSelecting;
-    private Windows.Foundation.Point _dragSelectStart;
-    private Microsoft.UI.Xaml.Shapes.Rectangle? _dragSelectRect;
-
     public SceneBuilderPage()
     {
         this.InitializeComponent();
@@ -57,12 +52,6 @@ public sealed partial class SceneBuilderPage : Page
             Interval = TimeSpan.FromMilliseconds(16) // ~60fps
         };
         _playbackTimer.Tick += PlaybackTimer_Tick;
-
-        // Hook up command history state changes
-        ViewModel.CommandHistory.StateChanged += (s, e) =>
-        {
-            // Update UI when undo/redo state changes
-        };
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -649,10 +638,10 @@ public sealed partial class SceneBuilderPage : Page
 
     private void RenderKeyframe(KeyframeViewModel keyframe, TrackViewModel track, double x, double y)
     {
-        // Convert HueColor to Windows.UI.Color (approximation)
+        // Convert HueColor to color (approximation)
         var rgb = HueColorToRgb(keyframe.Color);
         var brightness = keyframe.Brightness;
-        var color = Windows.UI.Color.FromArgb(255,
+        var color = Microsoft.UI.ColorHelper.FromArgb(255,
             (byte)(rgb.r * brightness),
             (byte)(rgb.g * brightness),
             (byte)(rgb.b * brightness));
@@ -660,13 +649,19 @@ public sealed partial class SceneBuilderPage : Page
         // Check if this keyframe is selected
         var isSelected = ViewModel.SelectedKeyframes.Contains(keyframe);
 
+        // Use constants for selection highlight color
+        var selectionColor = Microsoft.UI.ColorHelper.FromArgb(255,
+            Constants.AppConstants.Colors.SelectionHighlightR,
+            Constants.AppConstants.Colors.SelectionHighlightG,
+            Constants.AppConstants.Colors.SelectionHighlightB);
+
         var circle = new Microsoft.UI.Xaml.Shapes.Ellipse
         {
             Width = isSelected ? 20 : 16,
             Height = isSelected ? 20 : 16,
             Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(color),
             Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                isSelected ? Windows.UI.Color.FromArgb(255, 255, 200, 0) : Microsoft.UI.Colors.White),
+                isSelected ? selectionColor : Microsoft.UI.Colors.White),
             StrokeThickness = isSelected ? 3 : 2
         };
 
