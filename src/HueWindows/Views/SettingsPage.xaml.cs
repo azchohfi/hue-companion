@@ -80,18 +80,34 @@ public sealed partial class SettingsPage : Page
     }
 
     /// <summary>
-    /// Helper to get connection status text.
+    /// Helper to get multi-bridge connection status text.
     /// </summary>
-    public string GetConnectionStatus(bool isConnected)
+    public string GetMultiBridgeConnectionStatus(int totalCount, int connectedCount)
     {
-        return isConnected ? "Connected" : "Disconnected";
+        if (totalCount == 0) return "No bridges configured";
+        if (connectedCount == 0) return "Disconnected";
+        if (connectedCount == totalCount) return $"Connected ({connectedCount})";
+        return $"Partial ({connectedCount}/{totalCount})";
     }
 
     /// <summary>
-    /// Helper to get connection indicator color.
+    /// Helper to get multi-bridge connection indicator color.
     /// </summary>
-    public SolidColorBrush GetConnectionColor(bool isConnected)
+    public SolidColorBrush GetMultiBridgeConnectionColor(int connectedCount)
     {
-        return new SolidColorBrush(isConnected ? Colors.Green : Colors.Red);
+        return new SolidColorBrush(connectedCount > 0 ? Colors.Green : Colors.Red);
+    }
+
+    /// <summary>
+    /// Helper to get bridge count text.
+    /// </summary>
+    public string GetBridgeCountText(int count)
+    {
+        return count switch
+        {
+            0 => "No bridges configured",
+            1 => "1 bridge configured",
+            _ => $"{count} bridges configured"
+        };
     }
 }
