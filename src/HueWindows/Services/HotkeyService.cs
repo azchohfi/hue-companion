@@ -78,10 +78,18 @@ public sealed class HotkeyService : IHotkeyService
         if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
         {
             // Dispatch to UI thread
-            App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+            var mainWindow = App.MainWindow;
+            if (mainWindow != null)
             {
-                HotkeyPressed?.Invoke(this, EventArgs.Empty);
-            });
+                mainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    HotkeyPressed?.Invoke(this, EventArgs.Empty);
+                });
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[HotkeyService] WM_HOTKEY received but MainWindow is null - hotkey event dropped");
+            }
             return IntPtr.Zero;
         }
 

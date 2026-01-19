@@ -482,4 +482,12 @@ public sealed partial class SettingsPage : Page
     {
         return SettingsViewModel.GetKeyDisplayName(key);
     }
+
+    /// <summary>
+    /// Static helper to get display name for a virtual key (for XAML binding).
+    /// </summary>
+    public static string GetKeyDisplayNameStatic(VirtualKey key)
+    {
+        return SettingsViewModel.GetKeyDisplayName(key);
+    }
 }

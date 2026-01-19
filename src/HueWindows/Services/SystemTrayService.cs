@@ -288,10 +288,24 @@ public sealed class SystemTrayService : ISystemTrayService
         TrackPopupMenu(_contextMenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.X, point.Y, 0, _windowHandle, IntPtr.Zero);
     }
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
+
+    // Standard system icon IDs
+    private static readonly IntPtr IDI_APPLICATION = (IntPtr)32512;
+
     private void ShowTrayIcon()
     {
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         var hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+
+        // Fallback to system default application icon if load fails
+        if (hIcon == IntPtr.Zero)
+        {
+            var errorCode = Marshal.GetLastWin32Error();
+            System.Diagnostics.Debug.WriteLine($"[SystemTrayService] Failed to load icon from '{iconPath}'. Win32 error: {errorCode}. Using default icon.");
+            hIcon = LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+        }
 
         var nid = new NOTIFYICONDATA
         {
@@ -306,7 +320,10 @@ public sealed class SystemTrayService : ISystemTrayService
             szInfoTitle = string.Empty
         };
 
-        Shell_NotifyIcon(NotifyIconMessage.NIM_ADD, ref nid);
+        if (!Shell_NotifyIcon(NotifyIconMessage.NIM_ADD, ref nid))
+        {
+            System.Diagnostics.Debug.WriteLine("[SystemTrayService] Failed to add tray icon");
+        }
     }
 
     private void HideTrayIcon()

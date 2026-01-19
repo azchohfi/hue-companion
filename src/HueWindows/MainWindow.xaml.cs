@@ -30,8 +30,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly List<NavigationViewItem> _roomNavItems = new();
     private readonly List<NavigationViewItem> _zoneNavItems = new();
     private bool _itemsLoaded;
-    private bool _isWindowVisible = true;
     private IntPtr _windowHandle;
+    private bool _isExiting;
+    private readonly object _exitLock = new();
 
     private bool _canGoBack;
     public bool CanGoBack
@@ -159,7 +160,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _systemTrayService.ExitRequested += (s, e) => ExitApplication();
 
         _systemTrayService.SetTooltip("Hue Windows");
-        _systemTrayService.UpdateMenuState(_isWindowVisible);
+        _systemTrayService.UpdateMenuState(IsWindowVisible(_windowHandle));
     }
 
     private void OnHotkeyPressed(object? sender, EventArgs e)
@@ -173,7 +174,10 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     public void ToggleWindowVisibility()
     {
-        if (_isWindowVisible)
+        // Use Win32 to check actual window visibility state
+        var isActuallyVisible = IsWindowVisible(_windowHandle);
+
+        if (isActuallyVisible)
         {
             HideToTray();
         }
@@ -200,7 +204,6 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         SetForegroundWindow(_windowHandle);
         this.Activate();
 
-        _isWindowVisible = true;
         _systemTrayService.UpdateMenuState(true);
         System.Diagnostics.Debug.WriteLine("[MainWindow] Window shown from tray");
     }
@@ -211,34 +214,70 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     public void HideToTray()
     {
         ShowWindow(_windowHandle, SW_HIDE);
-        _isWindowVisible = false;
         _systemTrayService.UpdateMenuState(false);
         System.Diagnostics.Debug.WriteLine("[MainWindow] Window hidden to tray");
     }
 
     private void OnWindowClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
-        // If minimize to tray is enabled, hide instead of closing
-        if (_settingsService.Settings.MinimizeToTray)
+        // Prevent race condition with ExitApplication
+        lock (_exitLock)
         {
-            args.Cancel = true;
-            HideToTray();
-        }
-        else
-        {
-            // Clean up services
-            _hotkeyService.Dispose();
-            _systemTrayService.Dispose();
+            if (_isExiting)
+            {
+                // Already exiting via ExitApplication, allow close
+                return;
+            }
+
+            // If minimize to tray is enabled, hide instead of closing
+            if (_settingsService.Settings.MinimizeToTray)
+            {
+                args.Cancel = true;
+                HideToTray();
+            }
+            else
+            {
+                // Clean up services
+                CleanupServices();
+            }
         }
     }
 
     private void ExitApplication()
     {
+        lock (_exitLock)
+        {
+            if (_isExiting)
+                return;
+
+            _isExiting = true;
+        }
+
         // Clean up services before exiting
-        _hotkeyService.Dispose();
-        _systemTrayService.Dispose();
+        CleanupServices();
 
         Application.Current.Exit();
+    }
+
+    private void CleanupServices()
+    {
+        try
+        {
+            _hotkeyService.Dispose();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing HotkeyService: {ex.Message}");
+        }
+
+        try
+        {
+            _systemTrayService.Dispose();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing SystemTrayService: {ex.Message}");
+        }
     }
 
     private void SetupTitleBar()

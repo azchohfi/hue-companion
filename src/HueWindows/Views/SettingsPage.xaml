@@ -132,7 +132,13 @@
                         <ComboBox x:Name="KeyComboBox"
                                   MinWidth="120"
                                   ItemsSource="{x:Bind AvailableHotkeyKeys}"
-                                  SelectedItem="{x:Bind ViewModel.SelectedKey, Mode=TwoWay}"/>
+                                  SelectedItem="{x:Bind ViewModel.SelectedKey, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:VirtualKey">
+                                    <TextBlock Text="{x:Bind local:SettingsPage.GetKeyDisplayNameStatic((models:VirtualKey))}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
 
                     <!-- Current Hotkey Display and Status -->
