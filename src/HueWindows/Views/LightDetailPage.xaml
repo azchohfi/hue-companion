@@ -15,14 +15,7 @@
         <!-- Single unified card containing all controls -->
         <ScrollViewer>
             <Grid x:Name="MainContainer" Margin="36,32,36,36" CornerRadius="16">
-                <!-- Dark gradient background -->
-                <Grid.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                        <GradientStop Color="#FF252528" Offset="0.5"/>
-                        <GradientStop Color="#FF1E1E22" Offset="1"/>
-                    </LinearGradientBrush>
-                </Grid.Background>
+                <!-- Background set in code-behind for theme-aware gradients -->
 
                 <!-- Outline borders for light color - two for cross-fade -->
                 <Border x:Name="OutlineBorder"
@@ -51,11 +44,11 @@
 
                         <!-- Light icon -->
                         <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                                Background="#20FFFFFF" Margin="0,0,16,0">
+                                Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,16,0">
                             <FontIcon x:Name="LightIcon"
                                       Glyph="&#xE781;"
                                       FontSize="22"
-                                      Foreground="#80FFFFFF"/>
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
                         </Border>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -72,13 +65,13 @@
                     </Grid>
 
                     <!-- Divider -->
-                    <Border Height="1" Background="#20FFFFFF"/>
+                    <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}"/>
 
                     <!-- Brightness Section -->
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon x:Name="BrightnessIcon" Glyph="&#xE706;" FontSize="18"
-                                      Foreground="#80FFFFFF"/>
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
                             <TextBlock Text="Brightness" Style="{StaticResource BodyStrongTextBlockStyle}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
@@ -111,11 +104,11 @@
                     <!-- Color Section - visible when light supports color -->
                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}">
                         <!-- Divider -->
-                        <Border Height="1" Background="#20FFFFFF" Margin="0,0,0,12"/>
+                        <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,0,12"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon x:Name="ColorIcon" Glyph="&#xE790;" FontSize="18"
-                                      Foreground="#80FFFFFF"/>
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
                             <TextBlock Text="Color" Style="{StaticResource BodyStrongTextBlockStyle}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
@@ -133,11 +126,11 @@
                     <!-- Temperature Section - visible when light supports color temperature -->
                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.SupportsColorTemperature, Mode=OneWay}">
                         <!-- Divider -->
-                        <Border Height="1" Background="#20FFFFFF" Margin="0,0,0,12"/>
+                        <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,0,12"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon x:Name="TemperatureIcon" Glyph="&#xE9CA;" FontSize="18"
-                                      Foreground="#80FFFFFF"/>
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
                             <TextBlock Text="Color Temperature" Style="{StaticResource BodyStrongTextBlockStyle}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>

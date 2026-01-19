@@ -48,11 +48,53 @@ public sealed partial class LightDetailPage : Page
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
+        this.ActualThemeChanged += OnActualThemeChanged;
+    }
+
+    private void OnActualThemeChanged(FrameworkElement sender, object args)
+    {
+        ApplyThemeBackground();
+        // Re-update colors for new theme
+        if (_isLoaded)
+        {
+            UpdateHeaderActiveState();
+        }
+    }
+
+    private void ApplyThemeBackground()
+    {
+        var isDark = ActualTheme == ElementTheme.Dark;
+        MainContainer.Background = CreateCardGradient(isDark);
+    }
+
+    private static LinearGradientBrush CreateCardGradient(bool isDark)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(1, 1)
+        };
+
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
+        }
+
+        return brush;
     }
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        ApplyThemeBackground();
         UpdateHeaderActiveState();
     }
 
@@ -165,9 +207,13 @@ public sealed partial class LightDetailPage : Page
     {
         if (LightIcon == null) return;
 
-        var targetColor = isActive
-            ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
+        var targetColor = isActive ? _accentColor : inactiveColor;
 
         if (_lightIconBrush == null)
         {
@@ -183,9 +229,13 @@ public sealed partial class LightDetailPage : Page
     {
         if (BrightnessIcon == null) return;
 
-        var targetColor = isActive
-            ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
+        var targetColor = isActive ? _accentColor : inactiveColor;
 
         if (_brightnessIconBrush == null)
         {
@@ -201,9 +251,13 @@ public sealed partial class LightDetailPage : Page
     {
         if (ColorIcon == null) return;
 
-        var targetColor = isActive
-            ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
+        var targetColor = isActive ? _accentColor : inactiveColor;
 
         if (_colorIconBrush == null)
         {
@@ -219,9 +273,13 @@ public sealed partial class LightDetailPage : Page
     {
         if (TemperatureIcon == null) return;
 
-        var targetColor = isActive
-            ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
+        var targetColor = isActive ? _accentColor : inactiveColor;
 
         if (_temperatureIconBrush == null)
         {
