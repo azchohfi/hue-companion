@@ -13,21 +13,10 @@
 
     <Grid x:Name="OuterContainer">
         <VisualStateManager.VisualStateGroups>
+            <!-- HoverStates handled in code-behind for theme-aware colors -->
             <VisualStateGroup x:Name="HoverStates">
                 <VisualState x:Name="Default"/>
-                <VisualState x:Name="Hover">
-                    <VisualState.Setters>
-                        <Setter Target="CardRoot.Background">
-                            <Setter.Value>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#FF222226" Offset="0"/>
-                                    <GradientStop Color="#FF2D2D30" Offset="0.5"/>
-                                    <GradientStop Color="#FF262629" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Setter.Value>
-                        </Setter>
-                    </VisualState.Setters>
-                </VisualState>
+                <VisualState x:Name="Hover"/>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
@@ -36,15 +25,7 @@
               CornerRadius="16"
               MinHeight="120"
               Tapped="CardRoot_Tapped">
-
-            <!-- Dark gradient background -->
-            <Grid.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                    <GradientStop Color="#FF252528" Offset="0.5"/>
-                    <GradientStop Color="#FF1E1E22" Offset="1"/>
-                </LinearGradientBrush>
-            </Grid.Background>
+            <!-- Background set in code-behind for theme-aware gradients -->
 
             <!-- Colored outline borders - two for cross-fade animation -->
             <Border x:Name="OutlineBorder"
@@ -92,11 +73,11 @@
                             Grid.Column="0"
                             Width="40" Height="40"
                             CornerRadius="20"
-                            Background="#20FFFFFF">
+                            Background="{ThemeResource CardIconBackgroundBrush}">
                         <FontIcon x:Name="LightIcon"
                                   Glyph="&#xE781;"
                                   FontSize="18"
-                                  Foreground="#80FFFFFF"
+                                  Foreground="{ThemeResource CardIconForegroundBrush}"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"/>
                     </Border>
@@ -107,10 +88,10 @@
                                    Text="{Binding Name}"
                                    FontWeight="SemiBold"
                                    FontSize="14"
-                                   Foreground="#FFFFFFFF"
+                                   Foreground="{ThemeResource CardPrimaryTextBrush}"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock FontSize="12"
-                                   Foreground="#80FFFFFF"
+                                   Foreground="{ThemeResource CardSecondaryTextBrush}"
                                    Margin="0,2,0,0">
                             <Run Text="{Binding BrightnessPercent}"/>
                             <Run Text="% brightness"/>

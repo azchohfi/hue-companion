@@ -3,6 +3,66 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- =====================================================
+         Theme-Aware Card Backgrounds
+         ===================================================== -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <!-- Card gradient colors for dark theme -->
+            <Color x:Key="CardGradientColor1">#FF1A1A1E</Color>
+            <Color x:Key="CardGradientColor2">#FF252528</Color>
+            <Color x:Key="CardGradientColor3">#FF1E1E22</Color>
+            <Color x:Key="CardHoverGradientColor1">#FF222226</Color>
+            <Color x:Key="CardHoverGradientColor2">#FF2D2D30</Color>
+            <Color x:Key="CardHoverGradientColor3">#FF262629</Color>
+            <!-- Effect card gradient (warmer tint) -->
+            <Color x:Key="EffectCardGradientColor1">#FF1E1A1A</Color>
+            <Color x:Key="EffectCardGradientColor2">#FF282225</Color>
+            <Color x:Key="EffectCardGradientColor3">#FF221E1E</Color>
+            <!-- Icon and text brushes -->
+            <SolidColorBrush x:Key="CardIconBackgroundBrush" Color="#20FFFFFF"/>
+            <SolidColorBrush x:Key="CardIconForegroundBrush" Color="#80FFFFFF"/>
+            <SolidColorBrush x:Key="CardPrimaryTextBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="CardSecondaryTextBrush" Color="#80FFFFFF"/>
+            <SolidColorBrush x:Key="CardTertiaryTextBrush" Color="#60FFFFFF"/>
+            <SolidColorBrush x:Key="CardTrackBackgroundBrush" Color="#30FFFFFF"/>
+            <SolidColorBrush x:Key="CardTrackFillBrush" Color="#60FFFFFF"/>
+            <!-- Toggle off track -->
+            <SolidColorBrush x:Key="ToggleOffTrackFillBrush" Color="#20FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleOffTrackBorderBrush" Color="#20FFFFFF"/>
+            <!-- Button overlay colors -->
+            <SolidColorBrush x:Key="ButtonHoverOverlayBrush" Color="#15FFFFFF"/>
+            <SolidColorBrush x:Key="ButtonPressedOverlayBrush" Color="#10000000"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+            <!-- Card gradient colors for light theme -->
+            <Color x:Key="CardGradientColor1">#FFF5F5F5</Color>
+            <Color x:Key="CardGradientColor2">#FFFAFAFA</Color>
+            <Color x:Key="CardGradientColor3">#FFF8F8F8</Color>
+            <Color x:Key="CardHoverGradientColor1">#FFEDEDED</Color>
+            <Color x:Key="CardHoverGradientColor2">#FFF0F0F0</Color>
+            <Color x:Key="CardHoverGradientColor3">#FFEEEEEE</Color>
+            <!-- Effect card gradient (warmer tint) -->
+            <Color x:Key="EffectCardGradientColor1">#FFF5F2F2</Color>
+            <Color x:Key="EffectCardGradientColor2">#FFFAF7F7</Color>
+            <Color x:Key="EffectCardGradientColor3">#FFF8F5F5</Color>
+            <!-- Icon and text brushes -->
+            <SolidColorBrush x:Key="CardIconBackgroundBrush" Color="#15000000"/>
+            <SolidColorBrush x:Key="CardIconForegroundBrush" Color="#80000000"/>
+            <SolidColorBrush x:Key="CardPrimaryTextBrush" Color="#FF000000"/>
+            <SolidColorBrush x:Key="CardSecondaryTextBrush" Color="#80000000"/>
+            <SolidColorBrush x:Key="CardTertiaryTextBrush" Color="#60000000"/>
+            <SolidColorBrush x:Key="CardTrackBackgroundBrush" Color="#20000000"/>
+            <SolidColorBrush x:Key="CardTrackFillBrush" Color="#40000000"/>
+            <!-- Toggle off track -->
+            <SolidColorBrush x:Key="ToggleOffTrackFillBrush" Color="#20000000"/>
+            <SolidColorBrush x:Key="ToggleOffTrackBorderBrush" Color="#20000000"/>
+            <!-- Button overlay colors -->
+            <SolidColorBrush x:Key="ButtonHoverOverlayBrush" Color="#10000000"/>
+            <SolidColorBrush x:Key="ButtonPressedOverlayBrush" Color="#15000000"/>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- =====================================================
          ToggleSwitch Premium Styling - Theme Resource Overrides
          ===================================================== -->
 
@@ -167,9 +227,9 @@
                         <Grid x:Name="SwitchKnobBounds" Width="40" Height="20" Background="Transparent">
                             
                             <!-- Off State Track -->
-                            <Border x:Name="OffTrack" 
-                                    Background="#20FFFFFF" 
-                                    BorderBrush="#20FFFFFF"
+                            <Border x:Name="OffTrack"
+                                    Background="{ThemeResource ToggleOffTrackFillBrush}"
+                                    BorderBrush="{ThemeResource ToggleOffTrackBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10" />
 
@@ -270,11 +330,11 @@
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
 
-                        <!-- Hover overlay - subtle white -->
-                        <Border x:Name="HoverOverlay" Background="#15FFFFFF" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
+                        <!-- Hover overlay - theme-aware -->
+                        <Border x:Name="HoverOverlay" Background="{ThemeResource ButtonHoverOverlayBrush}" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
 
-                        <!-- Pressed overlay - slightly darker -->
-                        <Border x:Name="PressedOverlay" Background="#10000000" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
+                        <!-- Pressed overlay - theme-aware -->
+                        <Border x:Name="PressedOverlay" Background="{ThemeResource ButtonPressedOverlayBrush}" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
 
                         <ContentPresenter x:Name="ContentPresenter"
                                           Content="{TemplateBinding Content}"
@@ -288,17 +348,9 @@
         </Setter>
     </Style>
 
-    <!-- Effect Card Button Style - Warmer tint for native effects -->
+    <!-- Effect Card Button Style - Theme-aware for native effects -->
     <Style x:Key="EffectCardButtonStyle" TargetType="Button" BasedOn="{StaticResource SceneCardButtonStyle}">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF1E1A1A" Offset="0"/>
-                    <GradientStop Color="#FF282225" Offset="0.5"/>
-                    <GradientStop Color="#FF221E1E" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
     </Style>
 
     <!-- Active Scene Button Style -->

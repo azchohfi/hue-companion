@@ -18,6 +18,7 @@ namespace HueWindows.Controls;
 public sealed partial class LightCard : UserControl
 {
     private bool _isLoaded;
+    private bool _isHovering;
     private Color _accentColor = Colors.White;
     private Color _currentIconColor = Colors.Gray;
     private Color _currentColorButtonColor = Colors.Transparent;
@@ -38,11 +39,86 @@ public sealed partial class LightCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.ActualThemeChanged += OnActualThemeChanged;
+    }
+
+    private void OnActualThemeChanged(FrameworkElement sender, object args)
+    {
+        ApplyThemeBackground();
+        // Re-update icon and color button colors for new theme
+        if (ViewModel != null)
+        {
+            UpdateIconColor(ViewModel.IsOn);
+            UpdateColorButtonColor(ViewModel.IsOn);
+        }
+    }
+
+    private void ApplyThemeBackground()
+    {
+        var isDark = ActualTheme == ElementTheme.Dark;
+
+        if (_isHovering)
+        {
+            CardRoot.Background = CreateHoverGradient(isDark);
+        }
+        else
+        {
+            CardRoot.Background = CreateCardGradient(isDark);
+        }
+    }
+
+    private static LinearGradientBrush CreateCardGradient(bool isDark)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(1, 1)
+        };
+
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
+        }
+
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateHoverGradient(bool isDark)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(1, 1)
+        };
+
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 34, 34, 38), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 45, 45, 48), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 38, 38, 41), Offset = 1 });
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 237, 237, 237), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 240, 240, 240), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 238, 238, 238), Offset = 1 });
+        }
+
+        return brush;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        ApplyThemeBackground();
         UpdateActiveState();
     }
 
@@ -145,9 +221,13 @@ public sealed partial class LightCard : UserControl
     {
         if (LightIcon == null) return;
 
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
         var targetColor = isActive
             ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+            : isDark
+                ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+                : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
 
         // Initialize brush if needed
         if (_iconBrush == null)
@@ -165,9 +245,13 @@ public sealed partial class LightCard : UserControl
     {
         if (ColorButtonContent == null) return;
 
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
         var targetColor = isActive
             ? _accentColor
-            : Color.FromArgb(64, 255, 255, 255); // #40FFFFFF when inactive
+            : isDark
+                ? Color.FromArgb(64, 255, 255, 255)
+                : Color.FromArgb(64, 0, 0, 0);
 
         // Initialize brush if needed
         if (_colorButtonBrush == null)
@@ -229,11 +313,15 @@ public sealed partial class LightCard : UserControl
 
     private void CardRoot_PointerEntered(object sender, PointerRoutedEventArgs e)
     {
+        _isHovering = true;
+        ApplyThemeBackground();
         VisualStateManager.GoToState(this, "Hover", true);
     }
 
     private void CardRoot_PointerExited(object sender, PointerRoutedEventArgs e)
     {
+        _isHovering = false;
+        ApplyThemeBackground();
         VisualStateManager.GoToState(this, "Default", true);
     }
 

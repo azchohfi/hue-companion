@@ -37,14 +37,7 @@
         <!-- Header with Room Controls and Brightness -->
         <Grid x:Name="HeaderContainer" Grid.Row="0" Margin="36,32,36,24"
               CornerRadius="16">
-            <!-- Dark gradient background -->
-            <Grid.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                    <GradientStop Color="#FF252528" Offset="0.5"/>
-                    <GradientStop Color="#FF1E1E22" Offset="1"/>
-                </LinearGradientBrush>
-            </Grid.Background>
+            <!-- Background set in code-behind for theme-aware gradients -->
 
             <!-- Outline borders for room colors - two for cross-fade -->
             <Border x:Name="OutlineBorder"
@@ -73,7 +66,7 @@
 
                     <!-- Room icon (no longer tappable for color) -->
                     <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                            Background="#20FFFFFF" Margin="0,0,16,0">
+                            Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,16,0">
                         <FontIcon x:Name="RoomIcon"
                                   Glyph="&#xE781;"
                                   FontSize="22"
@@ -137,7 +130,7 @@
                 </Grid>
 
                 <!-- Divider -->
-                <Border Height="1" Background="#20FFFFFF"/>
+                <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}"/>
 
                 <!-- Brightness Section -->
                 <StackPanel Spacing="12">

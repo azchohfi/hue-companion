@@ -52,11 +52,53 @@ public sealed partial class RoomDetailPage : Page
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
+        this.ActualThemeChanged += OnActualThemeChanged;
+    }
+
+    private void OnActualThemeChanged(FrameworkElement sender, object args)
+    {
+        ApplyThemeBackground();
+        // Re-update colors for new theme
+        if (_isLoaded)
+        {
+            UpdateHeaderActiveState();
+        }
+    }
+
+    private void ApplyThemeBackground()
+    {
+        var isDark = ActualTheme == ElementTheme.Dark;
+        HeaderContainer.Background = CreateCardGradient(isDark);
+    }
+
+    private static LinearGradientBrush CreateCardGradient(bool isDark)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(1, 1)
+        };
+
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
+        }
+
+        return brush;
     }
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        ApplyThemeBackground();
         // Don't call UpdateHeaderActiveState here - let property changes from ViewModel drive updates
     }
 
@@ -238,9 +280,15 @@ public sealed partial class RoomDetailPage : Page
     {
         if (RoomIcon == null) return;
 
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
         var targetColor = isActive
             ? (colors.Count > 0 ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B) : _accentColor)
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+            : inactiveColor;
 
         // For simplicity, use solid color with animation (gradient icons are complex to animate)
         if (_roomIconBrush == null)
@@ -264,9 +312,15 @@ public sealed partial class RoomDetailPage : Page
     {
         if (BrightnessIcon == null) return;
 
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
         var targetColor = isActive
             ? (colors.Count > 0 ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B) : _accentColor)
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+            : inactiveColor;
 
         // For simplicity, use solid color with animation
         if (_brightnessIconBrush == null)
@@ -290,9 +344,15 @@ public sealed partial class RoomDetailPage : Page
     {
         if (ColorButtonContent == null) return;
 
+        // Use theme-aware inactive color
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(64, 255, 255, 255)
+            : Color.FromArgb(64, 0, 0, 0);
+
         var targetColor = isActive && colors.Count > 0
             ? Color.FromArgb(255, colors[0].R, colors[0].G, colors[0].B)
-            : Color.FromArgb(64, 255, 255, 255); // #40FFFFFF when inactive
+            : inactiveColor;
 
         if (_colorButtonBrush == null)
         {
@@ -419,10 +479,19 @@ public sealed partial class RoomDetailPage : Page
         }
         OutlineBorder2.Opacity = 0.0;
 
+        // Use theme-aware inactive colors
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveIconColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+        var inactiveButtonColor = isDark
+            ? Color.FromArgb(64, 255, 255, 255)
+            : Color.FromArgb(64, 0, 0, 0);
+
         // Set icon color
         var iconColor = isOn && colors.Count > 0
             ? _accentColor
-            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255);
+            : inactiveIconColor;
 
         _currentRoomIconColor = iconColor;
         _roomIconBrush = new SolidColorBrush(iconColor);
@@ -440,7 +509,7 @@ public sealed partial class RoomDetailPage : Page
         // Set color button
         _currentColorButtonColor = isOn && colors.Count > 0
             ? _accentColor
-            : Color.FromArgb(64, 255, 255, 255);
+            : inactiveButtonColor;
         _colorButtonBrush = new SolidColorBrush(_currentColorButtonColor);
         ColorButtonContent.Background = _colorButtonBrush;
     }

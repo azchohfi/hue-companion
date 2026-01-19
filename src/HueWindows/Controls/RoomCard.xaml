@@ -20,21 +20,10 @@
                 <VisualState x:Name="Active"/>
             </VisualStateGroup>
 
+            <!-- HoverStates handled in code-behind for theme-aware colors -->
             <VisualStateGroup x:Name="HoverStates">
                 <VisualState x:Name="Default"/>
-                <VisualState x:Name="Hover">
-                    <VisualState.Setters>
-                        <Setter Target="CardRoot.Background">
-                            <Setter.Value>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#FF222226" Offset="0"/>
-                                    <GradientStop Color="#FF2D2D30" Offset="0.5"/>
-                                    <GradientStop Color="#FF262629" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Setter.Value>
-                        </Setter>
-                    </VisualState.Setters>
-                </VisualState>
+                <VisualState x:Name="Hover"/>
             </VisualStateGroup>
 
             <VisualStateGroup x:Name="DragStates">
@@ -52,16 +41,7 @@
               ManipulationDelta="CardRoot_ManipulationDelta"
               ManipulationCompleted="CardRoot_ManipulationCompleted"
               Tapped="CardRoot_Tapped">
-
-            <!-- Dark gradient background -->
-            <Grid.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                    <GradientStop Color="#FF252528" Offset="0.5"/>
-                    <GradientStop Color="#FF1E1E22" Offset="1"/>
-                </LinearGradientBrush>
-
-            </Grid.Background>
+            <!-- Background set in code-behind for theme-aware gradients -->
 
             <!-- Solid Outline Border - Moved here for valid XAML structure (after properties) -->
             <Border x:Name="OutlineBorder"
@@ -93,11 +73,11 @@
                             Grid.Column="0"
                             Width="40" Height="40"
                             CornerRadius="20"
-                            Background="#20FFFFFF">
+                            Background="{ThemeResource CardIconBackgroundBrush}">
                         <FontIcon x:Name="RoomIcon"
                                   Glyph="{Binding RoomIcon}"
                                   FontSize="18"
-                                  Foreground="#80FFFFFF"
+                                  Foreground="{ThemeResource CardIconForegroundBrush}"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"/>
                     </Border>
@@ -107,11 +87,11 @@
                                    Text="{Binding RoomName}"
                                    FontWeight="SemiBold"
                                    FontSize="14"
-                                   Foreground="#FFFFFFFF"
+                                   Foreground="{ThemeResource CardPrimaryTextBrush}"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock x:Name="LightCountText"
                                    FontSize="12"
-                                   Foreground="#80FFFFFF"
+                                   Foreground="{ThemeResource CardSecondaryTextBrush}"
                                    Margin="0,2,0,0">
                             <Run Text="{Binding LightCount}"/>
                             <Run Text=" lights"/>
@@ -144,11 +124,11 @@
                           Margin="8,0,12,0"
                           Height="4">
                         <!-- Track background -->
-                        <Border Background="#30FFFFFF"
+                        <Border Background="{ThemeResource CardTrackBackgroundBrush}"
                                 CornerRadius="2"/>
                         <!-- Fill indicator -->
                         <Border x:Name="BrightnessFill"
-                                Background="#60FFFFFF"
+                                Background="{ThemeResource CardTrackFillBrush}"
                                 CornerRadius="2"
                                 HorizontalAlignment="Left"/>
                     </Grid>
@@ -157,7 +137,7 @@
                     <TextBlock x:Name="BrightnessText"
                                Grid.Column="2"
                                FontSize="12"
-                               Foreground="#60FFFFFF"
+                               Foreground="{ThemeResource CardTertiaryTextBrush}"
                                VerticalAlignment="Center"
                                MinWidth="36"
                                TextAlignment="Right">
