@@ -51,6 +51,11 @@ public static class AppConstants
 
         /// <summary>Opacity for inactive brightness bar (0-255).</summary>
         public const byte InactiveBrightnessBarAlpha = 96;
+
+        /// <summary>Selection highlight color RGB components (yellow/gold).</summary>
+        public const byte SelectionHighlightR = 255;
+        public const byte SelectionHighlightG = 200;
+        public const byte SelectionHighlightB = 0;
     }
 
     /// <summary>

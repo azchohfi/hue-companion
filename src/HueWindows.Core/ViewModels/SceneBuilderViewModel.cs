@@ -68,6 +68,22 @@ public partial class SceneBuilderViewModel : ObservableObject
     private bool _hasUnsavedChanges;
 
     /// <summary>
+    /// Undo/redo command history.
+    /// </summary>
+    public TimelineCommandHistory CommandHistory { get; } = new();
+
+    /// <summary>
+    /// Currently selected keyframes (for multi-select).
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<KeyframeViewModel> _selectedKeyframes = new();
+
+    /// <summary>
+    /// Clipboard for copy/paste operations. Stores track index to preserve track association.
+    /// </summary>
+    private List<(int TrackIndex, double TimeOffset, HueColor Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
+
+    /// <summary>
     /// Whether we're editing an existing scene (vs creating new).
     /// </summary>
     public bool IsEditingExistingScene => _loadedSceneId != null;
@@ -943,6 +959,229 @@ public partial class SceneBuilderViewModel : ObservableObject
             _isLoadingScene = false;
         }
     }
+
+    #region Undo/Redo Operations
+
+    /// <summary>
+    /// Undo the last timeline operation.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    public void Undo()
+    {
+        CommandHistory.Undo();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+    }
+
+    /// <summary>
+    /// Redo the last undone operation.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    public void Redo()
+    {
+        CommandHistory.Redo();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+    }
+
+    public bool CanUndo => CommandHistory.CanUndo;
+    public bool CanRedo => CommandHistory.CanRedo;
+
+    /// <summary>
+    /// Execute a command with undo support.
+    /// </summary>
+    public void ExecuteCommand(ITimelineCommand command)
+    {
+        CommandHistory.Execute(command);
+        MarkDirty();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+    }
+
+    #endregion
+
+    #region Multi-Select Operations
+
+    /// <summary>
+    /// Toggle selection of a keyframe (for multi-select).
+    /// </summary>
+    public void ToggleKeyframeSelection(KeyframeViewModel keyframe, bool isShiftClick)
+    {
+        if (isShiftClick)
+        {
+            // Add to selection
+            if (SelectedKeyframes.Contains(keyframe))
+            {
+                SelectedKeyframes.Remove(keyframe);
+            }
+            else
+            {
+                SelectedKeyframes.Add(keyframe);
+            }
+        }
+        else
+        {
+            // Replace selection
+            SelectedKeyframes.Clear();
+            SelectedKeyframes.Add(keyframe);
+            SelectedKeyframe = keyframe;
+        }
+    }
+
+    /// <summary>
+    /// Select keyframes within a rectangular area.
+    /// </summary>
+    public void SelectKeyframesInRect(double startTime, double endTime, int startTrackIndex, int endTrackIndex)
+    {
+        SelectedKeyframes.Clear();
+
+        var minTime = Math.Min(startTime, endTime);
+        var maxTime = Math.Max(startTime, endTime);
+        var minTrack = Math.Min(startTrackIndex, endTrackIndex);
+        var maxTrack = Math.Max(startTrackIndex, endTrackIndex);
+
+        for (int trackIndex = minTrack; trackIndex <= maxTrack && trackIndex < Tracks.Count; trackIndex++)
+        {
+            var track = Tracks[trackIndex];
+            foreach (var keyframe in track.Keyframes)
+            {
+                if (keyframe.TimeSeconds >= minTime && keyframe.TimeSeconds <= maxTime)
+                {
+                    SelectedKeyframes.Add(keyframe);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clear all keyframe selections.
+    /// </summary>
+    public void ClearSelection()
+    {
+        SelectedKeyframes.Clear();
+        SelectedKeyframe = null;
+    }
+
+    #endregion
+
+    #region Copy/Paste Operations
+
+    /// <summary>
+    /// Copy selected keyframes to clipboard.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasSelectedKeyframes))]
+    public void CopyKeyframes()
+    {
+        if (SelectedKeyframes.Count == 0) return;
+
+        // Find the earliest time to use as reference point
+        var minTime = SelectedKeyframes.Min(k => k.TimeSeconds);
+
+        // Store keyframes with track index and relative time offsets
+        _clipboardKeyframes = new List<(int, double, HueColor, double, TransitionStyle)>();
+
+        foreach (var keyframe in SelectedKeyframes)
+        {
+            // Find which track this keyframe belongs to
+            for (int trackIndex = 0; trackIndex < Tracks.Count; trackIndex++)
+            {
+                if (Tracks[trackIndex].Keyframes.Contains(keyframe))
+                {
+                    _clipboardKeyframes.Add((
+                        TrackIndex: trackIndex,
+                        TimeOffset: keyframe.TimeSeconds - minTime,
+                        Color: keyframe.Color,
+                        Brightness: keyframe.Brightness,
+                        Transition: keyframe.Transition
+                    ));
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Paste keyframes from clipboard to their original tracks.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanPaste))]
+    public void PasteKeyframes()
+    {
+        if (_clipboardKeyframes == null || _clipboardKeyframes.Count == 0) return;
+
+        var commands = new List<ITimelineCommand>();
+
+        // Paste at playhead position
+        var pasteTime = PlayheadPosition;
+
+        foreach (var clipKeyframe in _clipboardKeyframes)
+        {
+            // Only paste if the track index is valid
+            if (clipKeyframe.TrackIndex < 0 || clipKeyframe.TrackIndex >= Tracks.Count)
+                continue;
+
+            var track = Tracks[clipKeyframe.TrackIndex];
+            var newTime = pasteTime + clipKeyframe.TimeOffset;
+
+            // Ensure within bounds
+            if (newTime < 0 || newTime > DurationSeconds) continue;
+
+            var newKeyframe = new KeyframeViewModel
+            {
+                TimeSeconds = newTime,
+                Color = clipKeyframe.Color ?? HueColors.WarmWhite,
+                Brightness = clipKeyframe.Brightness,
+                Transition = clipKeyframe.Transition
+            };
+
+            commands.Add(new AddKeyframeCommand(track, newKeyframe));
+        }
+
+        if (commands.Count > 0)
+        {
+            ExecuteCommand(new BatchCommand("Paste keyframes", commands));
+        }
+    }
+
+    /// <summary>
+    /// Delete selected keyframes.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasSelectedKeyframes))]
+    public void DeleteSelectedKeyframes()
+    {
+        if (SelectedKeyframes.Count == 0) return;
+
+        var commands = new List<(TrackViewModel Track, KeyframeViewModel Keyframe)>();
+
+        foreach (var keyframe in SelectedKeyframes.ToList())
+        {
+            foreach (var track in Tracks)
+            {
+                if (track.Keyframes.Contains(keyframe))
+                {
+                    // Don't delete first or last keyframes (keyframes are maintained in sorted order)
+                    var isFirstKeyframe = track.Keyframes.Count > 0 && track.Keyframes[0] == keyframe;
+                    var isLastKeyframe = track.Keyframes.Count > 0 && track.Keyframes[^1] == keyframe;
+
+                    if (!isFirstKeyframe && !isLastKeyframe)
+                    {
+                        commands.Add((track, keyframe));
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (commands.Count > 0)
+        {
+            ExecuteCommand(new DeleteKeyframesCommand(commands));
+            SelectedKeyframes.Clear();
+        }
+    }
+
+    public bool HasSelectedKeyframes() => SelectedKeyframes.Count > 0;
+    public bool CanPaste() => _clipboardKeyframes != null && _clipboardKeyframes.Count > 0;
+
+    #endregion
 }
 
 /// <summary>
