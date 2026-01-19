@@ -331,10 +331,13 @@ public sealed partial class SceneBuilderPage : Page
         RenderPlayhead(canvasHeight);
 
         // Set canvas size - add fixed buffer beyond duration for grid extension
+        // Only update if changed to prevent layout cycles
         var durationWidth = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
-        // Add a fixed buffer (500px) beyond the loop region so grid extends visually
-        KeyframeCanvas.Width = durationWidth + 500;
-        KeyframeCanvas.Height = canvasHeight;
+        var targetWidth = durationWidth + 500;
+        if (Math.Abs(KeyframeCanvas.Width - targetWidth) > 1)
+            KeyframeCanvas.Width = targetWidth;
+        if (Math.Abs(KeyframeCanvas.Height - canvasHeight) > 1)
+            KeyframeCanvas.Height = canvasHeight;
 
         // Update time display
         UpdateTimeDisplay();

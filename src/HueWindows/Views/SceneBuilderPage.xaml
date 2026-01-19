@@ -482,10 +482,12 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Time Display (center) -->
+                    <!-- Time Display (center) - fixed width to prevent layout cycles -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
                         <TextBlock x:Name="CurrentTimeText"
                                    Text="00:00.00"
+                                   Width="72"
+                                   TextAlignment="Right"
                                    Style="{StaticResource SubtitleTextBlockStyle}"
                                    FontFamily="Consolas"
                                    VerticalAlignment="Center"/>
@@ -495,6 +497,8 @@
                                    VerticalAlignment="Center"/>
                         <TextBlock x:Name="TotalTimeText"
                                    Text="00:16.00"
+                                   Width="72"
+                                   TextAlignment="Left"
                                    Style="{StaticResource SubtitleTextBlockStyle}"
                                    FontFamily="Consolas"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
