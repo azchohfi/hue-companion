@@ -10,7 +10,7 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class ScenesViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _sceneStorageService;
     private readonly IRoomSceneAssignmentService _assignmentService;
@@ -48,12 +48,12 @@ public partial class ScenesViewModel : ObservableObject
     private string? _currentAnimationName;
 
     public ScenesViewModel(
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IAnimationService animationService,
         ISceneStorageService sceneStorageService,
         IRoomSceneAssignmentService assignmentService)
     {
-        _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+        _multiBridgeService = multiBridgeService ?? throw new ArgumentNullException(nameof(multiBridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
         _sceneStorageService = sceneStorageService ?? throw new ArgumentNullException(nameof(sceneStorageService));
         _assignmentService = assignmentService ?? throw new ArgumentNullException(nameof(assignmentService));
@@ -74,8 +74,8 @@ public partial class ScenesViewModel : ObservableObject
 
         try
         {
-            // Load rooms
-            var roomsResult = await _bridgeService.GetRoomsAsync();
+            // Load rooms from all bridges
+            var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
             if (roomsResult.IsSuccess && roomsResult.Value != null)
             {
                 Rooms = roomsResult.Value.ToList();
@@ -155,14 +155,24 @@ public partial class ScenesViewModel : ObservableObject
     {
         if (SelectedRoom == null) return;
 
+        var bridgeService = SelectedRoom.BridgeId != null
+            ? _multiBridgeService.GetBridgeService(SelectedRoom.BridgeId)
+            : _multiBridgeService.GetDefaultBridgeService();
+
+        if (bridgeService == null)
+        {
+            ErrorMessage = "No bridge connected.";
+            return;
+        }
+
         try
         {
-            var lights = await _bridgeService.GetLightsInRoomAsync(SelectedRoom.Id);
+            var lights = await bridgeService.GetLightsInRoomAsync(SelectedRoom.Id);
             if (lights.IsSuccess && lights.Value != null)
             {
                 foreach (var light in lights.Value)
                 {
-                    await _bridgeService.ApplyEffectAsync(light.Id, effect, speed, brightness);
+                    await bridgeService.ApplyEffectAsync(light.Id, effect, speed, brightness);
                 }
             }
             else

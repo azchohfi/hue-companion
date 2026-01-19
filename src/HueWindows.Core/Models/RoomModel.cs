@@ -25,9 +25,31 @@ public class RoomModel
     public LightGroupType GroupType { get; set; } = LightGroupType.Room;
 
     /// <summary>
-    /// The display name of the room/zone.
+    /// The original name of the room/zone from the Hue bridge.
     /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether to show the bridge name prefix in DisplayName (for multi-bridge duplicate handling).
+    /// </summary>
+    public bool ShowBridgePrefix { get; set; }
+
+    /// <summary>
+    /// The display name for UI, including bridge prefix if ShowBridgePrefix is true.
+    /// </summary>
+    public string DisplayName => ShowBridgePrefix && !string.IsNullOrEmpty(BridgeName)
+        ? $"{BridgeName} - {Name}"
+        : Name;
+
+    /// <summary>
+    /// The bridge ID this room belongs to (for multi-bridge support).
+    /// </summary>
+    public string? BridgeId { get; set; }
+
+    /// <summary>
+    /// The display name of the bridge this room belongs to (for UI).
+    /// </summary>
+    public string? BridgeName { get; set; }
 
     /// <summary>
     /// The room archetype (e.g., living room, bedroom, kitchen).

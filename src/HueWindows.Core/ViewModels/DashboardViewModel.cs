@@ -15,7 +15,7 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class DashboardViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IMessenger _messenger;
 
     [ObservableProperty]
@@ -46,14 +46,14 @@ public partial class DashboardViewModel : ObservableObject
     public event EventHandler<(Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors)>? RoomSelected;
 
     public DashboardViewModel(
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IMessenger messenger)
     {
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
         _messenger = messenger;
 
         // Subscribe to light state changes
-        _bridgeService.LightStateChanged += OnLightStateChanged;
+        _multiBridgeService.LightStateChanged += OnMultiBridgeLightStateChanged;
     }
 
     [RelayCommand]
@@ -65,18 +65,33 @@ public partial class DashboardViewModel : ObservableObject
         ErrorMessage = null;
         ShowEmptyState = false;
 
-        // Load rooms
-        var roomsResult = await _bridgeService.GetRoomsAsync();
+        // Load rooms from all bridges
+        var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
 
         RoomCards.Clear();
+
+        var disconnectedBridges = new HashSet<string>();
 
         if (roomsResult.IsSuccess)
         {
             foreach (var room in roomsResult.Value!)
             {
-                var cardVm = new RoomCardViewModel(room, _bridgeService);
-                cardVm.RoomTapped += OnRoomTapped;
-                RoomCards.Add(cardVm);
+                // Get the bridge service for this room
+                var bridgeService = room.BridgeId != null
+                    ? _multiBridgeService.GetBridgeService(room.BridgeId)
+                    : null;
+
+                if (bridgeService != null)
+                {
+                    var cardVm = new RoomCardViewModel(room, bridgeService);
+                    cardVm.RoomTapped += OnRoomTapped;
+                    RoomCards.Add(cardVm);
+                }
+                else if (room.BridgeId != null)
+                {
+                    // Track disconnected bridge
+                    disconnectedBridges.Add(room.BridgeName ?? room.BridgeId);
+                }
             }
         }
         else
@@ -86,8 +101,8 @@ public partial class DashboardViewModel : ObservableObject
 
         HasRooms = RoomCards.Count > 0;
 
-        // Load zones
-        var zonesResult = await _bridgeService.GetZonesAsync();
+        // Load zones from all bridges
+        var zonesResult = await _multiBridgeService.GetAllZonesAsync();
 
         ZoneCards.Clear();
 
@@ -95,9 +110,22 @@ public partial class DashboardViewModel : ObservableObject
         {
             foreach (var zone in zonesResult.Value!)
             {
-                var cardVm = new RoomCardViewModel(zone, _bridgeService);
-                cardVm.RoomTapped += OnRoomTapped;
-                ZoneCards.Add(cardVm);
+                // Get the bridge service for this zone
+                var bridgeService = zone.BridgeId != null
+                    ? _multiBridgeService.GetBridgeService(zone.BridgeId)
+                    : null;
+
+                if (bridgeService != null)
+                {
+                    var cardVm = new RoomCardViewModel(zone, bridgeService);
+                    cardVm.RoomTapped += OnRoomTapped;
+                    ZoneCards.Add(cardVm);
+                }
+                else if (zone.BridgeId != null)
+                {
+                    // Track disconnected bridge
+                    disconnectedBridges.Add(zone.BridgeName ?? zone.BridgeId);
+                }
             }
         }
         else if (ErrorMessage == null)
@@ -109,6 +137,13 @@ public partial class DashboardViewModel : ObservableObject
         HasZones = ZoneCards.Count > 0;
 
         ShowEmptyState = RoomCards.Count == 0 && ZoneCards.Count == 0;
+
+        // Show warning if some bridges are disconnected
+        if (disconnectedBridges.Count > 0 && ErrorMessage == null)
+        {
+            var bridgeList = string.Join(", ", disconnectedBridges);
+            ErrorMessage = $"Some rooms not shown - bridge(s) disconnected: {bridgeList}";
+        }
 
         IsLoading = false;
     }
@@ -124,7 +159,7 @@ public partial class DashboardViewModel : ObservableObject
         RoomSelected?.Invoke(this, args);
     }
 
-    private void OnLightStateChanged(object? sender, LightStateChangedEventArgs e)
+    private void OnMultiBridgeLightStateChanged(object? sender, MultiBridgeLightStateChangedEventArgs e)
     {
         // Marshal to UI thread since event comes from background thread
         RunOnUIThread(() =>
@@ -268,7 +303,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         _room = room;
         _bridgeService = bridgeService;
 
-        _roomName = room.Name;
+        _roomName = room.DisplayName;
         _isOn = room.IsOn;
         _brightness = room.Brightness;
         _dominantColor = room.DominantColor;

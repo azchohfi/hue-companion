@@ -10,8 +10,10 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class LightDetailViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
+    private IHueBridgeService? _bridgeService;
     private Guid _lightId;
+    private string? _bridgeId;
 
     [ObservableProperty]
     private string _lightName = string.Empty;
@@ -51,9 +53,26 @@ public partial class LightDetailViewModel : ObservableObject
     public int MinColorTemp => 153;
     public int MaxColorTemp => 500;
 
-    public LightDetailViewModel(IHueBridgeService bridgeService)
+    public LightDetailViewModel(IMultiBridgeService multiBridgeService)
     {
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
+    }
+
+    /// <summary>
+    /// Sets the bridge ID for this light, allowing lookup of the correct bridge service.
+    /// Call this before LoadLightAsync when navigating with bridge context.
+    /// </summary>
+    public void SetBridgeId(string? bridgeId)
+    {
+        _bridgeId = bridgeId;
+        if (bridgeId != null)
+        {
+            _bridgeService = _multiBridgeService.GetBridgeService(bridgeId);
+        }
+        else
+        {
+            _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+        }
     }
 
     public async Task LoadLightAsync(Guid lightId)
@@ -61,6 +80,19 @@ public partial class LightDetailViewModel : ObservableObject
         _lightId = lightId;
         IsLoading = true;
         ErrorMessage = null;
+
+        // Ensure we have a bridge service (fallback to default if not set)
+        if (_bridgeService == null)
+        {
+            _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+        }
+
+        if (_bridgeService == null)
+        {
+            ErrorMessage = "No bridge connected. Please configure a bridge in Settings.";
+            IsLoading = false;
+            return;
+        }
 
         var lightResult = await _bridgeService.GetLightAsync(lightId);
 
@@ -92,6 +124,7 @@ public partial class LightDetailViewModel : ObservableObject
 
     partial void OnIsOnChanged(bool value)
     {
+        if (_bridgeService == null) return;
         _ = _bridgeService.SetLightOnAsync(_lightId, value);
     }
 
@@ -101,7 +134,10 @@ public partial class LightDetailViewModel : ObservableObject
         Brightness = Math.Clamp(brightness, 0.0, 1.0);
         OnPropertyChanged(nameof(BrightnessPercent));
 
-        await _bridgeService.SetLightBrightnessAsync(_lightId, Brightness);
+        if (_bridgeService != null)
+        {
+            await _bridgeService.SetLightBrightnessAsync(_lightId, Brightness);
+        }
 
         // Auto-turn on if brightness > 0
         // Set field directly to update UI without triggering OnIsOnChanged (which would send redundant API call)
@@ -120,7 +156,10 @@ public partial class LightDetailViewModel : ObservableObject
         CurrentColor = color;
         IsColorMode = true;
 
-        await _bridgeService.SetLightColorAsync(_lightId, color);
+        if (_bridgeService != null)
+        {
+            await _bridgeService.SetLightColorAsync(_lightId, color);
+        }
     }
 
     [RelayCommand]
@@ -136,7 +175,10 @@ public partial class LightDetailViewModel : ObservableObject
         ColorTemperature = Math.Clamp(mirek, MinColorTemp, MaxColorTemp);
         IsColorMode = false;
 
-        await _bridgeService.SetLightTemperatureAsync(_lightId, ColorTemperature);
+        if (_bridgeService != null)
+        {
+            await _bridgeService.SetLightTemperatureAsync(_lightId, ColorTemperature);
+        }
     }
 
     [RelayCommand]

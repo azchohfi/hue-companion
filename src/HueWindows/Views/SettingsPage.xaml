@@ -96,22 +96,21 @@
                                     Background="{ThemeResource ControlFillColorSecondaryBrush}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <Ellipse Width="6" Height="6"
-                                             Fill="{x:Bind GetConnectionColor(ViewModel.IsConnected), Mode=OneWay}"/>
-                                    <TextBlock Text="{x:Bind GetConnectionStatus(ViewModel.IsConnected), Mode=OneWay}"
+                                             Fill="{x:Bind GetMultiBridgeConnectionColor(ViewModel.ConnectedBridgeCount), Mode=OneWay}"/>
+                                    <TextBlock Text="{x:Bind GetMultiBridgeConnectionStatus(ViewModel.BridgeCount, ViewModel.ConnectedBridgeCount), Mode=OneWay}"
                                                Style="{StaticResource CaptionTextBlockStyle}"
                                                FontSize="11"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                            <Run Text="{x:Bind ViewModel.BridgeIpAddress, Mode=OneWay}"/>
-                        </TextBlock>
+                        <TextBlock Text="{x:Bind GetBridgeCountText(ViewModel.BridgeCount), Mode=OneWay}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Button Content="Reconnect"
-                                Command="{x:Bind ViewModel.RepairBridgeCommand}"/>
+                        <Button Content="Manage Bridges"
+                                Command="{x:Bind ViewModel.ManageBridgesCommand}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>

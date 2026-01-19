@@ -21,7 +21,7 @@ public class BridgeModel
     public string AppKey { get; set; } = string.Empty;
 
     /// <summary>
-    /// The friendly name of the bridge.
+    /// The friendly name of the bridge (user-editable).
     /// </summary>
     public string? FriendlyName { get; set; }
 
@@ -29,4 +29,11 @@ public class BridgeModel
     /// The last time the app successfully connected to this bridge.
     /// </summary>
     public DateTime LastConnected { get; set; }
+
+    /// <summary>
+    /// Gets the display name for the bridge (FriendlyName or truncated BridgeId).
+    /// </summary>
+    public string DisplayName => !string.IsNullOrWhiteSpace(FriendlyName)
+        ? FriendlyName
+        : $"Bridge {BridgeId.Substring(Math.Max(0, BridgeId.Length - 6))}";
 }

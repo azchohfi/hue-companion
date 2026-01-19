@@ -12,7 +12,7 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class CustomDashboardViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
 
     [ObservableProperty]
@@ -33,14 +33,14 @@ public partial class CustomDashboardViewModel : ObservableObject
     public event EventHandler<(Guid Id, PinnedItemType Type)>? CardSelected;
 
     public CustomDashboardViewModel(
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IPinnedItemsService pinnedItemsService)
     {
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
 
-        // Subscribe to light state changes
-        _bridgeService.LightStateChanged += OnLightStateChanged;
+        // Subscribe to light state changes from all bridges
+        _multiBridgeService.LightStateChanged += OnLightStateChanged;
 
         // Subscribe to pinned items changes to auto-refresh
         _pinnedItemsService.PinnedItemsChanged += OnPinnedItemsChanged;
@@ -65,9 +65,9 @@ public partial class CustomDashboardViewModel : ObservableObject
             return;
         }
 
-        // Fetch all rooms and zones for lookup
-        var roomsResult = await _bridgeService.GetRoomsAsync();
-        var zonesResult = await _bridgeService.GetZonesAsync();
+        // Fetch all rooms and zones from all bridges
+        var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
+        var zonesResult = await _multiBridgeService.GetAllZonesAsync();
 
         if (roomsResult.IsFailure && zonesResult.IsFailure)
         {
@@ -98,14 +98,14 @@ public partial class CustomDashboardViewModel : ObservableObject
             {
                 if (allGroups.TryGetValue(pinned.Id, out var group))
                 {
-                    cardVm = new DashboardCardViewModel(group, _bridgeService, _pinnedItemsService);
+                    cardVm = new DashboardCardViewModel(group, _multiBridgeService, _pinnedItemsService);
                 }
             }
             else if (pinned.Type == PinnedItemType.Light)
             {
                 if (allLights.TryGetValue(pinned.Id, out var light))
                 {
-                    cardVm = new DashboardCardViewModel(light, _bridgeService, _pinnedItemsService);
+                    cardVm = new DashboardCardViewModel(light, _multiBridgeService, _pinnedItemsService);
                 }
             }
 
@@ -147,7 +147,7 @@ public partial class CustomDashboardViewModel : ObservableObject
         CardSelected?.Invoke(this, args);
     }
 
-    private void OnLightStateChanged(object? sender, LightStateChangedEventArgs e)
+    private void OnLightStateChanged(object? sender, MultiBridgeLightStateChangedEventArgs e)
     {
         // Marshal to UI thread since event comes from background thread
         UIDispatcher.RunOnUIThread(() =>

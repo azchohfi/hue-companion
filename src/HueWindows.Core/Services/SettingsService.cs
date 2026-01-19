@@ -48,6 +48,24 @@ public class SettingsService : ISettingsService
             // If settings are corrupted, start fresh
             Settings = new AppSettings();
         }
+
+        // Migrate legacy single bridge to multi-bridge list (runs once at startup)
+        await MigrateLegacyBridgeAsync();
+    }
+
+    /// <summary>
+    /// Migrates legacy single bridge configuration to the multi-bridge list.
+    /// </summary>
+    private async Task MigrateLegacyBridgeAsync()
+    {
+        #pragma warning disable CS0618 // Type or member is obsolete
+        if (Settings.ConfiguredBridge != null && Settings.ConfiguredBridges.Count == 0)
+        {
+            Settings.ConfiguredBridges.Add(Settings.ConfiguredBridge);
+            Settings.ConfiguredBridge = null;
+            await SaveAsync();
+        }
+        #pragma warning restore CS0618
     }
 
     /// <inheritdoc/>
@@ -60,10 +78,20 @@ public class SettingsService : ISettingsService
     /// <inheritdoc/>
     public Task<bool> HasConfiguredBridgeAsync()
     {
-        var hasBridge = Settings.ConfiguredBridge != null
+        // Check new multi-bridge list first
+        var hasMultiBridge = Settings.ConfiguredBridges.Any(b =>
+            !string.IsNullOrEmpty(b.AppKey) && !string.IsNullOrEmpty(b.IpAddress));
+
+        if (hasMultiBridge)
+            return Task.FromResult(true);
+
+        // Check legacy single bridge for backward compatibility
+        #pragma warning disable CS0618 // Type or member is obsolete
+        var hasLegacyBridge = Settings.ConfiguredBridge != null
             && !string.IsNullOrEmpty(Settings.ConfiguredBridge.AppKey)
             && !string.IsNullOrEmpty(Settings.ConfiguredBridge.IpAddress);
+        #pragma warning restore CS0618
 
-        return Task.FromResult(hasBridge);
+        return Task.FromResult(hasLegacyBridge);
     }
 }

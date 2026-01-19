@@ -13,7 +13,7 @@ public partial class SetupViewModel : ObservableObject
 {
     private readonly IBridgeDiscoveryService _discoveryService;
     private readonly ISettingsService _settingsService;
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private CancellationTokenSource? _registrationCts;
 
     [ObservableProperty]
@@ -48,11 +48,11 @@ public partial class SetupViewModel : ObservableObject
     public SetupViewModel(
         IBridgeDiscoveryService discoveryService,
         ISettingsService settingsService,
-        IHueBridgeService bridgeService)
+        IMultiBridgeService multiBridgeService)
     {
         _discoveryService = discoveryService;
         _settingsService = settingsService;
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
     }
 
     [RelayCommand]
@@ -138,28 +138,22 @@ public partial class SetupViewModel : ObservableObject
 
         if (result?.Success == true && result.AppKey != null)
         {
-            // Save credentials
-            _settingsService.Settings.ConfiguredBridge = new BridgeModel
+            // Create bridge model
+            var bridge = new BridgeModel
             {
                 BridgeId = SelectedBridge.BridgeId,
                 IpAddress = SelectedBridge.IpAddress,
                 AppKey = result.AppKey,
-                LastConnected = DateTime.Now
+                LastConnected = DateTime.UtcNow
             };
-            await _settingsService.SaveAsync();
 
-            // Connect to the bridge
-            var connectResult = await _bridgeService.ConnectAsync(
-                SelectedBridge.IpAddress,
-                result.AppKey);
+            // Add bridge to multi-bridge service
+            var addResult = await _multiBridgeService.AddBridgeAsync(bridge);
 
-            if (connectResult.IsSuccess)
+            if (addResult.IsSuccess)
             {
                 StatusMessage = "Connected successfully!";
                 RegistrationSuccess = true;
-
-                // Start event stream
-                await _bridgeService.StartEventStreamAsync();
 
                 // Wait briefly then navigate
                 await Task.Delay(1500);
@@ -167,7 +161,7 @@ public partial class SetupViewModel : ObservableObject
             }
             else
             {
-                StatusMessage = connectResult.Error ?? "Failed to connect to bridge after registration.";
+                StatusMessage = addResult.Error ?? "Failed to connect to bridge after registration.";
                 ShowLinkButtonPrompt = true;
             }
         }

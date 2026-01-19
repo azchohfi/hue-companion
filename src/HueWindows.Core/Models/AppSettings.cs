@@ -7,8 +7,15 @@ public class AppSettings
 {
     /// <summary>
     /// The configured Hue bridge, if any.
+    /// [Deprecated] Use ConfiguredBridges for multi-bridge support.
     /// </summary>
+    [Obsolete("Use ConfiguredBridges instead")]
     public BridgeModel? ConfiguredBridge { get; set; }
+
+    /// <summary>
+    /// All configured Hue bridges.
+    /// </summary>
+    public List<BridgeModel> ConfiguredBridges { get; set; } = new();
 
     /// <summary>
     /// The selected app theme.
