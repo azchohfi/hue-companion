@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services;
 using HueWindows.Core.Services.Interfaces;
+using Microsoft.UI;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -81,7 +82,7 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// <summary>
     /// Clipboard for copy/paste operations.
     /// </summary>
-    private List<(double TimeOffset, Windows.UI.Color Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
+    private List<(double TimeOffset, Color Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
 
     /// <summary>
     /// Whether we're editing an existing scene (vs creating new).

@@ -1,7 +1,7 @@
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using System.Collections.ObjectModel;
-using Windows.UI;
+using Microsoft.UI;
 
 namespace HueWindows.Core.Services;
 
