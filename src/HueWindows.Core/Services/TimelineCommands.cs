@@ -133,7 +133,7 @@ public class MoveKeyframeCommand : ITimelineCommand
 public class ModifyKeyframeCommand : ITimelineCommand
 {
     private readonly KeyframeViewModel _keyframe;
-    private readonly HueColor? _oldColor;
+    private readonly HueColor _oldColor;
     private readonly HueColor? _newColor;
     private readonly double? _oldBrightness;
     private readonly double? _newBrightness;
@@ -149,10 +149,10 @@ public class ModifyKeyframeCommand : ITimelineCommand
         Models.TransitionStyle? newTransition = null)
     {
         _keyframe = keyframe;
+        _oldColor = _keyframe.Color;
         
-        if (newColor.HasValue)
+        if (newColor != null)
         {
-            _oldColor = _keyframe.Color;
             _newColor = newColor;
         }
         
@@ -171,14 +171,14 @@ public class ModifyKeyframeCommand : ITimelineCommand
 
     public void Execute()
     {
-        if (_newColor.HasValue) _keyframe.Color = _newColor.Value;
+        if (_newColor != null) _keyframe.Color = _newColor;
         if (_newBrightness.HasValue) _keyframe.Brightness = _newBrightness.Value;
         if (_newTransition.HasValue) _keyframe.Transition = _newTransition.Value;
     }
 
     public void Undo()
     {
-        if (_oldColor.HasValue) _keyframe.Color = _oldColor.Value;
+        _keyframe.Color = _oldColor;
         if (_oldBrightness.HasValue) _keyframe.Brightness = _oldBrightness.Value;
         if (_oldTransition.HasValue) _keyframe.Transition = _oldTransition.Value;
     }
