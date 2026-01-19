@@ -257,6 +257,7 @@ public sealed partial class SceneBuilderPage : Page
         }
 
         UpdateEmptyState();
+        UpdateTimeDisplay();
     }
 
     private void UpdateEmptyState()
@@ -305,6 +306,9 @@ public sealed partial class SceneBuilderPage : Page
             KeyframeCanvas.Children.Add(separator);
         }
 
+        // Render loop region highlighting (background layer)
+        RenderLoopRegion(canvasHeight);
+
         // Render snap grid lines
         RenderGridLines(canvasHeight);
 
@@ -326,9 +330,14 @@ public sealed partial class SceneBuilderPage : Page
         // Render playhead
         RenderPlayhead(canvasHeight);
 
-        // Set canvas size
-        KeyframeCanvas.Width = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+        // Set canvas size - add fixed buffer beyond duration for grid extension
+        var durationWidth = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+        // Add a fixed buffer (500px) beyond the loop region so grid extends visually
+        KeyframeCanvas.Width = durationWidth + 500;
         KeyframeCanvas.Height = canvasHeight;
+
+        // Update time display
+        UpdateTimeDisplay();
     }
 
     private void RenderPlayhead(double height)
@@ -449,16 +458,48 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
+    private void RenderLoopRegion(double height)
+    {
+        var loopEndX = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+
+        // Draw tinted background for the loop region (accent color at ~10% opacity)
+        var loopBackground = new Microsoft.UI.Xaml.Shapes.Rectangle
+        {
+            Width = loopEndX,
+            Height = height,
+            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(18, 96, 165, 250)), // Subtle blue tint ~7% opacity
+            IsHitTestVisible = false
+        };
+        Canvas.SetLeft(loopBackground, 0);
+        Canvas.SetTop(loopBackground, 0);
+        KeyframeCanvas.Children.Add(loopBackground);
+
+        // Draw loop end boundary line (thicker, accent color)
+        var loopEndLine = new Microsoft.UI.Xaml.Shapes.Line
+        {
+            X1 = loopEndX,
+            Y1 = 0,
+            X2 = loopEndX,
+            Y2 = height,
+            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Windows.UI.Color.FromArgb(120, 96, 165, 250)), // Accent blue
+            StrokeThickness = 2,
+            IsHitTestVisible = false
+        };
+        KeyframeCanvas.Children.Add(loopEndLine);
+    }
+
     private void RenderGridLines(double height)
     {
-        if (!ViewModel.IsSnapEnabled) return;
-
         var interval = ViewModel.SnapInterval;
-        var duration = ViewModel.DurationSeconds;
         var zoom = ViewModel.ZoomLevel;
 
-        // Draw vertical grid lines at each snap interval
-        for (double time = interval; time < duration; time += interval)
+        // Grid extends beyond duration with a fixed buffer (matching canvas width calculation)
+        var gridExtentSeconds = ViewModel.DurationSeconds + (500 / zoom);
+
+        // Draw vertical grid lines at each snap interval, extending beyond duration
+        for (double time = interval; time < gridExtentSeconds; time += interval)
         {
             var x = time * zoom;
             var gridLine = new Microsoft.UI.Xaml.Shapes.Line
@@ -518,6 +559,36 @@ public sealed partial class SceneBuilderPage : Page
                 new Windows.Foundation.Point(x, 12)
             };
         }
+
+        // Update time display
+        UpdateTimeDisplay();
+    }
+
+    /// <summary>
+    /// Updates the time display in the footer to show current position and duration.
+    /// Format: mm:ss.ff (minutes:seconds.centiseconds)
+    /// </summary>
+    private void UpdateTimeDisplay()
+    {
+        if (CurrentTimeText != null)
+        {
+            CurrentTimeText.Text = FormatTime(ViewModel.PlayheadPosition);
+        }
+        if (TotalTimeText != null)
+        {
+            TotalTimeText.Text = FormatTime(ViewModel.DurationSeconds);
+        }
+    }
+
+    /// <summary>
+    /// Formats a time value in seconds as mm:ss.ff
+    /// </summary>
+    private static string FormatTime(double seconds)
+    {
+        var minutes = (int)(seconds / 60);
+        var secs = (int)(seconds % 60);
+        var centiseconds = (int)((seconds - Math.Floor(seconds)) * 100);
+        return $"{minutes:D2}:{secs:D2}.{centiseconds:D2}";
     }
 
     private void PlayheadHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -543,6 +614,14 @@ public sealed partial class SceneBuilderPage : Page
         // Clamp to valid range
         if (timeSeconds < 0) timeSeconds = 0;
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        // Apply snap when enabled, unless Ctrl is held
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (ViewModel.IsSnapEnabled && !ctrlHeld)
+        {
+            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+        }
 
         ViewModel.PlayheadPosition = timeSeconds;
 
@@ -574,6 +653,14 @@ public sealed partial class SceneBuilderPage : Page
         // Clamp to valid range
         if (timeSeconds < 0) timeSeconds = 0;
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
+
+        // Apply snap when enabled, unless Ctrl is held
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (ViewModel.IsSnapEnabled && !ctrlHeld)
+        {
+            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+        }
 
         ViewModel.PlayheadPosition = timeSeconds;
         RenderTimeline();
@@ -938,6 +1025,7 @@ public sealed partial class SceneBuilderPage : Page
 
         // Re-render the timeline with new duration
         RenderTimeline();
+        UpdateTimeDisplay();
     }
 
     private void ZoomSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)

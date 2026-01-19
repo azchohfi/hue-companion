@@ -441,81 +441,68 @@
             </Border>
         </Grid>
 
-        <!-- Footer: Transport Controls -->
+        <!-- Footer: Transport Controls (Two Rows) -->
         <Border Grid.Row="3"
-                Padding="36,16"
+                Padding="36,12,36,12"
                 Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,1,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Grid RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Play/Stop -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                    <Button x:Name="PlayButton"
-                            Click="PlayButton_Click"
-                            Style="{StaticResource AccentButtonStyle}"
-                            ToolTipService.ToolTip="Play (Space)">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon x:Name="PlayButtonIcon" Glyph="&#xE768;" FontSize="14"/>
-                            <TextBlock x:Name="PlayButtonText" Text="Play"/>
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="StopButton"
-                            Click="StopButton_Click"
-                            ToolTipService.ToolTip="Stop">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE71A;" FontSize="14"/>
-                            <TextBlock Text="Stop"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                <!-- Row 1: Transport (Play/Stop, Time Display, Zoom) -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Add Keyframe / Add Event -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                    <Button Click="AddKeyframe_Click"
-                            ToolTipService.ToolTip="Add keyframe to all tracks at playhead position">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE710;" FontSize="14"/>
-                            <TextBlock Text="Add Keyframe"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Play/Stop -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="PlayButton"
+                                Click="PlayButton_Click"
+                                Style="{StaticResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Play (Space)">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon x:Name="PlayButtonIcon" Glyph="&#xE768;" FontSize="14"/>
+                                <TextBlock x:Name="PlayButtonText" Text="Play"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="StopButton"
+                                Click="StopButton_Click"
+                                ToolTipService.ToolTip="Stop">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE71A;" FontSize="14"/>
+                                <TextBlock Text="Stop"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
 
-                    <Button ToolTipService.ToolTip="Add event track (lightning, sparkles, etc.)">
-                        <Button.Flyout>
-                            <MenuFlyout Placement="Top">
-                                <MenuFlyoutItem Text="Lightning Flash" Click="AddLightningTrack_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE945;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="Sparkle" Click="AddSparkleTrack_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE734;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="Candle Flicker" Click="AddCandleTrack_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE7E8;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                            </MenuFlyout>
-                        </Button.Flyout>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE945;" FontSize="14"/>
-                            <TextBlock Text="Add Event"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                    <!-- Time Display (center) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                        <TextBlock x:Name="CurrentTimeText"
+                                   Text="00:00.00"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   FontFamily="Consolas"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="/"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TotalTimeText"
+                                   Text="00:16.00"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   FontFamily="Consolas"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-                <!-- Zoom and Loop -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="24">
-                    <!-- Zoom Slider -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- Zoom Slider (right) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE71E;" FontSize="14" VerticalAlignment="Center"
                                   ToolTipService.ToolTip="Zoom Out"/>
                         <Slider x:Name="ZoomSlider"
@@ -529,33 +516,88 @@
                         <FontIcon Glyph="&#xE8A3;" FontSize="14" VerticalAlignment="Center"
                                   ToolTipService.ToolTip="Zoom In"/>
                     </StackPanel>
+                </Grid>
 
-                    <!-- Snap Toggle -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE80A;" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="Snap:"
-                                   Style="{StaticResource BodyTextBlockStyle}"
-                                   VerticalAlignment="Center"/>
-                        <ToggleSwitch x:Name="SnapToggle"
-                                      IsOn="{x:Bind ViewModel.IsSnapEnabled, Mode=TwoWay}"
-                                      Toggled="SnapToggle_Toggled"
-                                      OnContent=""
-                                      OffContent=""
-                                      ToolTipService.ToolTip="Snap to grid (hold Ctrl to temporarily disable)"/>
+                <!-- Row 2: Tools (Add Keyframe/Event, Snap/Loop, Save) -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Add Keyframe / Add Event (left) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Button Click="AddKeyframe_Click"
+                                ToolTipService.ToolTip="Add keyframe to all tracks at playhead position">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                                <TextBlock Text="Add Keyframe"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button ToolTipService.ToolTip="Add event track (lightning, sparkles, etc.)">
+                            <Button.Flyout>
+                                <MenuFlyout Placement="Top">
+                                    <MenuFlyoutItem Text="Lightning Flash" Click="AddLightningTrack_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE945;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="Sparkle" Click="AddSparkleTrack_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE734;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="Candle Flicker" Click="AddCandleTrack_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE7E8;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE945;" FontSize="14"/>
+                                <TextBlock Text="Add Event"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
-                    <!-- Loop Toggle -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE8EE;" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="Loop:"
-                                   Style="{StaticResource BodyTextBlockStyle}"
-                                   VerticalAlignment="Center"/>
-                        <ToggleSwitch x:Name="LoopToggle"
-                                      IsOn="True"
-                                      OnContent=""
-                                      OffContent=""/>
+                    <!-- Snap and Loop Toggles (center) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24">
+                        <!-- Snap Toggle -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE80A;" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Snap:"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                            <ToggleSwitch x:Name="SnapToggle"
+                                          IsOn="{x:Bind ViewModel.IsSnapEnabled, Mode=TwoWay}"
+                                          Toggled="SnapToggle_Toggled"
+                                          OnContent=""
+                                          OffContent=""
+                                          ToolTipService.ToolTip="Snap to grid (hold Ctrl to temporarily disable)"/>
+                        </StackPanel>
+
+                        <!-- Loop Toggle -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8EE;" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Loop:"
+                                       Style="{StaticResource BodyTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                            <ToggleSwitch x:Name="LoopToggle"
+                                          IsOn="True"
+                                          OnContent=""
+                                          OffContent=""/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+
+                    <!-- Save Button (right) -->
+                    <Button Grid.Column="2"
+                            Content="Save Scene"
+                            Click="SaveButton_Click"
+                            Style="{StaticResource AccentButtonStyle}"/>
+                </Grid>
             </Grid>
         </Border>
     </Grid>
