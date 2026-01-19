@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -17,13 +18,29 @@ public sealed partial class SettingsPage : Page
 {
     public SettingsViewModel ViewModel { get; }
 
+    /// <summary>
+    /// Gets the available hotkey keys for the combo box.
+    /// </summary>
+    public IReadOnlyList<VirtualKey> AvailableHotkeyKeys => SettingsViewModel.AvailableKeys;
+
     public SettingsPage()
     {
         ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
         ViewModel.RepairBridgeRequested += OnRepairBridgeRequested;
         ViewModel.BridgeSetupRequested += OnBridgeSetupRequested;
+        ViewModel.HotkeySettingsChanged += OnHotkeySettingsChanged;
 
         this.InitializeComponent();
+
+        // Unsubscribe from events when page is unloaded
+        this.Unloaded += OnPageUnloaded;
+    }
+
+    private void OnPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.RepairBridgeRequested -= OnRepairBridgeRequested;
+        ViewModel.BridgeSetupRequested -= OnBridgeSetupRequested;
+        ViewModel.HotkeySettingsChanged -= OnHotkeySettingsChanged;
     }
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
@@ -35,6 +52,20 @@ public sealed partial class SettingsPage : Page
     {
         var navigationService = App.Services.GetRequiredService<INavigationService>();
         navigationService.NavigateTo<SetupPage>();
+    }
+
+    private void OnHotkeySettingsChanged(object? sender, HotkeySettings settings)
+    {
+        // Re-register the hotkey with the new settings
+        var hotkeyService = App.Services.GetService<IHotkeyService>();
+        if (hotkeyService != null)
+        {
+            var result = hotkeyService.Register(settings);
+            if (!result.IsSuccess)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SettingsPage] Failed to register hotkey: {result.ErrorMessage}");
+            }
+        }
     }
 
     private StackPanel? _bridgeManagementPanel;
@@ -426,5 +457,37 @@ public sealed partial class SettingsPage : Page
             1 => "1 bridge configured",
             _ => $"{count} bridges configured"
         };
+    }
+
+    /// <summary>
+    /// Helper to get status icon glyph based on error state.
+    /// </summary>
+    public string GetStatusIcon(bool isError)
+    {
+        return isError ? "\uEA39" : "\uE73E"; // Warning vs Checkmark
+    }
+
+    /// <summary>
+    /// Helper to get status color based on error state.
+    /// </summary>
+    public SolidColorBrush GetStatusColor(bool isError)
+    {
+        return new SolidColorBrush(isError ? Colors.Orange : Colors.Green);
+    }
+
+    /// <summary>
+    /// Helper to get display name for a virtual key.
+    /// </summary>
+    public string GetKeyDisplayName(VirtualKey key)
+    {
+        return SettingsViewModel.GetKeyDisplayName(key);
+    }
+
+    /// <summary>
+    /// Static helper to get display name for a virtual key (for XAML binding).
+    /// </summary>
+    public static string GetKeyDisplayNameStatic(VirtualKey key)
+    {
+        return SettingsViewModel.GetKeyDisplayName(key);
     }
 }

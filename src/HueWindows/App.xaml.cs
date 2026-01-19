@@ -6,6 +6,7 @@ using HueWindows.Core.Services;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
+using HueWindows.Services;
 
 namespace HueWindows;
 
@@ -117,7 +118,14 @@ public partial class App : Application
 
         // Create and activate main window
         MainWindow = new MainWindow();
-        MainWindow.Activate();
+
+        // Check if we should start minimized
+        var startMinimized = settingsService.Settings.StartMinimized && settingsService.Settings.MinimizeToTray;
+
+        if (!startMinimized)
+        {
+            MainWindow.Activate();
+        }
 
         // Initialize dispatcher helper for UI thread marshaling
         DispatcherHelper.Initialize(MainWindow.DispatcherQueue);
@@ -142,6 +150,12 @@ public partial class App : Application
         services.AddSingleton<ISceneStorageService, SceneStorageService>();
         services.AddSingleton<IAnimationService, AnimationService>();
         services.AddSingleton<IRoomSceneAssignmentService, RoomSceneAssignmentService>();
+
+        // Register hotkey and system tray services
+        services.AddSingleton<HotkeyService>();
+        services.AddSingleton<IHotkeyService>(sp => sp.GetRequiredService<HotkeyService>());
+        services.AddSingleton<SystemTrayService>();
+        services.AddSingleton<ISystemTrayService>(sp => sp.GetRequiredService<SystemTrayService>());
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();

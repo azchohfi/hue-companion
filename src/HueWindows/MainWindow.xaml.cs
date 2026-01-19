@@ -8,9 +8,11 @@ using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Helpers;
 using HueWindows.Views;
+using HueWindows.Services;
 using WinRT.Interop;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HueWindows;
 
@@ -23,9 +25,14 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ISettingsService _settingsService;
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
+    private readonly HotkeyService _hotkeyService;
+    private readonly SystemTrayService _systemTrayService;
     private readonly List<NavigationViewItem> _roomNavItems = new();
     private readonly List<NavigationViewItem> _zoneNavItems = new();
     private bool _itemsLoaded;
+    private IntPtr _windowHandle;
+    private bool _isExiting;
+    private readonly object _exitLock = new();
 
     private bool _canGoBack;
     public bool CanGoBack
@@ -48,6 +55,27 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    #region Win32 Interop for Window Visibility
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+    private const int SW_MINIMIZE = 6;
+    private const int SW_RESTORE = 9;
+
+    #endregion
+
     public MainWindow()
     {
         this.InitializeComponent();
@@ -59,8 +87,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         SetupTitleBar();
 
         // Set window size and icon
-        var hwnd = WindowNative.GetWindowHandle(this);
-        var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+        _windowHandle = WindowNative.GetWindowHandle(this);
+        var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(_windowHandle);
         var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
         appWindow.Resize(new Windows.Graphics.SizeInt32(AppConstants.Layout.DefaultWindowWidth, AppConstants.Layout.DefaultWindowHeight));
         appWindow.SetIcon("Assets/app.ico");
@@ -70,6 +98,12 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _settingsService = App.Services.GetRequiredService<ISettingsService>();
         _multiBridgeService = App.Services.GetRequiredService<IMultiBridgeService>();
         _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
+        _hotkeyService = App.Services.GetRequiredService<HotkeyService>();
+        _systemTrayService = App.Services.GetRequiredService<SystemTrayService>();
+
+        // Initialize hotkey and system tray services
+        InitializeHotkeyService();
+        InitializeSystemTrayService();
 
         // Subscribe to pinned items changes
         _pinnedItemsService.PinnedItemsChanged += OnPinnedItemsChanged;
@@ -81,8 +115,169 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         // Track navigation changes to update back button
         ContentFrame.Navigated += (s, e) => CanGoBack = _navigationService.CanGoBack;
 
+        // Handle window closing for tray behavior
+        appWindow.Closing += OnWindowClosing;
+
         // Navigate based on whether bridge is configured
         NavigateToInitialPage();
+
+        // Check if we should start minimized
+        if (_settingsService.Settings.StartMinimized && _settingsService.Settings.MinimizeToTray)
+        {
+            HideToTray();
+        }
+    }
+
+    private void InitializeHotkeyService()
+    {
+        _hotkeyService.Initialize(_windowHandle);
+        _hotkeyService.HotkeyPressed += OnHotkeyPressed;
+
+        // Register the configured hotkey
+        var hotkeySettings = _settingsService.Settings.Hotkey;
+        if (hotkeySettings.IsEnabled)
+        {
+            var result = _hotkeyService.Register(hotkeySettings);
+            if (!result.IsSuccess)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to register hotkey: {result.ErrorMessage}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Hotkey registered: {hotkeySettings.DisplayString}");
+            }
+        }
+    }
+
+    private void InitializeSystemTrayService()
+    {
+        _systemTrayService.Initialize(_windowHandle);
+        _systemTrayService.IsVisible = true;
+
+        _systemTrayService.ShowWindowRequested += (s, e) => ShowFromTray();
+        _systemTrayService.HideWindowRequested += (s, e) => HideToTray();
+        _systemTrayService.ToggleWindowRequested += (s, e) => ToggleWindowVisibility();
+        _systemTrayService.ExitRequested += (s, e) => ExitApplication();
+
+        _systemTrayService.SetTooltip("Hue Windows");
+        _systemTrayService.UpdateMenuState(IsWindowVisible(_windowHandle));
+    }
+
+    private void OnHotkeyPressed(object? sender, EventArgs e)
+    {
+        System.Diagnostics.Debug.WriteLine("[MainWindow] Global hotkey pressed");
+        ToggleWindowVisibility();
+    }
+
+    /// <summary>
+    /// Toggles the window visibility between shown and hidden to tray.
+    /// </summary>
+    public void ToggleWindowVisibility()
+    {
+        // Use Win32 to check actual window visibility state
+        var isActuallyVisible = IsWindowVisible(_windowHandle);
+
+        if (isActuallyVisible)
+        {
+            HideToTray();
+        }
+        else
+        {
+            ShowFromTray();
+        }
+    }
+
+    /// <summary>
+    /// Shows the window from the system tray.
+    /// </summary>
+    public void ShowFromTray()
+    {
+        if (IsIconic(_windowHandle))
+        {
+            ShowWindow(_windowHandle, SW_RESTORE);
+        }
+        else
+        {
+            ShowWindow(_windowHandle, SW_SHOW);
+        }
+
+        SetForegroundWindow(_windowHandle);
+        this.Activate();
+
+        _systemTrayService.UpdateMenuState(true);
+        System.Diagnostics.Debug.WriteLine("[MainWindow] Window shown from tray");
+    }
+
+    /// <summary>
+    /// Hides the window to the system tray.
+    /// </summary>
+    public void HideToTray()
+    {
+        ShowWindow(_windowHandle, SW_HIDE);
+        _systemTrayService.UpdateMenuState(false);
+        System.Diagnostics.Debug.WriteLine("[MainWindow] Window hidden to tray");
+    }
+
+    private void OnWindowClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
+    {
+        // Prevent race condition with ExitApplication
+        lock (_exitLock)
+        {
+            if (_isExiting)
+            {
+                // Already exiting via ExitApplication, allow close
+                return;
+            }
+
+            // If minimize to tray is enabled, hide instead of closing
+            if (_settingsService.Settings.MinimizeToTray)
+            {
+                args.Cancel = true;
+                HideToTray();
+            }
+            else
+            {
+                // Clean up services
+                CleanupServices();
+            }
+        }
+    }
+
+    private void ExitApplication()
+    {
+        lock (_exitLock)
+        {
+            if (_isExiting)
+                return;
+
+            _isExiting = true;
+        }
+
+        // Clean up services before exiting
+        CleanupServices();
+
+        Application.Current.Exit();
+    }
+
+    private void CleanupServices()
+    {
+        try
+        {
+            _hotkeyService.Dispose();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing HotkeyService: {ex.Message}");
+        }
+
+        try
+        {
+            _systemTrayService.Dispose();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing SystemTrayService: {ex.Message}");
+        }
     }
 
     private void SetupTitleBar()

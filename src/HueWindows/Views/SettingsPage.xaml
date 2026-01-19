@@ -61,6 +61,182 @@
                 </Grid>
             </StackPanel>
 
+            <!-- Hotkey Section -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="Global Hotkey"
+                           Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                <!-- Enable/Disable Toggle -->
+                <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon Grid.Column="0" Glyph="&#xE765;" FontSize="20" Margin="0,0,16,0"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Enable global hotkey"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock Text="Show/hide window with a keyboard shortcut"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <ToggleSwitch Grid.Column="2"
+                                  IsOn="{x:Bind ViewModel.IsHotkeyEnabled, Mode=TwoWay}"
+                                  OnContent="On"
+                                  OffContent="Off"
+                                  VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Hotkey Configuration -->
+                <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="16"
+                      Visibility="{x:Bind ViewModel.IsHotkeyEnabled, Mode=OneWay}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Modifiers -->
+                    <StackPanel Grid.Row="0" Spacing="8">
+                        <TextBlock Text="Modifier keys"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <CheckBox Content="Win"
+                                      IsChecked="{x:Bind ViewModel.HasWinModifier, Mode=TwoWay}"/>
+                            <CheckBox Content="Ctrl"
+                                      IsChecked="{x:Bind ViewModel.HasCtrlModifier, Mode=TwoWay}"/>
+                            <CheckBox Content="Alt"
+                                      IsChecked="{x:Bind ViewModel.HasAltModifier, Mode=TwoWay}"/>
+                            <CheckBox Content="Shift"
+                                      IsChecked="{x:Bind ViewModel.HasShiftModifier, Mode=TwoWay}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Key Selection -->
+                    <StackPanel Grid.Row="1" Spacing="8" Margin="0,16,0,0">
+                        <TextBlock Text="Key"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <ComboBox x:Name="KeyComboBox"
+                                  MinWidth="120"
+                                  ItemsSource="{x:Bind AvailableHotkeyKeys}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedKey, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:VirtualKey">
+                                    <TextBlock Text="{x:Bind local:SettingsPage.GetKeyDisplayNameStatic((models:VirtualKey))}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Current Hotkey Display and Status -->
+                    <StackPanel Grid.Row="2" Margin="0,16,0,0" Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Current hotkey:"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Border Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    CornerRadius="4"
+                                    Padding="8,4">
+                                <TextBlock Text="{x:Bind ViewModel.HotkeyDisplayString, Mode=OneWay}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           FontFamily="Consolas"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="{x:Bind GetStatusIcon(ViewModel.IsHotkeyError), Mode=OneWay}"
+                                      FontSize="12"
+                                      Foreground="{x:Bind GetStatusColor(ViewModel.IsHotkeyError), Mode=OneWay}"/>
+                            <TextBlock Text="{x:Bind ViewModel.HotkeyStatusMessage, Mode=OneWay}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{x:Bind GetStatusColor(ViewModel.IsHotkeyError), Mode=OneWay}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+
+            <!-- System Tray Section -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="System Tray"
+                           Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Minimize to Tray -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <FontIcon Grid.Column="0" Glyph="&#xE921;" FontSize="20" Margin="0,0,16,0"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Minimize to system tray"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBlock Text="Hide to tray when minimizing instead of taskbar"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+
+                        <ToggleSwitch Grid.Column="2"
+                                      IsOn="{x:Bind ViewModel.MinimizeToTray, Mode=TwoWay}"
+                                      OnContent="On"
+                                      OffContent="Off"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Start Minimized -->
+                    <Grid Grid.Row="1" Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <FontIcon Grid.Column="0" Glyph="&#xE7E8;" FontSize="20" Margin="0,0,16,0"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Start minimized"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBlock Text="Launch app minimized to system tray"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+
+                        <ToggleSwitch Grid.Column="2"
+                                      IsOn="{x:Bind ViewModel.StartMinimized, Mode=TwoWay}"
+                                      OnContent="On"
+                                      OffContent="Off"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </StackPanel>
+
             <!-- Bridge Section -->
             <StackPanel Spacing="12">
                 <TextBlock Text="Hue Bridge"
