@@ -134,6 +134,9 @@ public partial class App : Application
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IBridgeDiscoveryService, BridgeDiscoveryService>();
         services.AddSingleton<IMultiBridgeService, MultiBridgeService>();
+        // Note: IHueBridgeService is no longer registered directly.
+        // ViewModels that need bridge services should use IMultiBridgeService and call
+        // GetDefaultBridgeService() or GetBridgeService(bridgeId) as needed.
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IPinnedItemsService, PinnedItemsService>();
         services.AddSingleton<ISceneStorageService, SceneStorageService>();

@@ -108,16 +108,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             {
                 if (!string.IsNullOrEmpty(cmdArgs.Name))
                 {
-                    // Get first connected bridge service for name resolution
-                    var firstBridge = _multiBridgeService.ConfiguredBridges.FirstOrDefault();
-                    if (firstBridge != null)
-                    {
-                        var bridgeService = _multiBridgeService.GetBridgeService(firstBridge.BridgeId);
-                        if (bridgeService != null)
-                        {
-                            navTarget = await NavigationTarget.ResolveAsync(cmdArgs, bridgeService);
-                        }
-                    }
+                    // Search all bridges for name resolution
+                    navTarget = await NavigationTarget.ResolveAsync(cmdArgs, _multiBridgeService);
                 }
                 else
                 {

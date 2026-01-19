@@ -59,17 +59,6 @@ public partial class SettingsViewModel : ObservableObject
 
         UpdateBridgeCounts();
 
-        // Migrate legacy single bridge to multi-bridge
-        #pragma warning disable CS0618 // Type or member is obsolete
-        if (_settingsService.Settings.ConfiguredBridge != null &&
-            _settingsService.Settings.ConfiguredBridges.Count == 0)
-        {
-            _settingsService.Settings.ConfiguredBridges.Add(_settingsService.Settings.ConfiguredBridge);
-            _settingsService.Settings.ConfiguredBridge = null;
-            _ = _settingsService.SaveAsync();
-        }
-        #pragma warning restore CS0618
-
         // Get app version from assembly
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;

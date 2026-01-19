@@ -100,7 +100,7 @@ public partial class BridgeManagementViewModel : ObservableObject
                     IpAddress = bridge.IpAddress
                 };
 
-                vm.AddRequested += OnDiscoveredBridgeAddRequested;
+                vm.RegisterRequested += OnDiscoveredBridgeRegisterRequested;
                 DiscoveredBridges.Add(vm);
             }
 
@@ -126,13 +126,9 @@ public partial class BridgeManagementViewModel : ObservableObject
         }
     }
 
-    private async void OnDiscoveredBridgeAddRequested(object? sender, string ipAddress)
+    private async void OnDiscoveredBridgeRegisterRequested(object? sender, DiscoveredBridgeViewModel vm)
     {
-        if (sender is not DiscoveredBridgeViewModel vm)
-            return;
-
-        vm.IsRegistering = true;
-        vm.StatusMessage = "Press the link button on the bridge, then click 'Register'...";
+        await RegisterBridgeAsync(vm);
     }
 
     public async Task<Result> RegisterBridgeAsync(DiscoveredBridgeViewModel vm)
@@ -173,18 +169,21 @@ public partial class BridgeManagementViewModel : ObservableObject
             }
             else
             {
-                vm.StatusMessage = result.Error ?? "Registration failed.";
+                vm.StatusMessage = null;
+                vm.ErrorMessage = result.Error ?? "Registration failed. Make sure you pressed the link button.";
                 return Result.Failure(result.Error ?? "Registration failed.");
             }
         }
         catch (Exception ex)
         {
-            vm.StatusMessage = $"Error: {ex.Message}";
+            vm.StatusMessage = null;
+            vm.ErrorMessage = $"Error: {ex.Message}";
             return Result.Failure(ex.Message);
         }
         finally
         {
             vm.IsRegistering = false;
+            vm.IsWaitingForLinkButton = false;
         }
     }
 
@@ -325,13 +324,43 @@ public partial class DiscoveredBridgeViewModel : ObservableObject
     private bool _isRegistering;
 
     [ObservableProperty]
+    private bool _isWaitingForLinkButton;
+
+    [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private string? _errorMessage;
+
     public event EventHandler<string>? AddRequested;
+    public event EventHandler<DiscoveredBridgeViewModel>? RegisterRequested;
 
     [RelayCommand]
     private void Add()
     {
+        // First click shows the "press link button" prompt
+        IsWaitingForLinkButton = true;
+        StatusMessage = "Press the link button on the bridge, then click 'Register'...";
+        ErrorMessage = null;
         AddRequested?.Invoke(this, IpAddress);
+    }
+
+    [RelayCommand]
+    private void Register()
+    {
+        // Second click triggers actual registration
+        IsRegistering = true;
+        StatusMessage = "Registering with bridge...";
+        ErrorMessage = null;
+        RegisterRequested?.Invoke(this, this);
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        IsWaitingForLinkButton = false;
+        IsRegistering = false;
+        StatusMessage = null;
+        ErrorMessage = null;
     }
 }

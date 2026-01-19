@@ -13,8 +13,9 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewModel
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
+    private readonly string? _bridgeId;
 
     // The underlying data (only one will be set)
     private readonly RoomModel? _room;
@@ -133,17 +134,18 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     /// </summary>
     public DashboardCardViewModel(
         RoomModel room,
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IPinnedItemsService pinnedItemsService)
     {
         _room = room;
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
+        _bridgeId = room.BridgeId;
 
         ItemId = room.Id;
         ItemType = room.GroupType == LightGroupType.Zone ? PinnedItemType.Zone : PinnedItemType.Room;
 
-        RoomName = room.Name;
+        RoomName = room.DisplayName;
         IsOn = room.IsOn;
         Brightness = room.Brightness;
         DominantColor = room.DominantColor;
@@ -156,12 +158,14 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     /// </summary>
     public DashboardCardViewModel(
         LightModel light,
-        IHueBridgeService bridgeService,
-        IPinnedItemsService pinnedItemsService)
+        IMultiBridgeService multiBridgeService,
+        IPinnedItemsService pinnedItemsService,
+        string? bridgeId = null)
     {
         _light = light;
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
+        _bridgeId = bridgeId;
 
         ItemId = light.Id;
         ItemType = PinnedItemType.Light;
@@ -174,15 +178,28 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         RoomIcon = "\uE781"; // Light bulb icon
     }
 
+    /// <summary>
+    /// Gets the bridge service for this item's bridge.
+    /// </summary>
+    private IHueBridgeService? GetBridgeService()
+    {
+        return _bridgeId != null
+            ? _multiBridgeService.GetBridgeService(_bridgeId)
+            : _multiBridgeService.GetDefaultBridgeService();
+    }
+
     partial void OnIsOnChanged(bool value)
     {
+        var bridgeService = GetBridgeService();
+        if (bridgeService == null) return;
+
         if (_room != null)
         {
-            _ = _bridgeService.SetRoomOnAsync(ItemId, value);
+            _ = bridgeService.SetRoomOnAsync(ItemId, value);
         }
         else if (_light != null)
         {
-            _ = _bridgeService.SetLightOnAsync(ItemId, value);
+            _ = bridgeService.SetLightOnAsync(ItemId, value);
         }
 
         OnPropertyChanged(nameof(BackgroundColorRgb));
@@ -197,13 +214,17 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         OnPropertyChanged(nameof(BrightnessPercent));
         OnPropertyChanged(nameof(BrightnessDisplayText));
 
-        if (_room != null)
+        var bridgeService = GetBridgeService();
+        if (bridgeService != null)
         {
-            await _bridgeService.SetRoomBrightnessAsync(ItemId, Brightness);
-        }
-        else if (_light != null)
-        {
-            await _bridgeService.SetLightBrightnessAsync(ItemId, Brightness);
+            if (_room != null)
+            {
+                await bridgeService.SetRoomBrightnessAsync(ItemId, Brightness);
+            }
+            else if (_light != null)
+            {
+                await bridgeService.SetLightBrightnessAsync(ItemId, Brightness);
+            }
         }
 
         // Update on state based on brightness
@@ -229,23 +250,27 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
 
         var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
 
-        if (_room != null)
+        var bridgeService = GetBridgeService();
+        if (bridgeService != null)
         {
-            if (_room.GroupType == LightGroupType.Zone)
-                await _bridgeService.SetZoneColorAsync(ItemId, color);
-            else
-                await _bridgeService.SetRoomColorAsync(ItemId, color);
-
-            // Update local light models
-            foreach (var light in _room.Lights.Where(l => l.SupportsColor))
+            if (_room != null)
             {
-                light.CurrentColor = color;
+                if (_room.GroupType == LightGroupType.Zone)
+                    await bridgeService.SetZoneColorAsync(ItemId, color);
+                else
+                    await bridgeService.SetRoomColorAsync(ItemId, color);
+
+                // Update local light models
+                foreach (var light in _room.Lights.Where(l => l.SupportsColor))
+                {
+                    light.CurrentColor = color;
+                }
             }
-        }
-        else if (_light != null)
-        {
-            await _bridgeService.SetLightColorAsync(ItemId, color);
-            _light.CurrentColor = color;
+            else if (_light != null)
+            {
+                await bridgeService.SetLightColorAsync(ItemId, color);
+                _light.CurrentColor = color;
+            }
         }
 
         DominantColor = color;

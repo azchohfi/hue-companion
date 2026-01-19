@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 
@@ -6,11 +7,13 @@ namespace HueWindows.Core.Services;
 /// <summary>
 /// Service for managing and communicating with multiple Hue bridges.
 /// </summary>
-public class MultiBridgeService : IMultiBridgeService
+public class MultiBridgeService : IMultiBridgeService, IDisposable
 {
     private readonly ISettingsService _settingsService;
-    private readonly Dictionary<string, IHueBridgeService> _bridgeServices = new();
-    private readonly Dictionary<string, bool> _connectionStatus = new();
+    private readonly ConcurrentDictionary<string, IHueBridgeService> _bridgeServices = new();
+    private readonly ConcurrentDictionary<string, bool> _connectionStatus = new();
+    private readonly object _connectionLock = new();
+    private bool _disposed;
 
     public IReadOnlyList<BridgeModel> ConfiguredBridges =>
         _settingsService.Settings.ConfiguredBridges;
@@ -60,8 +63,8 @@ public class MultiBridgeService : IMultiBridgeService
         }
 
         // Clean up service
-        _bridgeServices.Remove(bridgeId);
-        _connectionStatus.Remove(bridgeId);
+        _bridgeServices.TryRemove(bridgeId, out _);
+        _connectionStatus.TryRemove(bridgeId, out _);
 
         return Result.Success();
     }
@@ -101,44 +104,30 @@ public class MultiBridgeService : IMultiBridgeService
             return Result.Failure("Bridge not found in configuration.");
         }
 
-        // Create service if it doesn't exist
-        if (!_bridgeServices.ContainsKey(bridgeId))
+        IHueBridgeService service;
+
+        // Create service if it doesn't exist (thread-safe)
+        service = _bridgeServices.GetOrAdd(bridgeId, _ =>
         {
-            var service = new HueBridgeService();
+            var newService = new HueBridgeService();
 
-            // Subscribe to events
-            service.Connected += (s, e) => OnBridgeConnected(bridgeId);
-            service.Disconnected += (s, e) => OnBridgeDisconnected(bridgeId);
-            service.LightStateChanged += (s, e) => OnLightStateChanged(bridgeId, e);
+            // Subscribe to events - these will handle status updates
+            newService.Connected += (s, e) => OnBridgeConnected(bridgeId);
+            newService.Disconnected += (s, e) => OnBridgeDisconnected(bridgeId);
+            newService.LightStateChanged += (s, e) => OnLightStateChanged(bridgeId, e);
 
-            _bridgeServices[bridgeId] = service;
-        }
+            return newService;
+        });
 
-        // Connect
-        var result = await _bridgeServices[bridgeId].ConnectAsync(bridge.IpAddress, bridge.AppKey);
+        // Connect - let the event handlers manage status updates to avoid duplicates
+        var result = await service.ConnectAsync(bridge.IpAddress, bridge.AppKey);
 
         if (result.IsSuccess)
         {
-            _connectionStatus[bridgeId] = true;
             bridge.LastConnected = DateTime.UtcNow;
             await _settingsService.SaveAsync();
-
-            BridgeConnectionChanged?.Invoke(this, new BridgeConnectionEventArgs
-            {
-                BridgeId = bridgeId,
-                IsConnected = true
-            });
         }
-        else
-        {
-            _connectionStatus[bridgeId] = false;
-            BridgeConnectionChanged?.Invoke(this, new BridgeConnectionEventArgs
-            {
-                BridgeId = bridgeId,
-                IsConnected = false,
-                ErrorMessage = result.Error
-            });
-        }
+        // Note: Connection status and events are handled by OnBridgeConnected/OnBridgeDisconnected
 
         return result;
     }
@@ -184,16 +173,13 @@ public class MultiBridgeService : IMultiBridgeService
             }
         }
 
-        // Handle duplicate room names by adding bridge prefix
+        // Handle duplicate room names by marking them to show bridge prefix
         var roomsByName = allRooms.GroupBy(r => r.Name).ToList();
         foreach (var group in roomsByName.Where(g => g.Count() > 1))
         {
             foreach (var room in group)
             {
-                if (!string.IsNullOrEmpty(room.BridgeName))
-                {
-                    room.Name = $"{room.BridgeName} - {room.Name}";
-                }
+                room.ShowBridgePrefix = true;
             }
         }
 
@@ -223,16 +209,13 @@ public class MultiBridgeService : IMultiBridgeService
             }
         }
 
-        // Handle duplicate zone names by adding bridge prefix
+        // Handle duplicate zone names by marking them to show bridge prefix
         var zonesByName = allZones.GroupBy(z => z.Name).ToList();
         foreach (var group in zonesByName.Where(g => g.Count() > 1))
         {
             foreach (var zone in group)
             {
-                if (!string.IsNullOrEmpty(zone.BridgeName))
-                {
-                    zone.Name = $"{zone.BridgeName} - {zone.Name}";
-                }
+                zone.ShowBridgePrefix = true;
             }
         }
 
@@ -308,6 +291,24 @@ public class MultiBridgeService : IMultiBridgeService
         return service;
     }
 
+    /// <summary>
+    /// Gets the default bridge service (first connected bridge) for backward compatibility.
+    /// </summary>
+    public IHueBridgeService? GetDefaultBridgeService()
+    {
+        // Return first connected bridge service
+        foreach (var kvp in _connectionStatus)
+        {
+            if (kvp.Value && _bridgeServices.TryGetValue(kvp.Key, out var service))
+            {
+                return service;
+            }
+        }
+
+        // Fallback to first bridge service regardless of connection status
+        return _bridgeServices.Values.FirstOrDefault();
+    }
+
     private void OnBridgeConnected(string bridgeId)
     {
         _connectionStatus[bridgeId] = true;
@@ -338,5 +339,25 @@ public class MultiBridgeService : IMultiBridgeService
             Brightness = e.Brightness,
             Color = e.Color
         });
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        DisconnectAll();
+
+        // Dispose any disposable bridge services
+        foreach (var service in _bridgeServices.Values)
+        {
+            if (service is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        _bridgeServices.Clear();
+        _connectionStatus.Clear();
     }
 }

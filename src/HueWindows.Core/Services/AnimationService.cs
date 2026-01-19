@@ -11,15 +11,15 @@ namespace HueWindows.Core.Services;
 public class AnimationService : IAnimationService
 {
     private readonly ISceneStorageService _storageService;
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly ConcurrentDictionary<Guid, RunningAnimation> _runningAnimations = new();
 
     public AnimationService(
         ISceneStorageService storageService,
-        IHueBridgeService bridgeService)
+        IMultiBridgeService multiBridgeService)
     {
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
-        _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+        _multiBridgeService = multiBridgeService ?? throw new ArgumentNullException(nameof(multiBridgeService));
     }
 
     /// <inheritdoc/>
@@ -94,12 +94,22 @@ public class AnimationService : IAnimationService
     }
 
     /// <inheritdoc/>
-    public async Task<Result> StartSceneAsync(string sceneId, Guid roomId)
+    public async Task<Result> StartSceneAsync(string sceneId, Guid roomId, string? bridgeId = null)
     {
         try
         {
             // Stop any animation currently running in this room
             await StopSceneInRoomAsync(roomId);
+
+            // Get bridge service
+            var bridgeService = bridgeId != null
+                ? _multiBridgeService.GetBridgeService(bridgeId)
+                : _multiBridgeService.GetDefaultBridgeService();
+
+            if (bridgeService == null)
+            {
+                return Result.Failure("No bridge connected. Please configure a bridge in Settings.");
+            }
 
             // Load the scene
             var sceneResult = await GetSceneAsync(sceneId);
@@ -111,7 +121,7 @@ public class AnimationService : IAnimationService
             var scene = sceneResult.Value!;
 
             // Get lights for the target room/zone
-            var lights = await GetLightsForRoomAsync(roomId);
+            var lights = await GetLightsForRoomAsync(roomId, bridgeService);
 
             if (lights.Count == 0)
             {
@@ -119,7 +129,7 @@ public class AnimationService : IAnimationService
             }
 
             // Create and start the animation engine
-            var engine = new AnimationEngine(_bridgeService, scene, lights);
+            var engine = new AnimationEngine(bridgeService, scene, lights);
             engine.Start();
 
             var runningAnimation = new RunningAnimation
@@ -206,14 +216,14 @@ public class AnimationService : IAnimationService
             .ToList();
     }
 
-    private async Task<List<Guid>> GetLightsForRoomAsync(Guid roomId)
+    private async Task<List<Guid>> GetLightsForRoomAsync(Guid roomId, IHueBridgeService bridgeService)
     {
         var lights = new List<Guid>();
 
         try
         {
             // Try as room first
-            var roomResult = await _bridgeService.GetRoomAsync(roomId);
+            var roomResult = await bridgeService.GetRoomAsync(roomId);
             if (roomResult.IsSuccess && roomResult.Value != null)
             {
                 lights.AddRange(roomResult.Value.Lights.Select(l => l.Id));
@@ -221,7 +231,7 @@ public class AnimationService : IAnimationService
             }
 
             // Try as zone
-            var zoneResult = await _bridgeService.GetZoneAsync(roomId);
+            var zoneResult = await bridgeService.GetZoneAsync(roomId);
             if (zoneResult.IsSuccess && zoneResult.Value != null)
             {
                 lights.AddRange(zoneResult.Value.Lights.Select(l => l.Id));

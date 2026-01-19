@@ -48,6 +48,24 @@ public class SettingsService : ISettingsService
             // If settings are corrupted, start fresh
             Settings = new AppSettings();
         }
+
+        // Migrate legacy single bridge to multi-bridge list (runs once at startup)
+        await MigrateLegacyBridgeAsync();
+    }
+
+    /// <summary>
+    /// Migrates legacy single bridge configuration to the multi-bridge list.
+    /// </summary>
+    private async Task MigrateLegacyBridgeAsync()
+    {
+        #pragma warning disable CS0618 // Type or member is obsolete
+        if (Settings.ConfiguredBridge != null && Settings.ConfiguredBridges.Count == 0)
+        {
+            Settings.ConfiguredBridges.Add(Settings.ConfiguredBridge);
+            Settings.ConfiguredBridge = null;
+            await SaveAsync();
+        }
+        #pragma warning restore CS0618
     }
 
     /// <inheritdoc/>

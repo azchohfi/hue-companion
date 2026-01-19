@@ -86,6 +86,11 @@ public interface IMultiBridgeService
     /// Gets the bridge service for a specific bridge ID.
     /// </summary>
     IHueBridgeService? GetBridgeService(string bridgeId);
+
+    /// <summary>
+    /// Gets the default bridge service (first connected bridge) for backward compatibility.
+    /// </summary>
+    IHueBridgeService? GetDefaultBridgeService();
 }
 
 /// <summary>

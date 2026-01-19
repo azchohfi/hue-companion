@@ -70,6 +70,8 @@ public partial class DashboardViewModel : ObservableObject
 
         RoomCards.Clear();
 
+        var disconnectedBridges = new HashSet<string>();
+
         if (roomsResult.IsSuccess)
         {
             foreach (var room in roomsResult.Value!)
@@ -84,6 +86,11 @@ public partial class DashboardViewModel : ObservableObject
                     var cardVm = new RoomCardViewModel(room, bridgeService);
                     cardVm.RoomTapped += OnRoomTapped;
                     RoomCards.Add(cardVm);
+                }
+                else if (room.BridgeId != null)
+                {
+                    // Track disconnected bridge
+                    disconnectedBridges.Add(room.BridgeName ?? room.BridgeId);
                 }
             }
         }
@@ -114,6 +121,11 @@ public partial class DashboardViewModel : ObservableObject
                     cardVm.RoomTapped += OnRoomTapped;
                     ZoneCards.Add(cardVm);
                 }
+                else if (zone.BridgeId != null)
+                {
+                    // Track disconnected bridge
+                    disconnectedBridges.Add(zone.BridgeName ?? zone.BridgeId);
+                }
             }
         }
         else if (ErrorMessage == null)
@@ -125,6 +137,13 @@ public partial class DashboardViewModel : ObservableObject
         HasZones = ZoneCards.Count > 0;
 
         ShowEmptyState = RoomCards.Count == 0 && ZoneCards.Count == 0;
+
+        // Show warning if some bridges are disconnected
+        if (disconnectedBridges.Count > 0 && ErrorMessage == null)
+        {
+            var bridgeList = string.Join(", ", disconnectedBridges);
+            ErrorMessage = $"Some rooms not shown - bridge(s) disconnected: {bridgeList}";
+        }
 
         IsLoading = false;
     }
@@ -284,7 +303,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         _room = room;
         _bridgeService = bridgeService;
 
-        _roomName = room.Name;
+        _roomName = room.DisplayName;
         _isOn = room.IsOn;
         _brightness = room.Brightness;
         _dominantColor = room.DominantColor;

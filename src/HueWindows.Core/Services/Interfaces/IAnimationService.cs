@@ -34,7 +34,8 @@ public interface IAnimationService
     /// </summary>
     /// <param name="sceneId">The ID of the scene to play.</param>
     /// <param name="roomId">The target room or zone ID.</param>
-    Task<Result> StartSceneAsync(string sceneId, Guid roomId);
+    /// <param name="bridgeId">Optional bridge ID for multi-bridge support. If null, uses default bridge.</param>
+    Task<Result> StartSceneAsync(string sceneId, Guid roomId, string? bridgeId = null);
 
     /// <summary>
     /// Stops the animation running in a specific room/zone.

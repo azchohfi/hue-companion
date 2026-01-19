@@ -14,9 +14,10 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class SceneBuilderViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _storageService;
+    private IHueBridgeService? _bridgeService; // Set based on selected room
 
     private string? _loadedSceneId;
     private bool _isLoadingScene; // Prevents default track creation during scene load
@@ -126,11 +127,11 @@ public partial class SceneBuilderViewModel : ObservableObject
     }
 
     public SceneBuilderViewModel(
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IAnimationService animationService,
         ISceneStorageService storageService)
     {
-        _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+        _multiBridgeService = multiBridgeService ?? throw new ArgumentNullException(nameof(multiBridgeService));
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
     }
@@ -145,13 +146,14 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     private async Task LoadRoomsAsync()
     {
-        var roomsResult = await _bridgeService.GetRoomsAsync();
+        // Load rooms and zones from all bridges
+        var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
         if (roomsResult.IsSuccess && roomsResult.Value != null)
         {
             Rooms = new ObservableCollection<RoomModel>(roomsResult.Value);
         }
 
-        var zonesResult = await _bridgeService.GetZonesAsync();
+        var zonesResult = await _multiBridgeService.GetAllZonesAsync();
         if (zonesResult.IsSuccess && zonesResult.Value != null)
         {
             foreach (var zone in zonesResult.Value)
@@ -161,8 +163,26 @@ public partial class SceneBuilderViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Updates the bridge service based on the selected room's bridge ID.
+    /// </summary>
+    private void UpdateBridgeService()
+    {
+        if (SelectedRoom?.BridgeId != null)
+        {
+            _bridgeService = _multiBridgeService.GetBridgeService(SelectedRoom.BridgeId);
+        }
+        else
+        {
+            _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+        }
+    }
+
     partial void OnSelectedRoomChanged(RoomModel? value)
     {
+        // Update bridge service for the selected room
+        UpdateBridgeService();
+
         // Don't create default tracks when loading a scene - LoadSceneFromModelAsync handles it
         if (_isLoadingScene)
             return;
@@ -448,7 +468,7 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// </summary>
     public async Task UpdateLightsForPlayheadAsync()
     {
-        if (SelectedRoom == null || Tracks.Count == 0)
+        if (SelectedRoom == null || Tracks.Count == 0 || _bridgeService == null)
             return;
 
         // Throttle updates to avoid overwhelming the bridge
@@ -476,6 +496,8 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// </summary>
     public async Task UpdateLightForKeyframeAsync(KeyframeViewModel keyframe)
     {
+        if (_bridgeService == null) return;
+
         // Find which track this keyframe belongs to
         foreach (var track in Tracks)
         {
@@ -498,7 +520,7 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// <param name="trackIndex">The index of the light track to affect.</param>
     public async Task FireEventAsync(EventTrackViewModel eventTrack, int trackIndex)
     {
-        if (SelectedRoom == null || Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count)
+        if (SelectedRoom == null || Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count || _bridgeService == null)
             return;
 
         var track = Tracks[trackIndex];

@@ -11,7 +11,7 @@ namespace HueWindows.Core.ViewModels;
 public partial class SceneLibraryViewModel : ObservableObject
 {
     private readonly IAnimationService _animationService;
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -45,10 +45,10 @@ public partial class SceneLibraryViewModel : ObservableObject
 
     public SceneLibraryViewModel(
         IAnimationService animationService,
-        IHueBridgeService bridgeService)
+        IMultiBridgeService multiBridgeService)
     {
         _animationService = animationService ?? throw new ArgumentNullException(nameof(animationService));
-        _bridgeService = bridgeService ?? throw new ArgumentNullException(nameof(bridgeService));
+        _multiBridgeService = multiBridgeService ?? throw new ArgumentNullException(nameof(multiBridgeService));
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -66,8 +66,8 @@ public partial class SceneLibraryViewModel : ObservableObject
 
         try
         {
-            // Load rooms
-            var roomsResult = await _bridgeService.GetRoomsAsync();
+            // Load rooms from all bridges
+            var roomsResult = await _multiBridgeService.GetAllRoomsAsync();
             if (roomsResult.IsSuccess && roomsResult.Value != null)
             {
                 Rooms = roomsResult.Value.ToList();

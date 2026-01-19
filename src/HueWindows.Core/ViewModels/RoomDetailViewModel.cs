@@ -12,12 +12,14 @@ namespace HueWindows.Core.ViewModels;
 /// </summary>
 public partial class RoomDetailViewModel : ObservableObject
 {
-    private readonly IHueBridgeService _bridgeService;
+    private readonly IMultiBridgeService _multiBridgeService;
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _sceneStorageService;
     private readonly IRoomSceneAssignmentService _assignmentService;
+    private IHueBridgeService? _bridgeService; // Set when loading room based on BridgeId
     private Guid _groupId;
     private LightGroupType _groupType = LightGroupType.Room;
+    private string? _bridgeId; // Track which bridge this room belongs to
 
     [ObservableProperty]
     private string _roomName = string.Empty;
@@ -83,17 +85,34 @@ public partial class RoomDetailViewModel : ObservableObject
         : new();
 
     public RoomDetailViewModel(
-        IHueBridgeService bridgeService,
+        IMultiBridgeService multiBridgeService,
         IAnimationService animationService,
         ISceneStorageService sceneStorageService,
         IRoomSceneAssignmentService assignmentService)
     {
-        _bridgeService = bridgeService;
+        _multiBridgeService = multiBridgeService;
         _animationService = animationService;
         _sceneStorageService = sceneStorageService;
         _assignmentService = assignmentService;
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
+    }
+
+    /// <summary>
+    /// Sets the bridge ID for this room, allowing lookup of the correct bridge service.
+    /// Call this before LoadRoomAsync when navigating with bridge context.
+    /// </summary>
+    public void SetBridgeId(string? bridgeId)
+    {
+        _bridgeId = bridgeId;
+        if (bridgeId != null)
+        {
+            _bridgeService = _multiBridgeService.GetBridgeService(bridgeId);
+        }
+        else
+        {
+            _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+        }
     }
 
     private void OnRoomAnimationChanged(object? sender, RoomAnimationChangedEventArgs e)
@@ -116,6 +135,19 @@ public partial class RoomDetailViewModel : ObservableObject
         IsLoading = true;
         ErrorMessage = null;
 
+        // Ensure we have a bridge service (fallback to default if not set)
+        if (_bridgeService == null)
+        {
+            _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+        }
+
+        if (_bridgeService == null)
+        {
+            ErrorMessage = "No bridge connected. Please configure a bridge in Settings.";
+            IsLoading = false;
+            return;
+        }
+
         // Load room or zone based on type
         var groupResult = groupType == LightGroupType.Room
             ? await _bridgeService.GetRoomAsync(groupId)
@@ -129,7 +161,7 @@ public partial class RoomDetailViewModel : ObservableObject
         }
 
         var group = groupResult.Value!;
-        RoomName = group.Name;
+        RoomName = group.DisplayName;
         IsOn = group.IsOn;
         Brightness = group.Brightness;
 
@@ -188,6 +220,8 @@ public partial class RoomDetailViewModel : ObservableObject
     /// </summary>
     private async Task LoadScenesAsync()
     {
+        if (_bridgeService == null) return;
+
         var scenesResult = _groupType == LightGroupType.Room
             ? await _bridgeService.GetScenesForRoomAsync(_groupId)
             : await _bridgeService.GetScenesForZoneAsync(_groupId);
@@ -255,6 +289,8 @@ public partial class RoomDetailViewModel : ObservableObject
 
         OnPropertyChanged(nameof(LightColors));
 
+        if (_bridgeService == null) return;
+
         if (_groupType == LightGroupType.Room)
             _ = _bridgeService.SetRoomOnAsync(_groupId, value);
         else
@@ -273,6 +309,8 @@ public partial class RoomDetailViewModel : ObservableObject
         Brightness = Math.Clamp(brightness, 0.0, 1.0);
         OnPropertyChanged(nameof(BrightnessPercent));
 
+        if (_bridgeService == null) return;
+
         if (_groupType == LightGroupType.Room)
             await _bridgeService.SetRoomBrightnessAsync(_groupId, Brightness);
         else
@@ -284,10 +322,13 @@ public partial class RoomDetailViewModel : ObservableObject
     {
         var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
 
-        if (_groupType == LightGroupType.Room)
-            await _bridgeService.SetRoomColorAsync(_groupId, color);
-        else
-            await _bridgeService.SetZoneColorAsync(_groupId, color);
+        if (_bridgeService != null)
+        {
+            if (_groupType == LightGroupType.Room)
+                await _bridgeService.SetRoomColorAsync(_groupId, color);
+            else
+                await _bridgeService.SetZoneColorAsync(_groupId, color);
+        }
 
         // Update light viewmodels to reflect new color
         foreach (var light in Lights.Where(l => l.SupportsColor))
@@ -301,7 +342,7 @@ public partial class RoomDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsSceneAsync(string sceneName)
     {
-        if (string.IsNullOrWhiteSpace(sceneName))
+        if (string.IsNullOrWhiteSpace(sceneName) || _bridgeService == null)
             return;
 
         var isZone = _groupType == LightGroupType.Zone;
@@ -321,6 +362,8 @@ public partial class RoomDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task DeleteSceneAsync(SceneItemViewModel scene)
     {
+        if (_bridgeService == null) return;
+
         var result = await _bridgeService.DeleteSceneAsync(scene.SceneId);
         if (result.IsSuccess)
         {
@@ -355,6 +398,8 @@ public partial class RoomDetailViewModel : ObservableObject
     /// </summary>
     private async Task RefreshLightColorsAsync()
     {
+        if (_bridgeService == null) return;
+
         var groupResult = _groupType == LightGroupType.Room
             ? await _bridgeService.GetRoomAsync(_groupId)
             : await _bridgeService.GetZoneAsync(_groupId);
@@ -404,6 +449,7 @@ public partial class RoomDetailViewModel : ObservableObject
     /// </summary>
     public async Task ApplyEffectToLightAsync(Guid lightId, string effect, double speed, double brightness)
     {
+        if (_bridgeService == null) return;
         await _bridgeService.ApplyEffectAsync(lightId, effect, speed, brightness);
     }
 
