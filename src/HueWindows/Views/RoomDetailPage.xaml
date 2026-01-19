@@ -169,29 +169,40 @@
         </Grid>
 
         <!-- Content Area -->
-        <ScrollViewer Grid.Row="1">
+        <!-- Note: Using nested ScrollViewers to isolate ItemsRepeater layout calculations and prevent layout cycles -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Visible"
+                      HorizontalScrollBarVisibility="Disabled">
             <StackPanel Padding="36,0,36,36" Spacing="28">
 
                 <!-- Lights Section -->
                 <StackPanel>
                     <TextBlock Text="Lights"
                                Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                    <ItemsRepeater x:Name="LightsRepeater" ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
-                                    ElementPrepared="LightsRepeater_ElementPrepared">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="180"
-                                               MinItemHeight="120"
-                                               MinRowSpacing="8"
-                                               MinColumnSpacing="8"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
+                    <GridView x:Name="LightsGrid"
+                              ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              ContainerContentChanging="LightsGrid_ContainerContentChanging"
+                              SizeChanged="LightsGrid_SizeChanged">
+                        <GridView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </GridView.ItemsPanel>
+                        <GridView.ItemContainerStyle>
+                            <Style TargetType="GridViewItem">
+                                <Setter Property="Margin" Value="8"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </GridView.ItemContainerStyle>
+                        <GridView.ItemTemplate>
                             <DataTemplate x:DataType="vm:LightItemViewModel">
                                 <controls:LightCard/>
                             </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                        </GridView.ItemTemplate>
+                    </GridView>
                 </StackPanel>
 
                 <!-- Scenes Section -->
@@ -199,18 +210,29 @@
                     <TextBlock Text="Scenes"
                                Style="{StaticResource SectionHeaderTextStyle}"/>
 
-                    <ItemsRepeater x:Name="ScenesRepeater" ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
-                                   ElementPrepared="ScenesRepeater_ElementPrepared">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="110"
-                                               MinItemHeight="88"
-                                               MinRowSpacing="8"
-                                               MinColumnSpacing="8"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
+                    <GridView x:Name="ScenesGrid"
+                              ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              SizeChanged="ScenesGrid_SizeChanged">
+                        <GridView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </GridView.ItemsPanel>
+                        <GridView.ItemContainerStyle>
+                            <Style TargetType="GridViewItem">
+                                <Setter Property="Margin" Value="8"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </GridView.ItemContainerStyle>
+                        <GridView.ItemTemplate>
                             <DataTemplate x:DataType="vm:SceneItemViewModel">
-                                <Grid RenderTransformOrigin="0.5,0.5">
+                                <Grid HorizontalAlignment="Stretch"
+                                      RenderTransformOrigin="0.5,0.5"
+                                      Loaded="SceneContainer_Loaded"
+                                      Unloaded="SceneContainer_Unloaded">
                                     <Grid.RenderTransform>
                                         <ScaleTransform/>
                                     </Grid.RenderTransform>
@@ -237,7 +259,6 @@
                                                        MaxWidth="90"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"/>
-                                            <!-- Color swatches -->
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         Spacing="4"
@@ -257,8 +278,6 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </Button>
-                                    <!-- Active indicator border - uses scene's primary color -->
-                                    <!-- Note: Using Opacity instead of Visibility to avoid layout cycles in ItemsRepeater -->
                                     <Border BorderThickness="2"
                                             BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
                                             CornerRadius="8"
@@ -266,8 +285,8 @@
                                             Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
                                 </Grid>
                             </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                        </GridView.ItemTemplate>
+                    </GridView>
                 </StackPanel>
 
                 <!-- Pinned Animations Section -->
@@ -275,38 +294,51 @@
                     <TextBlock Text="Pinned Animations"
                                Style="{StaticResource SectionHeaderTextStyle}"/>
 
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.PinnedAnimations, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="110" MinItemHeight="88"
-                                               MinRowSpacing="8" MinColumnSpacing="8"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
+                    <GridView x:Name="PinnedAnimationsGrid"
+                              ItemsSource="{x:Bind ViewModel.PinnedAnimations, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              SizeChanged="PinnedAnimationsGrid_SizeChanged">
+                        <GridView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </GridView.ItemsPanel>
+                        <GridView.ItemContainerStyle>
+                            <Style TargetType="GridViewItem">
+                                <Setter Property="Margin" Value="8"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </GridView.ItemContainerStyle>
+                        <GridView.ItemTemplate>
                             <DataTemplate x:DataType="models:AnimatedSceneModel">
-                                <Button Style="{StaticResource SceneCardButtonStyle}"
-                                        Click="PinnedAnimation_Click"
-                                        Tag="{x:Bind}">
-                                    <Button.ContextFlyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem Text="Unpin" Click="UnpinAnimation_Click" Tag="{x:Bind}">
-                                                <MenuFlyoutItem.Icon>
-                                                    <FontIcon Glyph="&#xE77A;"/>
-                                                </MenuFlyoutItem.Icon>
-                                            </MenuFlyoutItem>
-                                        </MenuFlyout>
-                                    </Button.ContextFlyout>
-                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                        <FontIcon Glyph="&#xE768;" FontSize="16"
-                                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="90" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
+                                <Grid HorizontalAlignment="Stretch">
+                                    <Button Style="{StaticResource SceneCardButtonStyle}"
+                                            Click="PinnedAnimation_Click"
+                                            Tag="{x:Bind}">
+                                        <Button.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Unpin" Click="UnpinAnimation_Click" Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE77A;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Button.ContextFlyout>
+                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                            <FontIcon Glyph="&#xE768;" FontSize="16"
+                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                            <TextBlock Text="{x:Bind Name}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="90" TextAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                             </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                        </GridView.ItemTemplate>
+                    </GridView>
                 </StackPanel>
 
                 <!-- Animations Section -->
@@ -345,65 +377,87 @@
                     </Border>
 
                     <!-- Quick-pick Grid -->
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.AnimatedScenes, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="110"
-                                               MinItemHeight="88"
-                                               MinRowSpacing="8"
-                                               MinColumnSpacing="8"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
+                    <GridView x:Name="AnimationsGrid"
+                              ItemsSource="{x:Bind ViewModel.AnimatedScenes, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              SizeChanged="AnimationsGrid_SizeChanged">
+                        <GridView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </GridView.ItemsPanel>
+                        <GridView.ItemContainerStyle>
+                            <Style TargetType="GridViewItem">
+                                <Setter Property="Margin" Value="8"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </GridView.ItemContainerStyle>
+                        <GridView.ItemTemplate>
                             <DataTemplate x:DataType="models:AnimatedSceneModel">
-                                <Button Style="{StaticResource SceneCardButtonStyle}"
-                                        Click="AnimatedScene_Click"
-                                        Tag="{x:Bind}">
-                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                        <FontIcon Glyph="&#xE768;" FontSize="16"/>
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="90"
-                                                   TextAlignment="Center"
-                                                   HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
+                                <Grid HorizontalAlignment="Stretch">
+                                    <Button Style="{StaticResource SceneCardButtonStyle}"
+                                            Click="AnimatedScene_Click"
+                                            Tag="{x:Bind}">
+                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                            <FontIcon Glyph="&#xE768;" FontSize="16"/>
+                                            <TextBlock Text="{x:Bind Name}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="90"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                             </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                        </GridView.ItemTemplate>
+                    </GridView>
                 </StackPanel>
 
                 <!-- Hue Effects Section -->
                 <StackPanel>
                     <TextBlock Text="Hue Effects"
                                Style="{StaticResource SectionHeaderTextStyle}"/>
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.NativeEffects}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="110"
-                                               MinItemHeight="88"
-                                               MinRowSpacing="8"
-                                               MinColumnSpacing="8"
-                                               ItemsStretch="Fill"/>
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
+                    <GridView x:Name="NativeEffectsGrid"
+                              ItemsSource="{x:Bind ViewModel.NativeEffects}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              SizeChanged="NativeEffectsGrid_SizeChanged">
+                        <GridView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </GridView.ItemsPanel>
+                        <GridView.ItemContainerStyle>
+                            <Style TargetType="GridViewItem">
+                                <Setter Property="Margin" Value="8"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </GridView.ItemContainerStyle>
+                        <GridView.ItemTemplate>
                             <DataTemplate x:DataType="models:NativeEffectInfo">
-                                <Button Style="{StaticResource EffectCardButtonStyle}"
-                                        Click="NativeEffect_Click"
-                                        Tag="{x:Bind}">
-                                    <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                        <FontIcon Glyph="&#xE7B1;" FontSize="16"
-                                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="90"
-                                                   TextAlignment="Center"
-                                                   HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
+                                <Grid HorizontalAlignment="Stretch">
+                                    <Button Style="{StaticResource EffectCardButtonStyle}"
+                                            Click="NativeEffect_Click"
+                                            Tag="{x:Bind}">
+                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                            <FontIcon Glyph="&#xE7B1;" FontSize="16"
+                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                            <TextBlock Text="{x:Bind Name}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="90"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                             </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
+                        </GridView.ItemTemplate>
+                    </GridView>
                 </StackPanel>
 
             </StackPanel>

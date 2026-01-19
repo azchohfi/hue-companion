@@ -43,6 +43,7 @@ public sealed partial class RoomDetailPage : Page
     private readonly Dictionary<Guid, UIElement> _sceneElements = new(); // Track scene UI elements for animation
     private int _lightEntranceIndex; // Track stagger index for light cards
     private bool _useInstantColorUpdate; // Use instant update (no animation) when initial state was set from navigation params
+    private const double ItemMargin = 16.0; // Total horizontal margin (8px each side) used in adaptive grid sizing
 
     public RoomDetailPage()
     {
@@ -609,6 +610,31 @@ public sealed partial class RoomDetailPage : Page
         }
     }
 
+    private void LightsGrid_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+    {
+        if (args.ItemContainer?.ContentTemplateRoot is Controls.LightCard lightCard)
+        {
+            lightCard.AddToDashboardRequested -= OnLightAddToDashboardRequested;
+            lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
+        }
+
+        if (!args.InRecycleQueue && args.Phase == 0)
+        {
+            var element = args.ItemContainer;
+            if (element == null) return;
+
+            var index = _lightEntranceIndex++;
+            element.Opacity = 0;
+
+            var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
+            DispatcherQueue.TryEnqueue(async () =>
+            {
+                await Task.Delay(delay);
+                AnimationHelper.AnimateOpacity(element, 1.0);
+            });
+        }
+    }
+
     /// <summary>
     /// Handles click on Unpin in animation context menu.
     /// </summary>
@@ -700,25 +726,6 @@ public sealed partial class RoomDetailPage : Page
         await _pinnedItemsService.PinAsync(lightId, PinnedItemType.Light);
     }
 
-    private void LightsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
-    {
-        if (args.Element is Controls.LightCard lightCard)
-        {
-            lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
-        }
-
-        // Staggered entrance animation
-        var element = args.Element;
-        var index = _lightEntranceIndex++;
-        element.Opacity = 0;
-
-        var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
-        DispatcherQueue.TryEnqueue(async () =>
-        {
-            await Task.Delay(delay);
-            AnimationHelper.AnimateOpacity(element, 1.0);
-        });
-    }
 
     private void ColorPickerFlyout_Opening(object sender, object e)
     {
@@ -741,14 +748,7 @@ public sealed partial class RoomDetailPage : Page
 
     private void ScenesRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
-        if (args.Element is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
-        {
-            // Track element for animation
-            _sceneElements[sceneVm.SceneId] = element;
-
-            // Subscribe to activation for pulse animation
-            sceneVm.SceneActivated += OnSceneActivatedForPulse;
-        }
+        // Legacy handler retained for reference; not used now that Scenes uses GridView.
     }
 
     private void OnSceneActivatedForPulse(object? sender, Guid sceneId)
@@ -770,6 +770,28 @@ public sealed partial class RoomDetailPage : Page
                     AnimateScenePulse(element);
                 }
             });
+        }
+    }
+
+    private void SceneContainer_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
+        {
+            _sceneElements[sceneVm.SceneId] = element;
+            sceneVm.SceneActivated -= OnSceneActivatedForPulse;
+            sceneVm.SceneActivated += OnSceneActivatedForPulse;
+        }
+    }
+
+    private void SceneContainer_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
+        {
+            if (_sceneElements.TryGetValue(sceneVm.SceneId, out var tracked) && ReferenceEquals(tracked, element))
+            {
+                _sceneElements.Remove(sceneVm.SceneId);
+            }
+            sceneVm.SceneActivated -= OnSceneActivatedForPulse;
         }
     }
 
@@ -893,6 +915,49 @@ public sealed partial class RoomDetailPage : Page
             {
                 await ApplyNativeEffectAsync(args);
             }
+        }
+    }
+
+    private void LightsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWrapGridItemSize(LightsGrid, 220, 150);
+    }
+
+    private void ScenesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWrapGridItemSize(ScenesGrid, 180);
+    }
+
+    private void PinnedAnimationsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWrapGridItemSize(PinnedAnimationsGrid, 160);
+    }
+
+    private void AnimationsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWrapGridItemSize(AnimationsGrid, 160);
+    }
+
+    private void NativeEffectsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWrapGridItemSize(NativeEffectsGrid, 160);
+    }
+
+    private void UpdateWrapGridItemSize(GridView grid, double targetWidth, double? fixedHeight = null)
+    {
+        if (grid.ItemsPanelRoot is not ItemsWrapGrid wrapGrid)
+        {
+            return;
+        }
+
+        var available = Math.Max(0, grid.ActualWidth - ItemMargin);
+        var columns = Math.Max(1, Math.Floor((available + ItemMargin) / (targetWidth + ItemMargin)));
+        var itemWidth = Math.Max(targetWidth, (available - (columns * ItemMargin)) / columns);
+
+        wrapGrid.ItemWidth = itemWidth;
+        if (fixedHeight.HasValue)
+        {
+            wrapGrid.ItemHeight = fixedHeight.Value;
         }
     }
 }
