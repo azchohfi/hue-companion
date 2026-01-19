@@ -78,8 +78,8 @@ settings.json
 .claude/
 tmpclaude-*
 
-# Screenshot validation
-screenshots/
+# Screenshot validation (root level only, not website/public/screenshots)
+/screenshots/
 tools/screenshot-mcp/node_modules/
 
 # UI test outputs (generated)
