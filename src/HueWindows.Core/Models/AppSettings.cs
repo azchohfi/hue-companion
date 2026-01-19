@@ -26,6 +26,21 @@ public class AppSettings
     /// Items pinned to the custom dashboard, in display order.
     /// </summary>
     public List<PinnedItem> PinnedDashboardItems { get; set; } = new();
+
+    /// <summary>
+    /// Global hotkey settings for show/hide toggle.
+    /// </summary>
+    public HotkeySettings Hotkey { get; set; } = new();
+
+    /// <summary>
+    /// Whether to minimize to system tray instead of taskbar.
+    /// </summary>
+    public bool MinimizeToTray { get; set; } = true;
+
+    /// <summary>
+    /// Whether to start minimized to system tray.
+    /// </summary>
+    public bool StartMinimized { get; set; } = false;
 }
 
 /// <summary>
