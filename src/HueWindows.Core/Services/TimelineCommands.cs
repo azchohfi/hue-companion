@@ -1,7 +1,7 @@
+using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using System.Collections.ObjectModel;
-using Microsoft.UI;
 
 namespace HueWindows.Core.Services;
 
@@ -133,8 +133,8 @@ public class MoveKeyframeCommand : ITimelineCommand
 public class ModifyKeyframeCommand : ITimelineCommand
 {
     private readonly KeyframeViewModel _keyframe;
-    private readonly Color? _oldColor;
-    private readonly Color? _newColor;
+    private readonly HueColor? _oldColor;
+    private readonly HueColor? _newColor;
     private readonly double? _oldBrightness;
     private readonly double? _newBrightness;
     private readonly Models.TransitionStyle? _oldTransition;
@@ -144,7 +144,7 @@ public class ModifyKeyframeCommand : ITimelineCommand
 
     public ModifyKeyframeCommand(
         KeyframeViewModel keyframe,
-        Color? newColor = null,
+        HueColor? newColor = null,
         double? newBrightness = null,
         Models.TransitionStyle? newTransition = null)
     {
