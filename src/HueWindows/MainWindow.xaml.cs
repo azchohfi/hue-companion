@@ -86,6 +86,11 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         // Set up custom title bar
         SetupTitleBar();
 
+        // Set dynamic title with version
+        var appTitle = GetAppTitle();
+        this.Title = appTitle;
+        TitleTextBlock.Text = appTitle;
+
         // Set window size and icon
         _windowHandle = WindowNative.GetWindowHandle(this);
         var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(_windowHandle);
@@ -278,6 +283,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing SystemTrayService: {ex.Message}");
         }
+    }
+
+    private string GetAppTitle()
+    {
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var titleAttr = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(assembly);
+        var infoVersion = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(assembly);
+
+        var title = titleAttr?.Title ?? "Hue Companion";
+        var version = infoVersion?.InformationalVersion ?? "0.0.0";
+
+        return $"{title} - {version}";
     }
 
     private void SetupTitleBar()

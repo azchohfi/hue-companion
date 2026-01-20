@@ -26,6 +26,7 @@
     <BaseVersion>0.1.0</BaseVersion>
     <ApplicationTitle Condition="'$(DevBuild)' == 'true'">Hue Companion (Dev)</ApplicationTitle>
     <ApplicationTitle Condition="'$(DevBuild)' != 'true'">Hue Companion</ApplicationTitle>
+    <AssemblyTitle>$(ApplicationTitle)</AssemblyTitle>
     <InformationalVersion Condition="'$(VersionSuffix)' != ''">$(BaseVersion)-$(VersionSuffix)</InformationalVersion>
     <InformationalVersion Condition="'$(VersionSuffix)' == ''">$(BaseVersion)</InformationalVersion>
   </PropertyGroup>

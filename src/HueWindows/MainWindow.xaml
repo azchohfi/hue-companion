@@ -47,7 +47,7 @@
                    VerticalAlignment="Center"/>
 
             <!-- Title -->
-            <TextBlock Grid.Column="3" Text="Hue Companion"
+            <TextBlock x:Name="TitleTextBlock" Grid.Column="3"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        VerticalAlignment="Center"/>
         </Grid>
