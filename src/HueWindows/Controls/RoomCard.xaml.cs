@@ -15,7 +15,7 @@ namespace HueWindows.Controls;
 /// <summary>
 /// Widget-like room card control for the dashboard.
 /// Supports tap to navigate and drag to adjust brightness.
-/// Features Composition-based glow effect when active.
+/// Features true gaussian blur glow effect when active for light emission aesthetic.
 /// </summary>
 public sealed partial class RoomCard : UserControl
 {
@@ -27,6 +27,9 @@ public sealed partial class RoomCard : UserControl
     private bool _isLoaded;
     private bool _isHovering;
 
+    // Gaussian blur glow effect helper
+    private GlowHelper? _glowHelper;
+
     // Current accent color
     private Color _accentColor = Colors.White;
 
@@ -37,8 +40,16 @@ public sealed partial class RoomCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         this.SizeChanged += OnSizeChanged;
         this.ActualThemeChanged += OnActualThemeChanged;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        // Clean up glow effect resources
+        _glowHelper?.Dispose();
+        _glowHelper = null;
     }
 
     private void OnActualThemeChanged(FrameworkElement sender, object args)
@@ -111,6 +122,23 @@ public sealed partial class RoomCard : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        
+        // Initialize gaussian blur glow effect on the card
+        try
+        {
+            _glowHelper = new GlowHelper(CardRoot)
+            {
+                BlurAmount = 15f,
+                GlowExtent = 20f,
+                CornerRadius = 16f
+            };
+        }
+        catch
+        {
+            // Gracefully handle if Win2D isn't available
+            _glowHelper = null;
+        }
+        
         ApplyThemeBackground();
         UpdateActiveState();
     }
@@ -213,6 +241,26 @@ public sealed partial class RoomCard : UserControl
         // Animate border opacity
         var targetOpacity = isActive ? 1.0 : 0.0;
         AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
+
+        // Update gaussian blur glow effect
+        UpdateGlowEffect(isActive);
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (_glowHelper == null) return;
+
+        if (isActive)
+        {
+            // Show glow with the accent color
+            _glowHelper.UpdateColor(_accentColor);
+            _glowHelper.Show(_accentColor, animate: true);
+        }
+        else
+        {
+            // Hide glow when inactive
+            _glowHelper.Hide(animate: true);
+        }
     }
 
     private void UpdateToggleColor(bool isActive)

@@ -13,7 +13,8 @@ namespace HueWindows.Controls;
 
 /// <summary>
 /// Light card control for the room detail page.
-/// Displays a single light with colored border effect and toggle.
+/// Displays a single light with true gaussian blur glow effect and toggle.
+/// Features smooth light emission aesthetic when active.
 /// </summary>
 public sealed partial class LightCard : UserControl
 {
@@ -26,6 +27,9 @@ public sealed partial class LightCard : UserControl
     private SolidColorBrush? _toggleBrush;
     private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
+    
+    // Gaussian blur glow effect helper
+    private GlowHelper? _glowHelper;
 
     public LightItemViewModel? ViewModel => DataContext as LightItemViewModel;
 
@@ -39,7 +43,15 @@ public sealed partial class LightCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         this.ActualThemeChanged += OnActualThemeChanged;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        // Clean up glow effect resources
+        _glowHelper?.Dispose();
+        _glowHelper = null;
     }
 
     private void OnActualThemeChanged(FrameworkElement sender, object args)
@@ -118,6 +130,23 @@ public sealed partial class LightCard : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        
+        // Initialize gaussian blur glow effect on the card
+        try
+        {
+            _glowHelper = new GlowHelper(CardRoot)
+            {
+                BlurAmount = 15f,
+                GlowExtent = 20f,
+                CornerRadius = 16f
+            };
+        }
+        catch
+        {
+            // Gracefully handle if Win2D isn't available
+            _glowHelper = null;
+        }
+        
         ApplyThemeBackground();
         UpdateActiveState();
     }
@@ -182,6 +211,9 @@ public sealed partial class LightCard : UserControl
             // Fade out both borders
             AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
             AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
+            
+            // Hide glow effect
+            UpdateGlowEffect(false);
             return;
         }
 
@@ -198,6 +230,26 @@ public sealed partial class LightCard : UserControl
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
+        
+        // Update gaussian blur glow effect
+        UpdateGlowEffect(true);
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (_glowHelper == null) return;
+
+        if (isActive)
+        {
+            // Show glow with the accent color
+            _glowHelper.UpdateColor(_accentColor);
+            _glowHelper.Show(_accentColor, animate: true);
+        }
+        else
+        {
+            // Hide glow when inactive
+            _glowHelper.Hide(animate: true);
+        }
     }
 
     private void UpdateToggleColor(bool isActive)

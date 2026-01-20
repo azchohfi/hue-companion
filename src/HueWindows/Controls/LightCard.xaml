@@ -11,7 +11,8 @@
     PointerEntered="CardRoot_PointerEntered"
     PointerExited="CardRoot_PointerExited">
 
-    <Grid x:Name="OuterContainer">
+    <!-- Outer container with padding for glow to extend beyond card bounds -->
+    <Grid x:Name="OuterContainer" Padding="20">
         <VisualStateManager.VisualStateGroups>
             <!-- HoverStates handled in code-behind for theme-aware colors -->
             <VisualStateGroup x:Name="HoverStates">
@@ -19,6 +20,12 @@
                 <VisualState x:Name="Hover"/>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+
+        <!-- Glow container - rendered behind the card, extends beyond bounds -->
+        <Grid x:Name="GlowContainer"
+              Margin="-20"
+              Canvas.ZIndex="-1"
+              IsHitTestVisible="False"/>
 
         <!-- Main card container -->
         <Grid x:Name="CardRoot"
