@@ -21,6 +21,20 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
 
+  <!-- Build type configuration -->
+  <PropertyGroup>
+    <BaseVersion>0.1.0</BaseVersion>
+    <ApplicationTitle Condition="'$(DevBuild)' == 'true'">Hue Companion (Dev)</ApplicationTitle>
+    <ApplicationTitle Condition="'$(DevBuild)' != 'true'">Hue Companion</ApplicationTitle>
+    <InformationalVersion Condition="'$(VersionSuffix)' != ''">$(BaseVersion)-$(VersionSuffix)</InformationalVersion>
+    <InformationalVersion Condition="'$(VersionSuffix)' == ''">$(BaseVersion)</InformationalVersion>
+  </PropertyGroup>
+
+  <!-- MSIX identity for dev builds (allows running alongside stable) -->
+  <PropertyGroup Condition="'$(DevBuild)' == 'true'">
+    <PackageId>HueWindows.Dev</PackageId>
+  </PropertyGroup>
+
   <ItemGroup>
     <Content Include="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
