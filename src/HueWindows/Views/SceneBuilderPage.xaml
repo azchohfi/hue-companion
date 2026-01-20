@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:HueWindows.Views"
     xmlns:vm="using:HueWindows.Core.ViewModels"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -162,9 +163,10 @@
                             Padding="150,8,16,8"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,0,0,1">
-                        <Canvas x:Name="TimeRulerCanvas" Height="20"
-                                Background="Transparent"
-                                PointerPressed="TimeRulerCanvas_PointerPressed"/>
+                        <canvas:CanvasControl x:Name="TimeRulerCanvas" Height="20"
+                                              Draw="TimeRulerCanvas_Draw"
+                                              CreateResources="TimeRulerCanvas_CreateResources"
+                                              PointerPressed="TimeRulerCanvas_PointerPressed"/>
                     </Border>
 
                     <!-- Tracks Area -->
@@ -228,12 +230,13 @@
                             </StackPanel>
 
                             <!-- Keyframe Canvas -->
-                            <Canvas x:Name="KeyframeCanvas"
-                                    Grid.Column="1"
-                                    VerticalAlignment="Top"
-                                    Background="Transparent"
-                                    PointerPressed="KeyframeCanvas_PointerPressed"
-                                    PointerWheelChanged="KeyframeCanvas_PointerWheelChanged"/>
+                            <canvas:CanvasControl x:Name="TimelineCanvas"
+                                                  Grid.Column="1"
+                                                  VerticalAlignment="Top"
+                                                  Draw="TimelineCanvas_Draw"
+                                                  CreateResources="TimelineCanvas_CreateResources"
+                                                  PointerPressed="TimelineCanvas_PointerPressed"
+                                                  PointerWheelChanged="TimelineCanvas_PointerWheelChanged"/>
                         </Grid>
                     </ScrollViewer>
 
