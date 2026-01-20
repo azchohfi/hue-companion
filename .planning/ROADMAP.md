@@ -28,10 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Canvas uses separate layers for ruler, tracks, keyframes, and playhead with independent invalidation
   3. Timeline displays correctly on high-DPI displays (150%, 200% scaling) without blur or misalignment
   4. Component renderer classes exist (TimeRulerRenderer, TrackLanesRenderer, KeyframeLayerRenderer, PlayheadRenderer)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 01-01-PLAN.md — Create renderer class architecture (RenderCache, component renderers, TimelineRenderer)
+- [ ] 01-02-PLAN.md — Replace XAML Canvas with Win2D CanvasControl, integrate renderers
+- [ ] 01-03-PLAN.md — Port hit testing and interaction logic to geometry-based system
 
 ### Phase 2: Gradient Track Visuals
 **Goal**: Each track displays continuous gradient color strip showing light color evolution over time
@@ -83,7 +85,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Win2D Foundation | 0/0 | Not started | - |
+| 1. Win2D Foundation | 0/3 | Planned | - |
 | 2. Gradient Track Visuals | 0/0 | Not started | - |
 | 3. Interaction Polish | 0/0 | Not started | - |
 | 4. Control Refinements | 0/0 | Not started | - |
