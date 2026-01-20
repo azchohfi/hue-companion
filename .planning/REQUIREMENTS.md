@@ -9,9 +9,9 @@ Requirements for this polish milestone. Each maps to roadmap phases.
 
 ### Rendering Foundation
 
-- [ ] **REND-01**: Timeline renders via Win2D CanvasControl for GPU acceleration
-- [ ] **REND-02**: Canvas uses layered architecture (ruler, tracks, keyframes, playhead as separate layers)
-- [ ] **REND-03**: Rendering scales correctly on high-DPI displays
+- [x] **REND-01**: Timeline renders via Win2D CanvasControl for GPU acceleration
+- [x] **REND-02**: Canvas uses layered architecture (ruler, tracks, keyframes, playhead as separate layers)
+- [x] **REND-03**: Rendering scales correctly on high-DPI displays
 
 ### Track Visuals
 
@@ -73,9 +73,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REND-01 | Phase 1 | Pending |
-| REND-02 | Phase 1 | Pending |
-| REND-03 | Phase 1 | Pending |
+| REND-01 | Phase 1 | Complete |
+| REND-02 | Phase 1 | Complete |
+| REND-03 | Phase 1 | Complete |
 | TRAK-01 | Phase 2 | Pending |
 | TRAK-02 | Phase 2 | Pending |
 | TRAK-03 | Phase 3 | Pending |
