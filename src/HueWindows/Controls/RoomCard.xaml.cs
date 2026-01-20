@@ -213,6 +213,20 @@ public sealed partial class RoomCard : UserControl
         // Animate border opacity
         var targetOpacity = isActive ? 1.0 : 0.0;
         AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
+
+        // Update Win2D glow effect
+        UpdateGlowEffect(isActive);
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (CardGlow == null) return;
+
+        // Set glow color to match accent color
+        CardGlow.GlowColor = _accentColor;
+
+        // Animate glow visibility
+        CardGlow.IsGlowing = isActive;
     }
 
     private void UpdateToggleColor(bool isActive)

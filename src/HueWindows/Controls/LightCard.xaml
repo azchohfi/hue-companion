@@ -11,7 +11,7 @@
     PointerEntered="CardRoot_PointerEntered"
     PointerExited="CardRoot_PointerExited">
 
-    <Grid x:Name="OuterContainer">
+    <Grid x:Name="OuterContainer" Margin="20">
         <VisualStateManager.VisualStateGroups>
             <!-- HoverStates handled in code-behind for theme-aware colors -->
             <VisualStateGroup x:Name="HoverStates">
@@ -19,6 +19,12 @@
                 <VisualState x:Name="Hover"/>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+
+        <!-- Win2D Gaussian Blur Glow Effect (renders behind card) -->
+        <local:GlowEffect x:Name="CardGlow"
+                          Canvas.ZIndex="-1"
+                          Margin="-20"
+                          IsGlowing="False"/>
 
         <!-- Main card container -->
         <Grid x:Name="CardRoot"

@@ -11,7 +11,7 @@
     PointerEntered="CardRoot_PointerEntered"
     PointerExited="CardRoot_PointerExited">
 
-    <Grid x:Name="OuterContainer">
+    <Grid x:Name="OuterContainer" Margin="20">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ActiveStates">
                 <!-- No transitions - border opacity animated manually in code-behind -->
@@ -31,6 +31,12 @@
                 <VisualState x:Name="Dragging"/>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+
+        <!-- Win2D Gaussian Blur Glow Effect (renders behind card) -->
+        <local:GlowEffect x:Name="CardGlow"
+                          Canvas.ZIndex="-1"
+                          Margin="-20"
+                          IsGlowing="False"/>
 
         <!-- Main card container -->
         <Grid x:Name="CardRoot"

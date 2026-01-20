@@ -182,6 +182,9 @@ public sealed partial class LightCard : UserControl
             // Fade out both borders
             AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
             AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
+            
+            // Fade out glow
+            UpdateGlowEffect(false);
             return;
         }
 
@@ -198,6 +201,20 @@ public sealed partial class LightCard : UserControl
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
+
+        // Update glow effect
+        UpdateGlowEffect(true);
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (CardGlow == null) return;
+
+        // Set glow color to match accent color
+        CardGlow.GlowColor = _accentColor;
+
+        // Animate glow visibility
+        CardGlow.IsGlowing = isActive;
     }
 
     private void UpdateToggleColor(bool isActive)
