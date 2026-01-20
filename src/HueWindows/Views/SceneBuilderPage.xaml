@@ -164,6 +164,7 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,0,0,1">
                         <canvas:CanvasControl x:Name="TimeRulerCanvas" Height="20"
+                                              HorizontalAlignment="Left"
                                               Draw="TimeRulerCanvas_Draw"
                                               CreateResources="TimeRulerCanvas_CreateResources"
                                               PointerPressed="TimeRulerCanvas_PointerPressed"/>
@@ -232,11 +233,13 @@
                             <!-- Keyframe Canvas -->
                             <canvas:CanvasControl x:Name="TimelineCanvas"
                                                   Grid.Column="1"
+                                                  HorizontalAlignment="Left"
                                                   VerticalAlignment="Top"
                                                   Draw="TimelineCanvas_Draw"
                                                   CreateResources="TimelineCanvas_CreateResources"
                                                   PointerPressed="TimelineCanvas_PointerPressed"
-                                                  PointerWheelChanged="TimelineCanvas_PointerWheelChanged"/>
+                                                  PointerWheelChanged="TimelineCanvas_PointerWheelChanged"
+                                                  RightTapped="TimelineCanvas_RightTapped"/>
                         </Grid>
                     </ScrollViewer>
 

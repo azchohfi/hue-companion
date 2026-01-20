@@ -354,6 +354,28 @@ public sealed partial class SceneBuilderPage : Page
 
     private void RenderTimeline()
     {
+        // Calculate and set canvas dimensions based on tracks and duration
+        const double trackHeight = 50;
+        var totalHeight = (ViewModel.Tracks.Count + ViewModel.EventTracks.Count) * trackHeight;
+        var totalWidth = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+
+        if (TimelineCanvas != null)
+        {
+            if (totalHeight > 0)
+            {
+                TimelineCanvas.Height = totalHeight;
+            }
+            if (totalWidth > 0)
+            {
+                TimelineCanvas.Width = totalWidth;
+            }
+        }
+
+        if (TimeRulerCanvas != null && totalWidth > 0)
+        {
+            TimeRulerCanvas.Width = totalWidth;
+        }
+
         // Invalidate cache if zoom or duration changed
         _timelineRenderer?.InvalidateCache();
 
@@ -477,10 +499,10 @@ public sealed partial class SceneBuilderPage : Page
         if (timeSeconds < 0) timeSeconds = 0;
         if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
 
-        // Apply snap unless Ctrl is held
+        // Apply snap if enabled and Ctrl not held
         var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        if (!ctrlHeld)
+        if (ViewModel.IsSnapEnabled && !ctrlHeld)
         {
             timeSeconds = ViewModel.SnapToGrid(timeSeconds);
         }
@@ -824,6 +846,43 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
+    private void TimelineCanvas_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
+            return;
+
+        var position = e.GetPosition(TimelineCanvas);
+        var point = new Vector2((float)position.X, (float)position.Y);
+
+        // Hit test to find keyframe under cursor
+        var playheadX = (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
+        var lightTracksHeight = ViewModel.Tracks.Count * 50f;
+        var canvasHeight = lightTracksHeight + ViewModel.EventTracks.Count * 50f;
+
+        var hitResult = HitTestHelper.HitTest(
+            TimelineCanvas,
+            point,
+            playheadX,
+            canvasHeight,
+            ViewModel.Tracks.ToList(),
+            ViewModel.EventTracks.ToList(),
+            ViewModel.SelectedKeyframes,
+            (float)ViewModel.ZoomLevel);
+
+        if (hitResult.Type == HitType.Keyframe && hitResult.Keyframe != null && hitResult.Track != null)
+        {
+            // Delete keyframe (if track has > 2 keyframes)
+            if (hitResult.Track.Keyframes.Count > 2)
+            {
+                ViewModel.DeleteKeyframeCommand.Execute(hitResult.Keyframe);
+                SidePanel.Visibility = Visibility.Collapsed;
+                ViewModel.SelectedKeyframe = null;
+                RenderTimeline();
+            }
+            e.Handled = true;
+        }
+    }
+
     private void StartPlayheadDrag(PointerRoutedEventArgs e)
     {
         _isDraggingPlayhead = true;
@@ -930,20 +989,24 @@ public sealed partial class SceneBuilderPage : Page
         if (!props.IsLeftButtonPressed)
             return;
 
-        // Close panel if clicking track (not keyframe)
+        // Close any open panels first
         if (SidePanel.Visibility == Visibility.Visible)
         {
             SidePanel.Visibility = Visibility.Collapsed;
             ViewModel.SelectedKeyframe = null;
-            return;
+        }
+        if (EventSidePanel.Visibility == Visibility.Visible)
+        {
+            EventSidePanel.Visibility = Visibility.Collapsed;
+            ViewModel.SelectedEventTrack = null;
         }
 
         // Calculate time from click position
         var timeSeconds = point.X / ViewModel.ZoomLevel;
         timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
 
-        // Apply snap unless Ctrl held
-        if (!ctrlHeld)
+        // Apply snap if enabled and Ctrl not held
+        if (ViewModel.IsSnapEnabled && !ctrlHeld)
         {
             timeSeconds = ViewModel.SnapToGrid(timeSeconds);
         }
