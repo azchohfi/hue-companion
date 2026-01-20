@@ -11,7 +11,8 @@
     PointerEntered="CardRoot_PointerEntered"
     PointerExited="CardRoot_PointerExited">
 
-    <Grid x:Name="OuterContainer">
+    <!-- Outer container with padding for glow to extend beyond card bounds -->
+    <Grid x:Name="OuterContainer" Padding="20">
         <VisualStateManager.VisualStateGroups>
             <!-- HoverStates handled in code-behind for theme-aware colors -->
             <VisualStateGroup x:Name="HoverStates">
@@ -19,6 +20,15 @@
                 <VisualState x:Name="Hover"/>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+
+        <!-- Win2D Glow Panel - renders behind the card with true gaussian blur -->
+        <!-- Margin=-20 to fill the padding space where glow extends -->
+        <local:Win2DGlowPanel x:Name="GlowPanel"
+                               Margin="-20"
+                               Canvas.ZIndex="-1"
+                               BlurAmount="15"
+                               GlowExtent="20"
+                               CornerRadius="16"/>
 
         <!-- Main card container -->
         <Grid x:Name="CardRoot"

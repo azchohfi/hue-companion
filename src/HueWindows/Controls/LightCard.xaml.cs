@@ -13,7 +13,8 @@ namespace HueWindows.Controls;
 
 /// <summary>
 /// Light card control for the room detail page.
-/// Displays a single light with colored border effect and toggle.
+/// Displays a single light with true gaussian blur glow effect using Win2D and toggle.
+/// Features smooth light emission aesthetic when active.
 /// </summary>
 public sealed partial class LightCard : UserControl
 {
@@ -170,6 +171,7 @@ public sealed partial class LightCard : UserControl
         }
 
         UpdateBorderEffect(isActive);
+        UpdateGlowEffect(isActive);
         UpdateToggleColor(isActive);
         UpdateIconColor(isActive);
         UpdateColorButtonColor(isActive);
@@ -198,6 +200,22 @@ public sealed partial class LightCard : UserControl
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (GlowPanel == null) return;
+
+        if (isActive)
+        {
+            // Show glow with the accent color
+            GlowPanel.Show(_accentColor, animate: true);
+        }
+        else
+        {
+            // Hide glow when inactive
+            GlowPanel.Hide(animate: true);
+        }
     }
 
     private void UpdateToggleColor(bool isActive)

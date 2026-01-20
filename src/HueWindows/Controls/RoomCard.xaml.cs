@@ -15,7 +15,7 @@ namespace HueWindows.Controls;
 /// <summary>
 /// Widget-like room card control for the dashboard.
 /// Supports tap to navigate and drag to adjust brightness.
-/// Features Composition-based glow effect when active.
+/// Features true gaussian blur glow effect using Win2D when active for light emission aesthetic.
 /// </summary>
 public sealed partial class RoomCard : UserControl
 {
@@ -184,6 +184,9 @@ public sealed partial class RoomCard : UserControl
         // Update glow and outline (Set properties before animation starts)
         UpdateBorderEffect(isActive);
 
+        // Update Win2D glow effect
+        UpdateGlowEffect(isActive);
+
         // Update visual state (Triggers animation)
         VisualStateManager.GoToState(this, isActive ? "Active" : "Inactive", true);
 
@@ -213,6 +216,22 @@ public sealed partial class RoomCard : UserControl
         // Animate border opacity
         var targetOpacity = isActive ? 1.0 : 0.0;
         AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
+    }
+
+    private void UpdateGlowEffect(bool isActive)
+    {
+        if (GlowPanel == null) return;
+
+        if (isActive)
+        {
+            // Show glow with the accent color
+            GlowPanel.Show(_accentColor, animate: true);
+        }
+        else
+        {
+            // Hide glow when inactive
+            GlowPanel.Hide(animate: true);
+        }
     }
 
     private void UpdateToggleColor(bool isActive)
