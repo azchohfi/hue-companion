@@ -79,6 +79,9 @@ settings.json
 .claude/
 tmpclaude-*
 
+# GSD intel (local, regenerated)
+.planning/intel/
+
 # Screenshot validation (root level only, not website/public/screenshots)
 /screenshots/
 tools/screenshot-mcp/node_modules/
