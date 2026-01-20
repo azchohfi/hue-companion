@@ -42,11 +42,25 @@
               ManipulationCompleted="CardRoot_ManipulationCompleted"
               Tapped="CardRoot_Tapped">
             <!-- Background set in code-behind for theme-aware gradients -->
+            <!-- Shadow created via Composition API in code-behind -->
 
-            <!-- Solid Outline Border - Moved here for valid XAML structure (after properties) -->
+            <!-- Soft glow borders - outer layers create diffuse glow effect -->
+            <Border x:Name="GlowBorder3"
+                    Canvas.ZIndex="0"
+                    Margin="-6"
+                    CornerRadius="22"
+                    BorderThickness="6"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
+            <Border x:Name="GlowBorder2"
+                    Canvas.ZIndex="0"
+                    Margin="-3"
+                    CornerRadius="19"
+                    BorderThickness="4"
+                    IsHitTestVisible="False"
+                    Opacity="0"/>
             <Border x:Name="OutlineBorder"
                     Canvas.ZIndex="0"
-                    Grid.RowSpan="3"
                     CornerRadius="16"
                     BorderThickness="2"
                     IsHitTestVisible="False"
@@ -74,12 +88,18 @@
                             Width="40" Height="40"
                             CornerRadius="20"
                             Background="{ThemeResource CardIconBackgroundBrush}">
-                        <FontIcon x:Name="RoomIcon"
-                                  Glyph="{Binding RoomIcon}"
-                                  FontSize="18"
-                                  Foreground="{ThemeResource CardIconForegroundBrush}"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center"/>
+                        <Grid>
+                            <Border x:Name="IconGlow"
+                                    CornerRadius="20"
+                                    Background="Transparent"
+                                    Opacity="0.7"/>
+                            <FontIcon x:Name="RoomIcon"
+                                      Glyph="{Binding RoomIcon}"
+                                      FontSize="18"
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
 
                     <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
@@ -146,7 +166,7 @@
                     </TextBlock>
                 </Grid>
             </Grid>
-            
+
 
         </Grid>
 

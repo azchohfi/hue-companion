@@ -1,12 +1,15 @@
 using Microsoft.UI;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
+using System.Numerics;
 using Windows.UI;
 
 namespace HueWindows.Controls;
@@ -21,11 +24,17 @@ public sealed partial class LightCard : UserControl
     private bool _isHovering;
     private Color _accentColor = Colors.White;
     private Color _currentIconColor = Colors.Gray;
+    private Color _currentIconGlowColor = Colors.Transparent;
     private Color _currentColorButtonColor = Colors.Transparent;
     private SolidColorBrush? _iconBrush;
+    private SolidColorBrush? _iconGlowBrush;
     private SolidColorBrush? _toggleBrush;
     private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
+
+    // Composition shadow
+    private SpriteVisual? _shadowVisual;
+    private DropShadow? _dropShadow;
 
     public LightItemViewModel? ViewModel => DataContext as LightItemViewModel;
 
@@ -39,6 +48,7 @@ public sealed partial class LightCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.SizeChanged += OnSizeChanged;
         this.ActualThemeChanged += OnActualThemeChanged;
     }
 
@@ -119,7 +129,42 @@ public sealed partial class LightCard : UserControl
     {
         _isLoaded = true;
         ApplyThemeBackground();
+        SetupDropShadow();
         UpdateActiveState();
+    }
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateShadowSize();
+    }
+
+    private void SetupDropShadow()
+    {
+        var visual = ElementCompositionPreview.GetElementVisual(CardRoot);
+        var compositor = visual.Compositor;
+
+        // Create drop shadow
+        _dropShadow = compositor.CreateDropShadow();
+        _dropShadow.BlurRadius = 20;
+        _dropShadow.Opacity = 0.3f;
+        _dropShadow.Color = Colors.Black;
+        _dropShadow.Offset = new Vector3(0, 4, 0);
+
+        // Create sprite visual to host the shadow
+        _shadowVisual = compositor.CreateSpriteVisual();
+        _shadowVisual.Shadow = _dropShadow;
+        _shadowVisual.Size = new Vector2((float)CardRoot.ActualWidth, (float)CardRoot.ActualHeight);
+
+        // Insert shadow behind the card content
+        ElementCompositionPreview.SetElementChildVisual(OuterContainer, _shadowVisual);
+    }
+
+    private void UpdateShadowSize()
+    {
+        if (_shadowVisual != null && CardRoot.ActualWidth > 0 && CardRoot.ActualHeight > 0)
+        {
+            _shadowVisual.Size = new Vector2((float)CardRoot.ActualWidth, (float)CardRoot.ActualHeight);
+        }
     }
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
@@ -179,22 +224,40 @@ public sealed partial class LightCard : UserControl
     {
         if (!isActive)
         {
-            // Fade out both borders
+            // Fade out all borders
             AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
             AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
+            AnimationHelper.AnimateOpacity(GlowBorder2, 0.0);
+            AnimationHelper.AnimateOpacity(GlowBorder3, 0.0);
+            AnimationHelper.AnimateOpacity(GlowBorder2_2, 0.0);
+            AnimationHelper.AnimateOpacity(GlowBorder3_2, 0.0);
             return;
         }
 
-        // Cross-fade between two borders for smooth color transitions
+        // Create semi-transparent versions for outer glow layers
+        var glowColor2 = Color.FromArgb(100, _accentColor.R, _accentColor.G, _accentColor.B);
+        var glowColor3 = Color.FromArgb(50, _accentColor.R, _accentColor.G, _accentColor.B);
+
+        // Cross-fade between two border sets for smooth color transitions
         var newBorder = _useFirstBorder ? OutlineBorder : OutlineBorder2;
         var oldBorder = _useFirstBorder ? OutlineBorder2 : OutlineBorder;
+        var newGlow2 = _useFirstBorder ? GlowBorder2 : GlowBorder2_2;
+        var oldGlow2 = _useFirstBorder ? GlowBorder2_2 : GlowBorder2;
+        var newGlow3 = _useFirstBorder ? GlowBorder3 : GlowBorder3_2;
+        var oldGlow3 = _useFirstBorder ? GlowBorder3_2 : GlowBorder3;
 
-        // Set new color on the incoming border
+        // Set colors on incoming borders
         newBorder.BorderBrush = new SolidColorBrush(_accentColor);
+        newGlow2.BorderBrush = new SolidColorBrush(glowColor2);
+        newGlow3.BorderBrush = new SolidColorBrush(glowColor3);
 
         // Cross-fade: fade in new, fade out old
         AnimationHelper.AnimateOpacity(newBorder, 1.0);
         AnimationHelper.AnimateOpacity(oldBorder, 0.0);
+        AnimationHelper.AnimateOpacity(newGlow2, 1.0);
+        AnimationHelper.AnimateOpacity(oldGlow2, 0.0);
+        AnimationHelper.AnimateOpacity(newGlow3, 1.0);
+        AnimationHelper.AnimateOpacity(oldGlow3, 0.0);
 
         // Toggle for next update
         _useFirstBorder = !_useFirstBorder;
@@ -239,6 +302,22 @@ public sealed partial class LightCard : UserControl
         // Animate color change
         AnimationHelper.AnimateColor(_iconBrush, _currentIconColor, targetColor);
         _currentIconColor = targetColor;
+
+        // Animate icon glow
+        if (IconGlow == null) return;
+
+        var glowTarget = isActive
+            ? Color.FromArgb(80, _accentColor.R, _accentColor.G, _accentColor.B)
+            : Colors.Transparent;
+
+        if (_iconGlowBrush == null)
+        {
+            _iconGlowBrush = new SolidColorBrush(_currentIconGlowColor);
+            IconGlow.Background = _iconGlowBrush;
+        }
+
+        AnimationHelper.AnimateColor(_iconGlowBrush, _currentIconGlowColor, glowTarget);
+        _currentIconGlowColor = glowTarget;
     }
 
     private void UpdateColorButtonColor(bool isActive)

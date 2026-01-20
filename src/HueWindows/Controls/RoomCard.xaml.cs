@@ -1,13 +1,16 @@
 using Microsoft.UI;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
+using System.Numerics;
 using Windows.UI;
 
 namespace HueWindows.Controls;
@@ -29,6 +32,12 @@ public sealed partial class RoomCard : UserControl
 
     // Current accent color
     private Color _accentColor = Colors.White;
+    private SolidColorBrush? _iconGlowBrush;
+    private Color _currentIconGlowColor = Colors.Transparent;
+
+    // Composition shadow
+    private SpriteVisual? _shadowVisual;
+    private DropShadow? _dropShadow;
 
     public IRoomCardViewModel? ViewModel => DataContext as IRoomCardViewModel;
 
@@ -112,12 +121,43 @@ public sealed partial class RoomCard : UserControl
     {
         _isLoaded = true;
         ApplyThemeBackground();
+        SetupDropShadow();
         UpdateActiveState();
+    }
+
+    private void SetupDropShadow()
+    {
+        var visual = ElementCompositionPreview.GetElementVisual(CardRoot);
+        var compositor = visual.Compositor;
+
+        // Create drop shadow
+        _dropShadow = compositor.CreateDropShadow();
+        _dropShadow.BlurRadius = 20;
+        _dropShadow.Opacity = 0.3f;
+        _dropShadow.Color = Colors.Black;
+        _dropShadow.Offset = new Vector3(0, 4, 0);
+
+        // Create sprite visual to host the shadow
+        _shadowVisual = compositor.CreateSpriteVisual();
+        _shadowVisual.Shadow = _dropShadow;
+        _shadowVisual.Size = new Vector2((float)CardRoot.ActualWidth, (float)CardRoot.ActualHeight);
+
+        // Insert shadow behind the card content
+        ElementCompositionPreview.SetElementChildVisual(OuterContainer, _shadowVisual);
+    }
+
+    private void UpdateShadowSize()
+    {
+        if (_shadowVisual != null && CardRoot.ActualWidth > 0 && CardRoot.ActualHeight > 0)
+        {
+            _shadowVisual.Size = new Vector2((float)CardRoot.ActualWidth, (float)CardRoot.ActualHeight);
+        }
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateBrightnessBar();
+        UpdateShadowSize();
     }
 
 
@@ -207,12 +247,20 @@ public sealed partial class RoomCard : UserControl
             ? BrushFactory.CreateDiagonalGradient(colors)
             : BrushFactory.CreateDiagonalGradient(new[] { (_accentColor.R, _accentColor.G, _accentColor.B) });
 
-        // Set the brush FIRST, then animate opacity
-        OutlineBorder.BorderBrush = borderBrush;
+        // Create semi-transparent versions for outer glow layers
+        var glowColor2 = Color.FromArgb(100, _accentColor.R, _accentColor.G, _accentColor.B);
+        var glowColor3 = Color.FromArgb(50, _accentColor.R, _accentColor.G, _accentColor.B);
 
-        // Animate border opacity
+        // Set brushes on all glow layers
+        OutlineBorder.BorderBrush = borderBrush;
+        GlowBorder2.BorderBrush = new SolidColorBrush(glowColor2);
+        GlowBorder3.BorderBrush = new SolidColorBrush(glowColor3);
+
+        // Animate border opacity for all layers
         var targetOpacity = isActive ? 1.0 : 0.0;
         AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
+        AnimationHelper.AnimateOpacity(GlowBorder2, targetOpacity);
+        AnimationHelper.AnimateOpacity(GlowBorder3, targetOpacity);
     }
 
     private void UpdateToggleColor(bool isActive)
@@ -279,6 +327,22 @@ public sealed partial class RoomCard : UserControl
                 : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
             RoomIcon.Foreground = new SolidColorBrush(inactiveColor);
         }
+
+        // Animate icon glow
+        if (IconGlow == null) return;
+
+        var glowTarget = isActive
+            ? Color.FromArgb(80, _accentColor.R, _accentColor.G, _accentColor.B)
+            : Colors.Transparent;
+
+        if (_iconGlowBrush == null)
+        {
+            _iconGlowBrush = new SolidColorBrush(_currentIconGlowColor);
+            IconGlow.Background = _iconGlowBrush;
+        }
+
+        AnimationHelper.AnimateColor(_iconGlowBrush, _currentIconGlowColor, glowTarget);
+        _currentIconGlowColor = glowTarget;
     }
 
     private void UpdateBrightnessBar()
