@@ -8,6 +8,12 @@ using HueWindows.Core.Models;
 using Windows.UI;
 using Windows.Storage.Pickers;
 using Windows.ApplicationModel.DataTransfer;
+using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.Graphics.Canvas.UI;
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Geometry;
+using System.Numerics;
+using HueWindows.Views.Rendering;
 
 namespace HueWindows.Views;
 
@@ -26,11 +32,9 @@ public sealed partial class SceneBuilderPage : Page
     private KeyframeViewModel? _draggingKeyframe;
     private TrackViewModel? _draggingTrack;
 
-    // Cached playhead elements for efficient updates
-    private Microsoft.UI.Xaml.Shapes.Line? _playheadHitArea;
-    private Microsoft.UI.Xaml.Shapes.Line? _playheadLine;
-    private Microsoft.UI.Xaml.Shapes.Polygon? _playheadHandle;
-    private Microsoft.UI.Xaml.Shapes.Polygon? _rulerPlayheadMarker;
+    // Win2D rendering
+    private TimelineRenderer? _timelineRenderer;
+    private bool _resourcesCreated = false;
 
     // Event track playback state
     private readonly Dictionary<string, double> _nextEventFireTimes = new();
@@ -44,6 +48,7 @@ public sealed partial class SceneBuilderPage : Page
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<SceneBuilderViewModel>();
         Loaded += Page_Loaded;
+        Unloaded += SceneBuilderPage_Unloaded;
         KeyDown += SceneBuilderPage_KeyDown;
 
         // Initialize playback timer
@@ -267,6 +272,79 @@ public sealed partial class SceneBuilderPage : Page
         TracksGrid.Visibility = hasRoom ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    #region Win2D Event Handlers
+
+    private void TimelineCanvas_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
+    {
+        // Dispose old renderer on DPI change
+        if (args.Reason == CanvasCreateResourcesReason.DpiChanged)
+        {
+            _timelineRenderer?.Dispose();
+        }
+
+        _timelineRenderer = new TimelineRenderer();
+        _timelineRenderer.CreateResources(sender, GetRenderContext(sender));
+        _resourcesCreated = true;
+    }
+
+    private void TimeRulerCanvas_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
+    {
+        // Ruler uses same renderer, resources created once
+    }
+
+    private void TimelineCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+    {
+        if (!_resourcesCreated || _timelineRenderer == null)
+            return;
+
+        var context = GetRenderContext(sender);
+        _timelineRenderer.Draw(args.DrawingSession, context);
+    }
+
+    private void TimeRulerCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+    {
+        if (!_resourcesCreated || _timelineRenderer == null)
+            return;
+
+        // Draw ruler only
+        _timelineRenderer.DrawRuler(
+            args.DrawingSession,
+            (float)sender.Size.Width,
+            (float)sender.Size.Height,
+            (float)ViewModel.ZoomLevel,
+            (int)ViewModel.DurationSeconds);
+    }
+
+    private TimelineRenderContext GetRenderContext(CanvasControl sender)
+    {
+        const float trackHeight = 50f;
+        return new TimelineRenderContext(
+            Tracks: ViewModel.Tracks.ToList(),
+            EventTracks: ViewModel.EventTracks.ToList(),
+            SelectedKeyframes: ViewModel.SelectedKeyframes,
+            ZoomLevel: (float)ViewModel.ZoomLevel,
+            DurationSeconds: (float)ViewModel.DurationSeconds,
+            PlayheadPosition: (float)ViewModel.PlayheadPosition,
+            CanvasWidth: (float)sender.Size.Width,
+            CanvasHeight: (float)sender.Size.Height,
+            TrackHeight: trackHeight,
+            SnapInterval: (float)ViewModel.SnapInterval,
+            IsSnapEnabled: ViewModel.IsSnapEnabled
+        );
+    }
+
+    private void SceneBuilderPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        _timelineRenderer?.Dispose();
+        _timelineRenderer = null;
+
+        // Required to break reference cycle (from research)
+        TimelineCanvas?.RemoveFromVisualTree();
+        TimeRulerCanvas?.RemoveFromVisualTree();
+    }
+
+    #endregion
+
     private void RoomComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ViewModel == null) return;
@@ -276,180 +354,17 @@ public sealed partial class SceneBuilderPage : Page
 
     private void RenderTimeline()
     {
-        // Clear existing keyframes
-        KeyframeCanvas.Children.Clear();
+        // Invalidate cache if zoom or duration changed
+        _timelineRenderer?.InvalidateCache();
 
-        if (ViewModel.SelectedRoom == null || ViewModel.Tracks.Count == 0)
-            return;
+        // Trigger Win2D redraw
+        TimelineCanvas?.Invalidate();
+        TimeRulerCanvas?.Invalidate();
 
-        // Render time ruler ticks
-        RenderTimeRuler();
-
-        const double trackHeight = 50;
-        var lightTracksHeight = ViewModel.Tracks.Count * trackHeight;
-        var eventTracksHeight = ViewModel.EventTracks.Count * trackHeight;
-        var canvasHeight = lightTracksHeight + eventTracksHeight;
-
-        // Render track separator lines for light tracks
-        for (int i = 1; i < ViewModel.Tracks.Count; i++)
-        {
-            var separator = new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = 0,
-                Y1 = i * trackHeight,
-                X2 = ViewModel.DurationSeconds * ViewModel.ZoomLevel,
-                Y2 = i * trackHeight,
-                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(40, 255, 255, 255)),
-                StrokeThickness = 1
-            };
-            KeyframeCanvas.Children.Add(separator);
-        }
-
-        // Render loop region highlighting (background layer)
-        RenderLoopRegion(canvasHeight);
-
-        // Render snap grid lines
-        RenderGridLines(canvasHeight);
-
-        // Render keyframes for each track
-        for (int trackIndex = 0; trackIndex < ViewModel.Tracks.Count; trackIndex++)
-        {
-            var track = ViewModel.Tracks[trackIndex];
-            var y = trackIndex * trackHeight + trackHeight / 2;
-
-            foreach (var keyframe in track.Keyframes)
-            {
-                RenderKeyframe(keyframe, track, keyframe.TimeSeconds * ViewModel.ZoomLevel, y);
-            }
-        }
-
-        // Render event tracks
-        RenderEventTracks(lightTracksHeight, trackHeight);
-
-        // Render playhead
-        RenderPlayhead(canvasHeight);
-
-        // Set canvas size - add fixed buffer beyond duration for grid extension
-        // Only update if changed to prevent layout cycles
-        var durationWidth = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
-        var targetWidth = durationWidth + 500;
-        if (Math.Abs(KeyframeCanvas.Width - targetWidth) > 1)
-            KeyframeCanvas.Width = targetWidth;
-        if (Math.Abs(KeyframeCanvas.Height - canvasHeight) > 1)
-            KeyframeCanvas.Height = canvasHeight;
-
-        // Update time display
         UpdateTimeDisplay();
     }
 
-    private void RenderPlayhead(double height)
-    {
-        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
 
-        // Invisible wider hit area for easier dragging
-        _playheadHitArea = new Microsoft.UI.Xaml.Shapes.Line
-        {
-            X1 = x,
-            Y1 = 0,
-            X2 = x,
-            Y2 = height,
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(0, 0, 0, 0)), // Transparent
-            StrokeThickness = 12, // Wide hit area
-            Tag = "PlayheadHitArea"
-        };
-        _playheadHitArea.PointerPressed += PlayheadHandle_PointerPressed;
-        KeyframeCanvas.Children.Add(_playheadHitArea);
-
-        // Visible playhead line
-        _playheadLine = new Microsoft.UI.Xaml.Shapes.Line
-        {
-            X1 = x,
-            Y1 = 0,
-            X2 = x,
-            Y2 = height,
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(255, 255, 100, 100)),
-            StrokeThickness = 2,
-            IsHitTestVisible = false // Let the hit area handle input
-        };
-        KeyframeCanvas.Children.Add(_playheadLine);
-
-        // Playhead handle (triangle at top) - make it draggable
-        _playheadHandle = new Microsoft.UI.Xaml.Shapes.Polygon
-        {
-            Points = new Microsoft.UI.Xaml.Media.PointCollection
-            {
-                new Windows.Foundation.Point(x - 8, 0),
-                new Windows.Foundation.Point(x + 8, 0),
-                new Windows.Foundation.Point(x, 12)
-            },
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(255, 255, 100, 100)),
-            Tag = "PlayheadHandle"
-        };
-        _playheadHandle.PointerPressed += PlayheadHandle_PointerPressed;
-        KeyframeCanvas.Children.Add(_playheadHandle);
-    }
-
-    private void RenderEventTracks(double startY, double trackHeight)
-    {
-        if (ViewModel.EventTracks.Count == 0)
-            return;
-
-        var width = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
-
-        for (int i = 0; i < ViewModel.EventTracks.Count; i++)
-        {
-            var eventTrack = ViewModel.EventTracks[i];
-            var y = startY + i * trackHeight;
-
-            // Draw background for event track (slightly different color)
-            var background = new Microsoft.UI.Xaml.Shapes.Rectangle
-            {
-                Width = width,
-                Height = trackHeight,
-                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(20, 255, 200, 100)), // Subtle warm tint
-                IsHitTestVisible = true,
-                Tag = eventTrack
-            };
-            background.PointerPressed += EventTrack_PointerPressed;
-            Canvas.SetLeft(background, 0);
-            Canvas.SetTop(background, y);
-            KeyframeCanvas.Children.Add(background);
-
-            // Draw separator line
-            var separator = new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = 0,
-                Y1 = y,
-                X2 = width,
-                Y2 = y,
-                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(60, 255, 200, 100)),
-                StrokeThickness = 1,
-                IsHitTestVisible = false
-            };
-            KeyframeCanvas.Children.Add(separator);
-
-            // Draw event pattern indicator (dashed line in the middle)
-            var patternLine = new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = 0,
-                Y1 = y + trackHeight / 2,
-                X2 = width,
-                Y2 = y + trackHeight / 2,
-                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(80, 255, 200, 100)),
-                StrokeThickness = 2,
-                StrokeDashArray = new Microsoft.UI.Xaml.Media.DoubleCollection { 4, 4 },
-                IsHitTestVisible = false
-            };
-            KeyframeCanvas.Children.Add(patternLine);
-        }
-    }
 
     private void EventTrack_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -461,107 +376,18 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void RenderLoopRegion(double height)
-    {
-        var loopEndX = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
 
-        // Draw tinted background for the loop region (accent color at ~10% opacity)
-        var loopBackground = new Microsoft.UI.Xaml.Shapes.Rectangle
-        {
-            Width = loopEndX,
-            Height = height,
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(18, 96, 165, 250)), // Subtle blue tint ~7% opacity
-            IsHitTestVisible = false
-        };
-        Canvas.SetLeft(loopBackground, 0);
-        Canvas.SetTop(loopBackground, 0);
-        KeyframeCanvas.Children.Add(loopBackground);
-
-        // Draw loop end boundary line (thicker, accent color)
-        var loopEndLine = new Microsoft.UI.Xaml.Shapes.Line
-        {
-            X1 = loopEndX,
-            Y1 = 0,
-            X2 = loopEndX,
-            Y2 = height,
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(120, 96, 165, 250)), // Accent blue
-            StrokeThickness = 2,
-            IsHitTestVisible = false
-        };
-        KeyframeCanvas.Children.Add(loopEndLine);
-    }
-
-    private void RenderGridLines(double height)
-    {
-        var interval = ViewModel.SnapInterval;
-        var zoom = ViewModel.ZoomLevel;
-
-        // Grid extends beyond duration with a fixed buffer (matching canvas width calculation)
-        var gridExtentSeconds = ViewModel.DurationSeconds + (500 / zoom);
-
-        // Draw vertical grid lines at each snap interval, extending beyond duration
-        for (double time = interval; time < gridExtentSeconds; time += interval)
-        {
-            var x = time * zoom;
-            var gridLine = new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = x,
-                Y1 = 0,
-                X2 = x,
-                Y2 = height,
-                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(25, 255, 255, 255)),
-                StrokeThickness = 1,
-                IsHitTestVisible = false
-            };
-            KeyframeCanvas.Children.Add(gridLine);
-        }
-    }
 
     /// <summary>
     /// Efficiently updates just the playhead position without re-rendering everything.
     /// </summary>
     private void UpdatePlayheadPosition()
     {
-        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
+        // Just invalidate - Win2D redraws efficiently
+        TimelineCanvas?.Invalidate();
 
-        // Update hit area
-        if (_playheadHitArea != null)
-        {
-            _playheadHitArea.X1 = x;
-            _playheadHitArea.X2 = x;
-        }
-
-        // Update visible line
-        if (_playheadLine != null)
-        {
-            _playheadLine.X1 = x;
-            _playheadLine.X2 = x;
-        }
-
-        // Update handle
-        if (_playheadHandle != null)
-        {
-            _playheadHandle.Points = new Microsoft.UI.Xaml.Media.PointCollection
-            {
-                new Windows.Foundation.Point(x - 8, 0),
-                new Windows.Foundation.Point(x + 8, 0),
-                new Windows.Foundation.Point(x, 12)
-            };
-        }
-
-        // Update ruler marker
-        if (_rulerPlayheadMarker != null)
-        {
-            _rulerPlayheadMarker.Points = new Microsoft.UI.Xaml.Media.PointCollection
-            {
-                new Windows.Foundation.Point(x - 5, 20),
-                new Windows.Foundation.Point(x + 5, 20),
-                new Windows.Foundation.Point(x, 12)
-            };
-        }
+        // Update ruler playhead marker
+        TimeRulerCanvas?.Invalidate();
 
         // Update time display
         UpdateTimeDisplay();
@@ -597,21 +423,21 @@ public sealed partial class SceneBuilderPage : Page
     private void PlayheadHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isDraggingPlayhead = true;
-        KeyframeCanvas.CapturePointer(e.Pointer);
+        TimelineCanvas.CapturePointer(e.Pointer);
 
         // Wire up move and release events
-        KeyframeCanvas.PointerMoved += KeyframeCanvas_PointerMoved;
-        KeyframeCanvas.PointerReleased += KeyframeCanvas_PointerReleased;
+        TimelineCanvas.PointerMoved += TimelineCanvas_PointerMoved;
+        TimelineCanvas.PointerReleased += TimelineCanvas_PointerReleased;
 
         e.Handled = true;
     }
 
-    private void KeyframeCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDraggingPlayhead)
             return;
 
-        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var point = e.GetCurrentPoint(TimelineCanvas);
         var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
 
         // Clamp to valid range
@@ -632,16 +458,16 @@ public sealed partial class SceneBuilderPage : Page
         UpdatePlayheadPosition();
     }
 
-    private void KeyframeCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
         if (_isDraggingPlayhead)
         {
             _isDraggingPlayhead = false;
-            KeyframeCanvas.ReleasePointerCapture(e.Pointer);
+            TimelineCanvas.ReleasePointerCapture(e.Pointer);
 
             // Unwire events
-            KeyframeCanvas.PointerMoved -= KeyframeCanvas_PointerMoved;
-            KeyframeCanvas.PointerReleased -= KeyframeCanvas_PointerReleased;
+            TimelineCanvas.PointerMoved -= TimelineCanvas_PointerMoved;
+            TimelineCanvas.PointerReleased -= TimelineCanvas_PointerReleased;
         }
     }
 
@@ -670,102 +496,7 @@ public sealed partial class SceneBuilderPage : Page
         e.Handled = true;
     }
 
-    private void RenderTimeRuler()
-    {
-        TimeRulerCanvas.Children.Clear();
-        var width = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
-        TimeRulerCanvas.Width = width;
 
-        // Draw tick marks every second, labels every 5 seconds
-        for (int i = 0; i <= (int)ViewModel.DurationSeconds; i++)
-        {
-            var x = i * ViewModel.ZoomLevel;
-            var tickHeight = (i % 5 == 0) ? 12.0 : 6.0;
-
-            var tick = new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = x,
-                Y1 = 20 - tickHeight,
-                X2 = x,
-                Y2 = 20,
-                Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Microsoft.UI.Colors.Gray),
-                StrokeThickness = 1
-            };
-            TimeRulerCanvas.Children.Add(tick);
-
-            // Add labels every 5 seconds
-            if (i % 5 == 0)
-            {
-                var label = new TextBlock
-                {
-                    Text = $"{i}s",
-                    FontSize = 10,
-                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                        Microsoft.UI.Colors.Gray)
-                };
-                Canvas.SetLeft(label, x - 8);
-                Canvas.SetTop(label, 0);
-                TimeRulerCanvas.Children.Add(label);
-            }
-        }
-
-        // Draw playhead marker on ruler
-        var playheadX = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
-        _rulerPlayheadMarker = new Microsoft.UI.Xaml.Shapes.Polygon
-        {
-            Points = new Microsoft.UI.Xaml.Media.PointCollection
-            {
-                new Windows.Foundation.Point(playheadX - 5, 20),
-                new Windows.Foundation.Point(playheadX + 5, 20),
-                new Windows.Foundation.Point(playheadX, 12)
-            },
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(255, 255, 100, 100))
-        };
-        TimeRulerCanvas.Children.Add(_rulerPlayheadMarker);
-    }
-
-    private void RenderKeyframe(KeyframeViewModel keyframe, TrackViewModel track, double x, double y)
-    {
-        // Convert HueColor to color (approximation)
-        var rgb = HueColorToRgb(keyframe.Color);
-        var brightness = keyframe.Brightness;
-        var color = Microsoft.UI.ColorHelper.FromArgb(255,
-            (byte)(rgb.r * brightness),
-            (byte)(rgb.g * brightness),
-            (byte)(rgb.b * brightness));
-
-        // Check if this keyframe is selected
-        var isSelected = ViewModel.SelectedKeyframes.Contains(keyframe);
-
-        // Use constants for selection highlight color
-        var selectionColor = Microsoft.UI.ColorHelper.FromArgb(255,
-            Constants.AppConstants.Colors.SelectionHighlightR,
-            Constants.AppConstants.Colors.SelectionHighlightG,
-            Constants.AppConstants.Colors.SelectionHighlightB);
-
-        var circle = new Microsoft.UI.Xaml.Shapes.Ellipse
-        {
-            Width = isSelected ? 20 : 16,
-            Height = isSelected ? 20 : 16,
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(color),
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                isSelected ? selectionColor : Microsoft.UI.Colors.White),
-            StrokeThickness = isSelected ? 3 : 2
-        };
-
-        var offset = isSelected ? 10 : 8;
-        Canvas.SetLeft(circle, x - offset);
-        Canvas.SetTop(circle, y - offset);
-
-        // Store references for selection
-        circle.Tag = (keyframe, track);
-        circle.PointerPressed += Keyframe_PointerPressed;
-        circle.RightTapped += Keyframe_RightTapped;
-
-        KeyframeCanvas.Children.Add(circle);
-    }
 
     private (int r, int g, int b) HueColorToRgb(HueWindows.Core.Models.HueColor color)
     {
@@ -828,9 +559,9 @@ public sealed partial class SceneBuilderPage : Page
                     _draggingTrack = track;
 
                     // Capture pointer for dragging
-                    KeyframeCanvas.CapturePointer(e.Pointer);
-                    KeyframeCanvas.PointerMoved += KeyframeCanvas_KeyframeDrag;
-                    KeyframeCanvas.PointerReleased += KeyframeCanvas_KeyframeDragEnd;
+                    TimelineCanvas.CapturePointer(e.Pointer);
+                    TimelineCanvas.PointerMoved += TimelineCanvas_KeyframeDrag;
+                    TimelineCanvas.PointerReleased += TimelineCanvas_KeyframeDragEnd;
 
                     // Select the keyframe
                     SelectKeyframe(keyframe);
@@ -853,12 +584,12 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void KeyframeCanvas_KeyframeDrag(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_KeyframeDrag(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDraggingKeyframe || _draggingKeyframe == null || _draggingTrack == null)
             return;
 
-        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var point = e.GetCurrentPoint(TimelineCanvas);
         var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
 
         // Clamp to valid range
@@ -889,18 +620,18 @@ public sealed partial class SceneBuilderPage : Page
         KeyframeTimeText.Text = $"Keyframe @ {timeSeconds:F1}s";
     }
 
-    private void KeyframeCanvas_KeyframeDragEnd(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_KeyframeDragEnd(object sender, PointerRoutedEventArgs e)
     {
         if (_isDraggingKeyframe)
         {
             _isDraggingKeyframe = false;
             _draggingKeyframe = null;
             _draggingTrack = null;
-            KeyframeCanvas.ReleasePointerCapture(e.Pointer);
+            TimelineCanvas.ReleasePointerCapture(e.Pointer);
 
             // Unwire events
-            KeyframeCanvas.PointerMoved -= KeyframeCanvas_KeyframeDrag;
-            KeyframeCanvas.PointerReleased -= KeyframeCanvas_KeyframeDragEnd;
+            TimelineCanvas.PointerMoved -= TimelineCanvas_KeyframeDrag;
+            TimelineCanvas.PointerReleased -= TimelineCanvas_KeyframeDragEnd;
         }
     }
 
@@ -1046,12 +777,12 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeline();
     }
 
-    private void KeyframeCanvas_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel == null)
             return;
 
-        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var point = e.GetCurrentPoint(TimelineCanvas);
         var delta = point.Properties.MouseWheelDelta;
 
         // Check if Ctrl is held for finer zoom control
@@ -1158,7 +889,7 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeline();
     }
 
-    private void KeyframeCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private void TimelineCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
         {
@@ -1168,7 +899,7 @@ public sealed partial class SceneBuilderPage : Page
             return;
         }
 
-        var point = e.GetCurrentPoint(KeyframeCanvas);
+        var point = e.GetCurrentPoint(TimelineCanvas);
 
         // Only handle left-click for creating keyframes
         if (!point.Properties.IsLeftButtonPressed)
@@ -1379,90 +1110,16 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
+    // TODO (Plan 03): Migrate to Win2D rendering
     private void ShowLightTrackPulse(int trackIndex, double trackHeight)
     {
-        var y = trackIndex * trackHeight + trackHeight / 2;
-        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
-
-        // Create a highlight pulse on the light track
-        var pulse = new Microsoft.UI.Xaml.Shapes.Ellipse
-        {
-            Width = 24,
-            Height = 24,
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(180, 255, 255, 255)),
-            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(255, 255, 220, 100)),
-            StrokeThickness = 2,
-            IsHitTestVisible = false
-        };
-        Canvas.SetLeft(pulse, x - 12);
-        Canvas.SetTop(pulse, y - 12);
-        KeyframeCanvas.Children.Add(pulse);
-
-        // Animate expansion and fade out
-        var fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
-        var scale = 1.0;
-        var opacity = 1.0;
-        fadeTimer.Tick += (s, e) =>
-        {
-            scale += 0.15;
-            opacity -= 0.12;
-            if (opacity <= 0)
-            {
-                fadeTimer.Stop();
-                KeyframeCanvas.Children.Remove(pulse);
-            }
-            else
-            {
-                pulse.Width = 24 * scale;
-                pulse.Height = 24 * scale;
-                Canvas.SetLeft(pulse, x - (12 * scale));
-                Canvas.SetTop(pulse, y - (12 * scale));
-                pulse.Opacity = opacity;
-            }
-        };
-        fadeTimer.Start();
+        // Temporarily disabled - will be migrated to Win2D in Plan 03
     }
 
+    // TODO (Plan 03): Migrate to Win2D rendering
     private void ShowEventPulse(EventTrackViewModel eventTrack, double lightTracksHeight, double trackHeight)
     {
-        var trackIndex = ViewModel.EventTracks.IndexOf(eventTrack);
-        if (trackIndex < 0) return;
-
-        var y = lightTracksHeight + trackIndex * trackHeight + trackHeight / 2;
-        var x = ViewModel.PlayheadPosition * ViewModel.ZoomLevel;
-
-        // Create a pulse circle that fades out
-        var pulse = new Microsoft.UI.Xaml.Shapes.Ellipse
-        {
-            Width = 20,
-            Height = 20,
-            Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Windows.UI.Color.FromArgb(200, 255, 220, 100)),
-            IsHitTestVisible = false
-        };
-        Canvas.SetLeft(pulse, x - 10);
-        Canvas.SetTop(pulse, y - 10);
-        KeyframeCanvas.Children.Add(pulse);
-
-        // Animate fade out
-        var fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        var opacity = 1.0;
-        fadeTimer.Tick += (s, e) =>
-        {
-            opacity -= 0.15;
-            if (opacity <= 0)
-            {
-                fadeTimer.Stop();
-                KeyframeCanvas.Children.Remove(pulse);
-            }
-            else
-            {
-                pulse.Opacity = opacity;
-            }
-        };
-        fadeTimer.Start();
+        // Temporarily disabled - will be migrated to Win2D in Plan 03
     }
 
     private void AddLightningTrack_Click(object sender, RoutedEventArgs e)
