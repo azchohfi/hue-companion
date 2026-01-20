@@ -43,7 +43,7 @@ public sealed partial class RoomDetailPage : Page
     private readonly Dictionary<Guid, UIElement> _sceneElements = new(); // Track scene UI elements for animation
     private int _lightEntranceIndex; // Track stagger index for light cards
     private bool _useInstantColorUpdate; // Use instant update (no animation) when initial state was set from navigation params
-    private const double ItemMargin = 16.0; // Total horizontal margin (8px each side) used in adaptive grid sizing
+    private const double ItemMargin = 12.0; // Total horizontal margin (6px each side) used in adaptive grid sizing
 
     public RoomDetailPage()
     {

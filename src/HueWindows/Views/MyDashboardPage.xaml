@@ -66,17 +66,18 @@
                           ReorderMode="Enabled"
                           SelectionMode="None"
                           DragItemsCompleted="PinnedItemsListView_DragItemsCompleted"
-                          Visibility="{x:Bind InvertBool(ViewModel.ShowEmptyState), Mode=OneWay}">
+                          Visibility="{x:Bind InvertBool(ViewModel.ShowEmptyState), Mode=OneWay}"
+                          Margin="-6,0,-6,0">
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal"
                                            ItemWidth="220"
-                                           ItemHeight="132"/>
+                                           ItemHeight="128"/>
                         </ItemsPanelTemplate>
                     </ListView.ItemsPanel>
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="6"/>
+                            <Setter Property="Padding" Value="6,4,6,4"/>
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                         </Style>
