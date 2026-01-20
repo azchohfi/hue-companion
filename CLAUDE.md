@@ -3,15 +3,29 @@
 ## Build Commands
 
 ```bash
-# Build
-dotnet build src/HueWindows/HueWindows.csproj
+# Development workflow (preferred)
+.\hue dev              # Build and launch dev version
+.\hue dev --restart    # Kill existing dev, rebuild, launch
+.\hue dev --no-launch  # Build only, don't launch
 
-# Run
-dotnet run --project src/HueWindows/HueWindows.csproj
+# Stable builds (for side-by-side comparison)
+.\hue cut              # Cut new stable from current code
+.\hue cut --message "reason"  # Cut with note
+.\hue stable           # Launch existing stable build
 
-# Build for specific architecture
+# Process management
+.\hue list             # Show running instances (dev/stable)
+.\hue kill dev         # Kill dev instances only
+.\hue kill stable      # Kill stable instances only
+
+# Direct dotnet commands (if needed)
 dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64 -p:DevBuild=true
 ```
+
+Dev builds display "Hue Companion (Dev)" in title bar with git hash version.
+Stable builds display "Hue Companion" with date-based version.
+Both can run simultaneously (separate MSIX identities).
 
 ## Architecture
 
