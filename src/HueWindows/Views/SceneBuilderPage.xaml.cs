@@ -366,15 +366,6 @@ public sealed partial class SceneBuilderPage : Page
 
 
 
-    private void EventTrack_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        if (sender is Microsoft.UI.Xaml.Shapes.Rectangle rect &&
-            rect.Tag is EventTrackViewModel eventTrack)
-        {
-            SelectEventTrack(eventTrack);
-            e.Handled = true;
-        }
-    }
 
 
 
@@ -420,56 +411,6 @@ public sealed partial class SceneBuilderPage : Page
         return $"{minutes:D2}:{secs:D2}.{centiseconds:D2}";
     }
 
-    private void PlayheadHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        _isDraggingPlayhead = true;
-        TimelineCanvas.CapturePointer(e.Pointer);
-
-        // Wire up move and release events
-        TimelineCanvas.PointerMoved += TimelineCanvas_PointerMoved;
-        TimelineCanvas.PointerReleased += TimelineCanvas_PointerReleased;
-
-        e.Handled = true;
-    }
-
-    private void TimelineCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_isDraggingPlayhead)
-            return;
-
-        var point = e.GetCurrentPoint(TimelineCanvas);
-        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
-
-        // Clamp to valid range
-        if (timeSeconds < 0) timeSeconds = 0;
-        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
-
-        // Apply snap when enabled, unless Ctrl is held
-        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        if (ViewModel.IsSnapEnabled && !ctrlHeld)
-        {
-            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
-        }
-
-        ViewModel.PlayheadPosition = timeSeconds;
-
-        // Use optimized update instead of full re-render
-        UpdatePlayheadPosition();
-    }
-
-    private void TimelineCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        if (_isDraggingPlayhead)
-        {
-            _isDraggingPlayhead = false;
-            TimelineCanvas.ReleasePointerCapture(e.Pointer);
-
-            // Unwire events
-            TimelineCanvas.PointerMoved -= TimelineCanvas_PointerMoved;
-            TimelineCanvas.PointerReleased -= TimelineCanvas_PointerReleased;
-        }
-    }
 
     private void TimeRulerCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -523,66 +464,6 @@ public sealed partial class SceneBuilderPage : Page
         return ((int)(r * 255), (int)(g * 255), (int)(b * 255));
     }
 
-    private void Keyframe_PointerPressed(object sender, PointerRoutedEventArgs e)
-    {
-        if (sender is Microsoft.UI.Xaml.Shapes.Ellipse ellipse &&
-            ellipse.Tag is (KeyframeViewModel keyframe, TrackViewModel track))
-        {
-            var props = e.GetCurrentPoint(ellipse).Properties;
-            var shiftHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
-                .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-            if (props.IsRightButtonPressed)
-            {
-                // Right-click: delete keyframe (if track has more than 2 keyframes)
-                if (track.Keyframes.Count > 2)
-                {
-                    ViewModel.DeleteKeyframeCommand.Execute(keyframe);
-                    SidePanel.Visibility = Visibility.Collapsed;
-                    ViewModel.SelectedKeyframe = null;
-                    RenderTimeline();
-                }
-                e.Handled = true;
-                return;
-            }
-
-            if (props.IsLeftButtonPressed)
-            {
-                // Handle multi-select with Shift key
-                ViewModel.ToggleKeyframeSelection(keyframe, shiftHeld);
-
-                if (!shiftHeld)
-                {
-                    // Start dragging the keyframe
-                    _isDraggingKeyframe = true;
-                    _draggingKeyframe = keyframe;
-                    _draggingTrack = track;
-
-                    // Capture pointer for dragging
-                    TimelineCanvas.CapturePointer(e.Pointer);
-                    TimelineCanvas.PointerMoved += TimelineCanvas_KeyframeDrag;
-                    TimelineCanvas.PointerReleased += TimelineCanvas_KeyframeDragEnd;
-
-                    // Select the keyframe
-                    SelectKeyframe(keyframe);
-                }
-                else
-                {
-                    // Multi-select mode - show side panel if single selection
-                    if (ViewModel.SelectedKeyframes.Count == 1)
-                    {
-                        SelectKeyframe(keyframe);
-                    }
-                    else
-                    {
-                        SidePanel.Visibility = Visibility.Collapsed;
-                    }
-                    RenderTimeline(); // Re-render to show selection highlights
-                }
-            }
-            e.Handled = true;
-        }
-    }
 
     private void TimelineCanvas_KeyframeDrag(object sender, PointerRoutedEventArgs e)
     {
@@ -635,21 +516,6 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    private void Keyframe_RightTapped(object sender, RightTappedRoutedEventArgs e)
-    {
-        if (sender is Microsoft.UI.Xaml.Shapes.Ellipse ellipse &&
-            ellipse.Tag is (KeyframeViewModel keyframe, TrackViewModel track))
-        {
-            // Delete keyframe on right-click (if track has more than 2 keyframes)
-            if (track.Keyframes.Count > 2)
-            {
-                ViewModel.DeleteKeyframeCommand.Execute(keyframe);
-                SidePanel.Visibility = Visibility.Collapsed;
-                RenderTimeline();
-            }
-            e.Handled = true;
-        }
-    }
 
     private async void SelectKeyframe(KeyframeViewModel keyframe)
     {
@@ -893,81 +759,205 @@ public sealed partial class SceneBuilderPage : Page
     {
         if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
         {
-            // Close panel if clicking on empty canvas
             SidePanel.Visibility = Visibility.Collapsed;
             if (ViewModel != null) ViewModel.SelectedKeyframe = null;
             return;
         }
 
+        var pointerPoint = e.GetCurrentPoint(TimelineCanvas);
+        var point = new Vector2((float)pointerPoint.Position.X, (float)pointerPoint.Position.Y);
+
+        // Hit test to determine what was clicked
+        var playheadX = (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
+        var lightTracksHeight = ViewModel.Tracks.Count * 50f;
+        var canvasHeight = lightTracksHeight + ViewModel.EventTracks.Count * 50f;
+
+        var hitResult = HitTestHelper.HitTest(
+            TimelineCanvas,
+            point,
+            playheadX,
+            canvasHeight,
+            ViewModel.Tracks.ToList(),
+            ViewModel.EventTracks.ToList(),
+            ViewModel.SelectedKeyframes,
+            (float)ViewModel.ZoomLevel);
+
+        var props = pointerPoint.Properties;
+        var shiftHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        switch (hitResult.Type)
+        {
+            case HitType.Playhead:
+                if (props.IsLeftButtonPressed)
+                {
+                    StartPlayheadDrag(e);
+                    e.Handled = true;
+                }
+                break;
+
+            case HitType.Keyframe:
+                HandleKeyframeClick(hitResult.Keyframe!, hitResult.Track!, props, shiftHeld, e);
+                e.Handled = true;
+                break;
+
+            case HitType.EventTrack:
+                if (props.IsLeftButtonPressed)
+                {
+                    SelectEventTrack(hitResult.EventTrack!);
+                    e.Handled = true;
+                }
+                break;
+
+            case HitType.Track:
+                HandleTrackClick(hitResult.Track!, hitResult.TrackIndex, point, props, ctrlHeld, e);
+                e.Handled = true;
+                break;
+
+            case HitType.None:
+                // Clicked empty space - close panels
+                SidePanel.Visibility = Visibility.Collapsed;
+                ViewModel.SelectedKeyframe = null;
+                break;
+        }
+    }
+
+    private void StartPlayheadDrag(PointerRoutedEventArgs e)
+    {
+        _isDraggingPlayhead = true;
+        TimelineCanvas.CapturePointer(e.Pointer);
+        TimelineCanvas.PointerMoved += TimelineCanvas_PlayheadDrag;
+        TimelineCanvas.PointerReleased += TimelineCanvas_PlayheadDragEnd;
+    }
+
+    private void TimelineCanvas_PlayheadDrag(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isDraggingPlayhead)
+            return;
+
         var point = e.GetCurrentPoint(TimelineCanvas);
+        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
 
-        // Only handle left-click for creating keyframes
-        if (!point.Properties.IsLeftButtonPressed)
-            return;
+        // Clamp to valid range
+        timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
 
-        var x = point.Position.X;
-        var y = point.Position.Y;
-
-        const double trackHeight = 50;
-        var trackIndex = (int)(y / trackHeight);
-
-        // Ensure track index is valid
-        if (trackIndex < 0 || trackIndex >= ViewModel.Tracks.Count)
+        // Apply snap unless Ctrl held
+        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (ViewModel.IsSnapEnabled && !ctrlHeld)
         {
-            // Clicked outside tracks - close the panel
-            SidePanel.Visibility = Visibility.Collapsed;
-            ViewModel.SelectedKeyframe = null;
+            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+        }
+
+        ViewModel.PlayheadPosition = timeSeconds;
+        UpdatePlayheadPosition();
+    }
+
+    private void TimelineCanvas_PlayheadDragEnd(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isDraggingPlayhead)
+        {
+            _isDraggingPlayhead = false;
+            TimelineCanvas.ReleasePointerCapture(e.Pointer);
+            TimelineCanvas.PointerMoved -= TimelineCanvas_PlayheadDrag;
+            TimelineCanvas.PointerReleased -= TimelineCanvas_PlayheadDragEnd;
+        }
+    }
+
+    private void HandleKeyframeClick(
+        KeyframeViewModel keyframe,
+        TrackViewModel track,
+        Microsoft.UI.Input.PointerPointProperties props,
+        bool shiftHeld,
+        PointerRoutedEventArgs e)
+    {
+        if (props.IsRightButtonPressed)
+        {
+            // Right-click: delete (if track has > 2 keyframes)
+            if (track.Keyframes.Count > 2)
+            {
+                ViewModel.DeleteKeyframeCommand.Execute(keyframe);
+                SidePanel.Visibility = Visibility.Collapsed;
+                ViewModel.SelectedKeyframe = null;
+                RenderTimeline();
+            }
             return;
         }
 
-        var track = ViewModel.Tracks[trackIndex];
-        var timeSeconds = x / ViewModel.ZoomLevel;
-
-        // Clamp time to valid range
-        if (timeSeconds < 0) timeSeconds = 0;
-        if (timeSeconds > ViewModel.DurationSeconds) timeSeconds = ViewModel.DurationSeconds;
-
-        // Check if clicking near an existing keyframe - if so, don't create a new one
-        // (the keyframe's own handler will handle it)
-        var clickThreshold = 12.0 / ViewModel.ZoomLevel; // Match the keyframe circle size
-        var nearbyKeyframe = track.Keyframes
-            .FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < clickThreshold);
-
-        if (nearbyKeyframe != null)
+        if (props.IsLeftButtonPressed)
         {
-            // Don't create new keyframe - let the keyframe handle its own click
-            return;
-        }
+            ViewModel.ToggleKeyframeSelection(keyframe, shiftHeld);
 
-        // If panel is open, just close it without creating a new keyframe
+            if (!shiftHeld)
+            {
+                // Start dragging
+                _isDraggingKeyframe = true;
+                _draggingKeyframe = keyframe;
+                _draggingTrack = track;
+
+                TimelineCanvas.CapturePointer(e.Pointer);
+                TimelineCanvas.PointerMoved += TimelineCanvas_KeyframeDrag;
+                TimelineCanvas.PointerReleased += TimelineCanvas_KeyframeDragEnd;
+
+                SelectKeyframe(keyframe);
+            }
+            else
+            {
+                // Multi-select mode
+                if (ViewModel.SelectedKeyframes.Count == 1)
+                {
+                    SelectKeyframe(keyframe);
+                }
+                else
+                {
+                    SidePanel.Visibility = Visibility.Collapsed;
+                }
+                RenderTimeline();
+            }
+        }
+    }
+
+    private void HandleTrackClick(
+        TrackViewModel track,
+        int trackIndex,
+        Vector2 point,
+        Microsoft.UI.Input.PointerPointProperties props,
+        bool ctrlHeld,
+        PointerRoutedEventArgs e)
+    {
+        if (!props.IsLeftButtonPressed)
+            return;
+
+        // Close panel if clicking track (not keyframe)
         if (SidePanel.Visibility == Visibility.Visible)
         {
             SidePanel.Visibility = Visibility.Collapsed;
             ViewModel.SelectedKeyframe = null;
-            e.Handled = true;
             return;
         }
 
-        // Apply snap unless Ctrl is held
-        var ctrlHeld = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        // Calculate time from click position
+        var timeSeconds = point.X / ViewModel.ZoomLevel;
+        timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
+
+        // Apply snap unless Ctrl held
         if (!ctrlHeld)
         {
             timeSeconds = ViewModel.SnapToGrid(timeSeconds);
         }
 
-        // Left-click on blank space creates a new keyframe
+        // Create new keyframe
         ViewModel.AddKeyframe(track, timeSeconds);
         RenderTimeline();
 
-        // Select the newly added keyframe
+        // Select the new keyframe
         var newKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
         if (newKeyframe != null)
         {
             SelectKeyframe(newKeyframe);
         }
-
-        e.Handled = true;
     }
 
     private void CloseSidePanel_Click(object sender, RoutedEventArgs e)
