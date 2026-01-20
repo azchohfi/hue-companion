@@ -1,0 +1,89 @@
+# Roadmap: Scene Builder DAW Polish
+
+## Overview
+
+Transform the Scene Builder from functional to polished by migrating rendering to Win2D for GPU acceleration, adding DAW-style gradient color strips showing light animations over time, polishing interactions with hover states and accessibility improvements, and refining controls for a professional experience.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Win2D Foundation** - GPU-accelerated rendering with layered architecture
+- [ ] **Phase 2: Gradient Track Visuals** - Continuous color strips with Logic Pro aesthetic
+- [ ] **Phase 3: Interaction Polish** - Hover states, playhead improvements, ruler alignment
+- [ ] **Phase 4: Control Refinements** - Debounced inputs and improved color picker
+
+## Phase Details
+
+### Phase 1: Win2D Foundation
+**Goal**: Timeline renders via Win2D CanvasControl with GPU acceleration and layered architecture
+**Depends on**: Nothing (first phase)
+**Requirements**: REND-01, REND-02, REND-03
+**Success Criteria** (what must be TRUE):
+  1. Timeline rendering achieves 60fps during playback with profiling verification
+  2. Canvas uses separate layers for ruler, tracks, keyframes, and playhead with independent invalidation
+  3. Timeline displays correctly on high-DPI displays (150%, 200% scaling) without blur or misalignment
+  4. Component renderer classes exist (TimeRulerRenderer, TrackLanesRenderer, KeyframeLayerRenderer, PlayheadRenderer)
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
+### Phase 2: Gradient Track Visuals
+**Goal**: Each track displays continuous gradient color strip showing light color evolution over time
+**Depends on**: Phase 1 (Win2D foundation required for gradient rendering)
+**Requirements**: TRAK-01, TRAK-02
+**Success Criteria** (what must be TRUE):
+  1. User can see continuous color gradient between keyframes showing interpolated colors
+  2. Gradient strips have rounded edges and clean borders matching Logic Pro aesthetic
+  3. Keyframe markers are overlaid on gradient strips (not replaced by them)
+  4. Gradient rendering maintains 60fps performance during playback
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
+### Phase 3: Interaction Polish
+**Goal**: Timeline interactions feel polished with clear visual affordances and accessibility compliance
+**Depends on**: Phase 2 (layered architecture required for hover states)
+**Requirements**: TRAK-03, PLAY-01, PLAY-02, PLAY-03
+**Success Criteria** (what must be TRUE):
+  1. Keyframes and playhead show hover states (brightness changes, cursor changes) on mouse over
+  2. Playhead has 44x44px minimum drag hit area meeting WCAG 2.5.5 accessibility standards
+  3. Time ruler maintains alignment with keyframes when window is resized
+  4. User receives visual feedback (cursor change, hover highlight) indicating playhead is draggable
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
+### Phase 4: Control Refinements
+**Goal**: Controls provide responsive interaction without API flooding
+**Depends on**: Phase 3
+**Requirements**: CTRL-01, CTRL-02, CTRL-03, PICK-01, PICK-02, PICK-03
+**Success Criteria** (what must be TRUE):
+  1. Snap and loop controls use compact icon toggles with accessible on/off states
+  2. Brightness and frequency sliders are debounced (150ms) to prevent API spam during drag
+  3. Color picker popup is smaller and positions to avoid obscuring target keyframe
+  4. Color picker updates are debounced to prevent API flooding during color adjustment
+  5. Keyboard shortcuts are documented in UI via tooltips
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Win2D Foundation | 0/0 | Not started | - |
+| 2. Gradient Track Visuals | 0/0 | Not started | - |
+| 3. Interaction Polish | 0/0 | Not started | - |
+| 4. Control Refinements | 0/0 | Not started | - |
