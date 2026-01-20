@@ -33,6 +33,7 @@
   <!-- MSIX identity for dev builds (allows running alongside stable) -->
   <PropertyGroup Condition="'$(DevBuild)' == 'true'">
     <PackageId>HueWindows.Dev</PackageId>
+    <AppxManifest>Package.Dev.appxmanifest</AppxManifest>
   </PropertyGroup>
 
   <ItemGroup>
