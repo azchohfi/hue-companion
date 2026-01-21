@@ -53,7 +53,10 @@ skipped: 0
   reason: "User reported: This isn't great in practice, the light should update basically live update so people can preview in real life. This wasn't clear before, sorry about that."
   severity: major
   test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "150ms debounce timer on color picker prevents live preview - user needs immediate updates to see colors on actual lights"
+  artifacts:
+    - path: "src/HueWindows/Views/SceneBuilderPage.xaml.cs"
+      issue: "_colorDebounceTimer delays API calls by 150ms"
+  missing:
+    - "Remove debounce timer from color picker, call UpdateLightForKeyframeAsync immediately"
+  debug_session: "inline diagnosis"
