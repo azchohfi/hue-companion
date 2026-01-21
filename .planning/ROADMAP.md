@@ -8,12 +8,12 @@ Scene Builder bug bash milestone. Two phases address color picker usability issu
 
 ### Phase 5: Color Picker Overhaul
 
-**Goal:** Users select colors via temperature + saturation model where every choice produces accurate, realizable results on physical Hue bulbs.
+**Goal:** Users select colors via hue + saturation wheel where every choice produces accurate, realizable results on physical Hue bulbs.
 
 **Dependencies:** None (first phase of v0.3)
 
 **Requirements:**
-- CPICK-01: Color picker uses temperature + saturation model instead of full color wheel
+- CPICK-01: Color picker uses hue + saturation wheel clipped to Philips Hue gamut
 - CPICK-02: All selectable colors are realizable on Philips Hue bulbs
 - CPICK-03: RGB text input fields removed from color picker
 - CPICK-04: Color picker circle reduced to ~50% of current size
@@ -22,7 +22,7 @@ Scene Builder bug bash milestone. Two phases address color picker usability issu
 - COLOR-02: Dragging keyframe preserves user-selected color (no corruption)
 
 **Success Criteria:**
-1. User can select color temperature (warm to cool white) and saturation level
+1. User can select any hue on the color wheel with adjustable saturation
 2. Every color selectable in the picker displays correctly on physical Hue bulb
 3. Selected color in picker matches the gradient bar segment for that keyframe
 4. Dragging a keyframe to a new time position preserves the exact color value

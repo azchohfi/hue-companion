@@ -5,7 +5,7 @@
 **Goal:** Fix color picker usability issues and keyframe interaction bugs discovered during v0.2 testing.
 
 **Target fixes:**
-- Replace full color wheel with temperature + saturation picker (always realizable on Hue)
+- Replace unrestricted color wheel with hue + saturation wheel clipped to Hue gamut
 - Simplify color picker UI (remove RGB fields, reduce size)
 - Fix color picker popup positioning constraints
 - Fix keyframe drag color corruption

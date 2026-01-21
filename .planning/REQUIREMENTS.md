@@ -9,7 +9,7 @@ Bug fixes and usability improvements for Scene Builder color picker and interact
 
 ### Color Picker Redesign
 
-- [ ] **CPICK-01**: Color picker uses temperature + saturation model instead of full color wheel
+- [ ] **CPICK-01**: Color picker uses hue + saturation wheel clipped to Philips Hue gamut
 - [ ] **CPICK-02**: All selectable colors are realizable on Philips Hue bulbs
 - [ ] **CPICK-03**: RGB text input fields removed from color picker
 - [ ] **CPICK-04**: Color picker circle reduced to ~50% of current size
@@ -41,7 +41,7 @@ Deferred from v0.2 to future milestones:
 
 | Feature | Reason |
 |---------|--------|
-| Full HSV/HSL color wheel | Hue bulbs can't reproduce all colors; temperature + saturation is more appropriate |
+| Unrestricted color wheel | Hue bulbs can't reproduce all sRGB colors; wheel must be clipped to Hue gamut |
 | Audio integration | This is lights-only |
 | Undo/redo system | Not addressing in this pass |
 
