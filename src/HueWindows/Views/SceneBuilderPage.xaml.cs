@@ -636,6 +636,9 @@ public sealed partial class SceneBuilderPage : Page
 
     private async void SelectKeyframe(KeyframeViewModel keyframe)
     {
+        // Update both SelectedKeyframe and SelectedKeyframes collection
+        ViewModel.SelectedKeyframes.Clear();
+        ViewModel.SelectedKeyframes.Add(keyframe);
         ViewModel.SelectedKeyframe = keyframe;
         SidePanel.Visibility = Visibility.Visible;
         KeyframeTimeText.Text = $"Keyframe @ {keyframe.TimeSeconds:F1}s";

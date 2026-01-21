@@ -56,7 +56,7 @@ public class KeyframeLayerRenderer
 
                 // Size and stroke based on selection
                 var radius = isSelected ? 10.0f : 8.0f;
-                var strokeWidth = isSelected ? 4.0f : 2.0f;
+                var strokeWidth = isSelected ? 3.0f : 2.0f;
                 var strokeColor = isSelected ? Color.FromArgb(255, 0, 0, 0) : normalStrokeColor;
 
                 // Glow parameters: selected gets persistent glow, hovered gets lighter glow
