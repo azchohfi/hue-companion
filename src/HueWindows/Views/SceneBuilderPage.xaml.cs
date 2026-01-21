@@ -1168,6 +1168,10 @@ public sealed partial class SceneBuilderPage : Page
             if (Enum.TryParse<HueWindows.Core.Models.TransitionStyle>(tagValue, out var transition))
             {
                 ViewModel.SelectedKeyframe.Transition = transition;
+                ViewModel.HasUnsavedChanges = true;
+
+                // Immediately update gradient bar to show new transition
+                RenderTimeline();
             }
         }
     }
