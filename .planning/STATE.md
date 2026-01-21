@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** The track representation must feel like a real DAW — continuous color gradients showing what lights will do over time, with precise time alignment that users can trust.
-**Current focus:** Milestone complete — all phases verified
+**Current focus:** Gap closure complete — ready for UAT re-verification
 
 ## Current Position
 
-Phase: 4 of 4 (Control Refinements) — COMPLETE
-Plan: 2 of 2 complete
-Status: Milestone complete
-Last activity: 2026-01-21 — Completed Phase 4 (Control Refinements)
+Phase: 4 of 4 (Control Refinements) — gap closure complete
+Plan: 3 of 3 complete (including gap closure)
+Status: Gap closure executed
+Last activity: 2026-01-21 — Completed 04-03-PLAN.md (color picker live preview)
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: 4 min
 - Total execution time: 0.7 hours
 
@@ -30,10 +30,10 @@ Progress: [██████████] 100%
 | 01-win2d-foundation | 3/3 | 14 min | 5 min |
 | 02-gradient-track-visuals | 2/2 | 10 min | 5 min |
 | 03-interaction-polish | 3/3 | 12 min | 4 min |
-| 04-control-refinements | 2/2 | 7 min | 3.5 min |
+| 04-control-refinements | 3/3 | 10 min | 3.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 3m, 4m, 5m, 3m, 4m
+- Last 5 plans: 4m, 5m, 3m, 4m, 3m
 - Trend: Consistent fast execution (~4min average)
 
 *Updated after each plan completion*
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - 04-02: 36x36px minimum size for compact icon buttons (touch-friendly)
 - 04-02: AutomationProperties.AcceleratorKey for screen reader keyboard hints
 - 04-02: Loop toggle binds to ViewModel.IsLooping (was hardcoded)
+- 04-03: Color picker uses direct API calls for real-time preview (no debounce)
+- 04-03: Brightness slider retains 150ms debounce (different UX requirements)
 
 ### Pending Todos
 
@@ -88,6 +90,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed Phase 4 (Control Refinements) — Milestone complete
+Stopped at: Completed 04-03-PLAN.md (color picker live preview gap closure)
 Resume file: None
-Next: Audit milestone (/gsd:audit-milestone)
+Next: UAT re-verification for color picker live preview
