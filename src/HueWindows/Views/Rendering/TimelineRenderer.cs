@@ -31,6 +31,7 @@ public class TimelineRenderer : IDisposable
     private readonly RenderCache _cache;
     private readonly TimeRulerRenderer _rulerRenderer;
     private readonly TrackLanesRenderer _trackRenderer;
+    private readonly GradientTrackRenderer _gradientRenderer;
     private readonly KeyframeLayerRenderer _keyframeRenderer;
     private readonly PlayheadRenderer _playheadRenderer;
 
@@ -44,6 +45,7 @@ public class TimelineRenderer : IDisposable
         _cache = new RenderCache();
         _rulerRenderer = new TimeRulerRenderer();
         _trackRenderer = new TrackLanesRenderer();
+        _gradientRenderer = new GradientTrackRenderer();
         _keyframeRenderer = new KeyframeLayerRenderer();
         _playheadRenderer = new PlayheadRenderer();
     }
@@ -98,6 +100,15 @@ public class TimelineRenderer : IDisposable
             context.TrackHeight,
             context.DurationSeconds,
             context.ZoomLevel
+        );
+
+        // Layer 2.5: Gradient strips (after tracks, before keyframes)
+        _gradientRenderer.Draw(
+            ds,
+            context.Tracks,
+            context.ZoomLevel,
+            context.TrackHeight,
+            context.DurationSeconds
         );
 
         // Layer 3: Keyframes
