@@ -271,25 +271,29 @@ public partial class SceneBuilderViewModel : ObservableObject
 
         foreach (var light in room.Lights)
         {
+            // Use light's current color and brightness, or default to neutral white
+            var initialColor = light.Color ?? HueColor.White;
+            var initialBrightness = light.Brightness ?? 1.0;
+
             var track = new TrackViewModel
             {
                 LightId = light.Id.ToString(),
                 DisplayName = light.Name,
                 Keyframes = new ObservableCollection<KeyframeViewModel>
                 {
-                    // Default: two keyframes at start and end with same color
+                    // Default: two keyframes at start and end with light's CURRENT color
                     new KeyframeViewModel
                     {
                         TimeSeconds = 0,
-                        Color = HueColors.WarmWhite,
-                        Brightness = 1.0,
+                        Color = initialColor,
+                        Brightness = initialBrightness,
                         Transition = TransitionStyle.EaseInOut
                     },
                     new KeyframeViewModel
                     {
                         TimeSeconds = DurationSeconds,
-                        Color = HueColors.WarmWhite,
-                        Brightness = 1.0,
+                        Color = initialColor,
+                        Brightness = initialBrightness,
                         Transition = TransitionStyle.EaseInOut
                     }
                 }
