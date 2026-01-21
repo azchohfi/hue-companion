@@ -292,6 +292,11 @@ public sealed partial class GamutColorPicker : UserControl
 
     public double Brightness => BrightnessSlider.Value / 100.0;
 
+    public void SetBrightness(double brightness)
+    {
+        BrightnessSlider.Value = brightness * 100.0;
+    }
+
     private double GetMaxSaturation(double hue)
     {
         int index = (int)Math.Round(hue) % 360;
