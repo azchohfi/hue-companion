@@ -440,7 +440,7 @@ public sealed partial class SceneBuilderPage : Page
             return;
 
         var point = e.GetCurrentPoint(TimeRulerCanvas);
-        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+        var timeSeconds = (point.Position.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
 
         // Clamp to valid range
         if (timeSeconds < 0) timeSeconds = 0;
@@ -493,7 +493,7 @@ public sealed partial class SceneBuilderPage : Page
             return;
 
         var point = e.GetCurrentPoint(TimelineCanvas);
-        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+        var timeSeconds = (point.Position.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
 
         // Clamp to valid range
         if (timeSeconds < 0) timeSeconds = 0;
@@ -790,7 +790,7 @@ public sealed partial class SceneBuilderPage : Page
         var point = new Vector2((float)pointerPoint.Position.X, (float)pointerPoint.Position.Y);
 
         // Hit test to determine what was clicked
-        var playheadX = (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
+        var playheadX = GradientTrackRenderer.LeftMargin + (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
         var lightTracksHeight = ViewModel.Tracks.Count * 50f;
         var canvasHeight = lightTracksHeight + ViewModel.EventTracks.Count * 50f;
 
@@ -855,7 +855,7 @@ public sealed partial class SceneBuilderPage : Page
         var point = new Vector2((float)position.X, (float)position.Y);
 
         // Hit test to find keyframe under cursor
-        var playheadX = (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
+        var playheadX = GradientTrackRenderer.LeftMargin + (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
         var lightTracksHeight = ViewModel.Tracks.Count * 50f;
         var canvasHeight = lightTracksHeight + ViewModel.EventTracks.Count * 50f;
 
@@ -897,7 +897,7 @@ public sealed partial class SceneBuilderPage : Page
             return;
 
         var point = e.GetCurrentPoint(TimelineCanvas);
-        var timeSeconds = point.Position.X / ViewModel.ZoomLevel;
+        var timeSeconds = (point.Position.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
 
         // Clamp to valid range
         timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
@@ -1002,7 +1002,7 @@ public sealed partial class SceneBuilderPage : Page
         }
 
         // Calculate time from click position
-        var timeSeconds = point.X / ViewModel.ZoomLevel;
+        var timeSeconds = (point.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
         timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
 
         // Apply snap if enabled and Ctrl not held

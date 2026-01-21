@@ -123,7 +123,7 @@ public class TimelineRenderer : IDisposable
         // Layer 4: Playhead (draws on top of everything)
         _playheadRenderer.Draw(
             ds,
-            context.PlayheadPosition * context.ZoomLevel,
+            GradientTrackRenderer.LeftMargin + (context.PlayheadPosition * context.ZoomLevel),
             context.CanvasHeight
         );
     }

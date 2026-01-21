@@ -63,7 +63,7 @@ public class RenderCache : IDisposable
         // Draw vertical grid lines at each snap interval
         for (float time = snapInterval; time < gridExtentSeconds; time += snapInterval)
         {
-            var x = time * zoomLevel;
+            var x = GradientTrackRenderer.LeftMargin + (time * zoomLevel);
             pathBuilder.BeginFigure(x, 0);
             pathBuilder.AddLine(x, height);
             pathBuilder.EndFigure(CanvasFigureLoop.Open);

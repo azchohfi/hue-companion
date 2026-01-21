@@ -41,7 +41,7 @@ public class TimeRulerRenderer
         // Draw tick marks every second, labels every 5 seconds
         for (int i = 0; i <= durationSeconds; i++)
         {
-            var x = i * zoomLevel;
+            var x = GradientTrackRenderer.LeftMargin + (i * zoomLevel);
             var tickHeight = (i % 5 == 0) ? 12.0f : 6.0f;
 
             // Draw tick mark

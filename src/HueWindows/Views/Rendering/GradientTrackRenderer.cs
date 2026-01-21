@@ -30,6 +30,17 @@ public class GradientTrackRenderer
     private const float MinSegmentWidth = 5.0f;
 
     /// <summary>
+    /// Corner radius for rounded rectangles.
+    /// Subtle rounding rather than full pill shape.
+    /// </summary>
+    private const float CornerRadius = 4.0f;
+
+    /// <summary>
+    /// Left margin for timeline content to prevent keyframes at time=0 from being clipped.
+    /// </summary>
+    public const float LeftMargin = 14.0f;
+
+    /// <summary>
     /// Draws gradient strips for all tracks showing color evolution between keyframes.
     /// </summary>
     /// <param name="ds">Canvas drawing session.</param>
@@ -55,6 +66,7 @@ public class GradientTrackRenderer
 
     /// <summary>
     /// Draws the gradient strip for a single track.
+    /// All x positions are offset by LeftMargin to give keyframes room at edges.
     /// </summary>
     private void DrawTrackGradient(
         CanvasDrawingSession ds,
@@ -74,9 +86,10 @@ public class GradientTrackRenderer
         // Edge extension: solid color before first keyframe
         if (firstKf.TimeSeconds > 0)
         {
+            var x = LeftMargin;
             var width = (float)(firstKf.TimeSeconds * zoomLevel);
             var color = HueColorToWindowsColor(firstKf.Color);
-            DrawSolidSegment(ds, 0, y, width, trackHeight, color);
+            DrawSolidSegment(ds, x, y, width, trackHeight, color);
         }
 
         // Gradient segments between keyframes
@@ -85,8 +98,8 @@ public class GradientTrackRenderer
             var startKf = keyframes[i];
             var endKf = keyframes[i + 1];
 
-            var segmentStartX = (float)(startKf.TimeSeconds * zoomLevel);
-            var segmentEndX = (float)(endKf.TimeSeconds * zoomLevel);
+            var segmentStartX = LeftMargin + (float)(startKf.TimeSeconds * zoomLevel);
+            var segmentEndX = LeftMargin + (float)(endKf.TimeSeconds * zoomLevel);
             var segmentWidth = segmentEndX - segmentStartX;
 
             // Very short segments fall back to solid midpoint color
@@ -104,7 +117,7 @@ public class GradientTrackRenderer
         // Edge extension: solid color after last keyframe
         if (lastKf.TimeSeconds < durationSeconds)
         {
-            var extendX = (float)(lastKf.TimeSeconds * zoomLevel);
+            var extendX = LeftMargin + (float)(lastKf.TimeSeconds * zoomLevel);
             var extendWidth = (float)((durationSeconds - lastKf.TimeSeconds) * zoomLevel);
             var color = HueColorToWindowsColor(lastKf.Color);
             DrawSolidSegment(ds, extendX, y, extendWidth, trackHeight, color);
@@ -123,7 +136,6 @@ public class GradientTrackRenderer
         float width,
         float height)
     {
-        var cornerRadius = height / 2; // Pill shape
         var rect = new Rect(x, y, width, height);
 
         // Create gradient stops with easing
@@ -136,12 +148,15 @@ public class GradientTrackRenderer
             EndPoint = new Vector2(x + width, 0)
         };
 
-        // Fill with gradient (pill shape)
-        ds.FillRoundedRectangle(rect, cornerRadius, cornerRadius, gradientBrush);
+        // Fill with gradient
+        ds.FillRoundedRectangle(rect, CornerRadius, CornerRadius, gradientBrush);
+
+        // Add depth effect (highlight and shadow)
+        DrawDepthEffect(ds, x, y, width, height);
 
         // Draw subtle dark border
-        var borderColor = Color.FromArgb(80, 0, 0, 0);
-        ds.DrawRoundedRectangle(rect, cornerRadius, cornerRadius, borderColor, 1.0f);
+        var borderColor = Color.FromArgb(60, 0, 0, 0);
+        ds.DrawRoundedRectangle(rect, CornerRadius, CornerRadius, borderColor, 1.0f);
     }
 
     /// <summary>
@@ -199,15 +214,64 @@ public class GradientTrackRenderer
         if (width <= 0)
             return;
 
-        var cornerRadius = height / 2; // Pill shape
         var rect = new Rect(x, y, width, height);
 
         using var brush = new CanvasSolidColorBrush(ds, color);
-        ds.FillRoundedRectangle(rect, cornerRadius, cornerRadius, brush);
+        ds.FillRoundedRectangle(rect, CornerRadius, CornerRadius, brush);
+
+        // Add depth effect (highlight and shadow)
+        DrawDepthEffect(ds, x, y, width, height);
 
         // Draw subtle dark border
-        var borderColor = Color.FromArgb(80, 0, 0, 0);
-        ds.DrawRoundedRectangle(rect, cornerRadius, cornerRadius, borderColor, 1.0f);
+        var borderColor = Color.FromArgb(60, 0, 0, 0);
+        ds.DrawRoundedRectangle(rect, CornerRadius, CornerRadius, borderColor, 1.0f);
+    }
+
+    /// <summary>
+    /// Draws a depth effect with top highlight and bottom shadow for a 3D appearance.
+    /// </summary>
+    private void DrawDepthEffect(
+        CanvasDrawingSession ds,
+        float x,
+        float y,
+        float width,
+        float height)
+    {
+        // Inset from edges to stay within rounded corners
+        var inset = CornerRadius;
+        var effectWidth = width - (inset * 2);
+        if (effectWidth <= 0)
+            return;
+
+        // Top highlight - subtle white gradient fading down
+        var highlightHeight = height * 0.35f;
+        var highlightStops = new CanvasGradientStop[]
+        {
+            new() { Position = 0.0f, Color = Color.FromArgb(50, 255, 255, 255) },
+            new() { Position = 1.0f, Color = Color.FromArgb(0, 255, 255, 255) }
+        };
+        using var highlightBrush = new CanvasLinearGradientBrush(ds, highlightStops)
+        {
+            StartPoint = new Vector2(0, y),
+            EndPoint = new Vector2(0, y + highlightHeight)
+        };
+        var highlightRect = new Rect(x + inset, y, effectWidth, highlightHeight);
+        ds.FillRectangle(highlightRect, highlightBrush);
+
+        // Bottom shadow - subtle dark gradient fading up
+        var shadowHeight = height * 0.25f;
+        var shadowStops = new CanvasGradientStop[]
+        {
+            new() { Position = 0.0f, Color = Color.FromArgb(0, 0, 0, 0) },
+            new() { Position = 1.0f, Color = Color.FromArgb(40, 0, 0, 0) }
+        };
+        using var shadowBrush = new CanvasLinearGradientBrush(ds, shadowStops)
+        {
+            StartPoint = new Vector2(0, y + height - shadowHeight),
+            EndPoint = new Vector2(0, y + height)
+        };
+        var shadowRect = new Rect(x + inset, y + height - shadowHeight, effectWidth, shadowHeight);
+        ds.FillRectangle(shadowRect, shadowBrush);
     }
 
     /// <summary>

@@ -103,7 +103,7 @@ public static class HitTestHelper
             for (int i = track.Keyframes.Count - 1; i >= 0; i--)
             {
                 var keyframe = track.Keyframes[i];
-                var kfX = (float)(keyframe.TimeSeconds * zoomLevel);
+                var kfX = GradientTrackRenderer.LeftMargin + (float)(keyframe.TimeSeconds * zoomLevel);
                 var isSelected = selectedKeyframes.Contains(keyframe);
                 var radius = isSelected ? KeyframeSelectedRadius : KeyframeRadius;
 

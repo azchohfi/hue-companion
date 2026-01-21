@@ -39,7 +39,8 @@ public class KeyframeLayerRenderer
 
             foreach (var keyframe in track.Keyframes)
             {
-                var x = (float)(keyframe.TimeSeconds * zoomLevel);
+                // Apply left margin to match gradient bar positioning
+                var x = GradientTrackRenderer.LeftMargin + (float)(keyframe.TimeSeconds * zoomLevel);
                 var isSelected = selectedSet.Contains(keyframe);
 
                 // Convert HueColor to RGB
