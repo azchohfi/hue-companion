@@ -279,56 +279,23 @@ public class GradientTrackRenderer
     /// </summary>
     private Color InterpolateColor(HueColor startColor, HueColor endColor, double t)
     {
-        var startRgb = HueColorToRgb(startColor);
-        var endRgb = HueColorToRgb(endColor);
+        var (sr, sg, sb) = startColor.ToRgb(1.0);
+        var (er, eg, eb) = endColor.ToRgb(1.0);
 
-        // Linear RGB interpolation
-        var r = startRgb.r + (endRgb.r - startRgb.r) * t;
-        var g = startRgb.g + (endRgb.g - startRgb.g) * t;
-        var b = startRgb.b + (endRgb.b - startRgb.b) * t;
+        // Linear RGB interpolation in byte space
+        var r = sr + (er - sr) * t;
+        var g = sg + (eg - sg) * t;
+        var b = sb + (eb - sb) * t;
 
-        return Color.FromArgb(255,
-            (byte)System.Math.Clamp(r * 255, 0, 255),
-            (byte)System.Math.Clamp(g * 255, 0, 255),
-            (byte)System.Math.Clamp(b * 255, 0, 255));
+        return Color.FromArgb(255, (byte)r, (byte)g, (byte)b);
     }
 
     /// <summary>
-    /// Converts HueColor to Windows.UI.Color.
+    /// Converts HueColor to Windows.UI.Color using canonical ToRgb() method.
     /// </summary>
     private Color HueColorToWindowsColor(HueColor color)
     {
-        var rgb = HueColorToRgb(color);
-        return Color.FromArgb(255,
-            (byte)(rgb.r * 255),
-            (byte)(rgb.g * 255),
-            (byte)(rgb.b * 255));
-    }
-
-    /// <summary>
-    /// Converts HueColor (xy color space) to RGB.
-    /// This is a simplified approximation - real conversion requires the light's gamut.
-    /// </summary>
-    private (double r, double g, double b) HueColorToRgb(HueColor color)
-    {
-        var x = color.X;
-        var y = color.Y;
-        var z = 1.0 - x - y;
-
-        var Y = 1.0; // Full brightness for gradient visualization (brightness not shown)
-        var X = (Y / y) * x;
-        var Z = (Y / y) * z;
-
-        // XYZ to RGB (sRGB D65)
-        var r = X * 1.656492 - Y * 0.354851 - Z * 0.255038;
-        var g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
-        var b = X * 0.051713 - Y * 0.121364 + Z * 1.011530;
-
-        // Clamp to 0-1 range
-        r = System.Math.Max(0, System.Math.Min(1, r));
-        g = System.Math.Max(0, System.Math.Min(1, g));
-        b = System.Math.Max(0, System.Math.Min(1, b));
-
-        return (r, g, b);
+        var (r, g, b) = color.ToRgb(1.0); // brightness=1.0 for visualization
+        return Color.FromArgb(255, r, g, b);
     }
 }
