@@ -19,19 +19,24 @@ public class PlayheadRenderer
     /// <param name="ds">Canvas drawing session.</param>
     /// <param name="playheadX">X position of the playhead in pixels.</param>
     /// <param name="height">Height of the canvas.</param>
-    public void Draw(CanvasDrawingSession ds, float playheadX, float height)
+    /// <param name="isHovered">Whether the playhead is currently hovered.</param>
+    /// <param name="isDragging">Whether the playhead is being dragged.</param>
+    public void Draw(CanvasDrawingSession ds, float playheadX, float height, bool isHovered = false, bool isDragging = false)
     {
         var playheadColor = Color.FromArgb(255, 255, 100, 100); // Red
+
+        // Line thickness: 4px when hovered or dragging, 2px otherwise
+        var lineThickness = (isHovered || isDragging) ? 4.0f : 2.0f;
 
         // Draw vertical playhead line
         ds.DrawLine(
             new Vector2(playheadX, 0),
             new Vector2(playheadX, height),
             playheadColor,
-            2.0f
+            lineThickness
         );
 
-        // Draw triangle handle at top
+        // Draw triangle handle at top (size unchanged regardless of hover)
         EnsureTriangleGeometry(ds);
         if (_triangleGeometry != null)
         {
