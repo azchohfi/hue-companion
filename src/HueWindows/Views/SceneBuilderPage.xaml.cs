@@ -365,8 +365,10 @@ public sealed partial class SceneBuilderPage : Page
     {
         // Calculate and set canvas dimensions based on tracks and duration
         const double trackHeight = 50;
+        const double keyframeRadius = 12; // Padding for keyframe visibility at edges
         var totalHeight = (ViewModel.Tracks.Count + ViewModel.EventTracks.Count) * trackHeight;
-        var totalWidth = ViewModel.DurationSeconds * ViewModel.ZoomLevel;
+        // Include left margin and right padding so keyframes at edges aren't clipped
+        var totalWidth = GradientTrackRenderer.LeftMargin + (ViewModel.DurationSeconds * ViewModel.ZoomLevel) + keyframeRadius;
 
         if (TimelineCanvas != null)
         {
@@ -377,13 +379,19 @@ public sealed partial class SceneBuilderPage : Page
             if (totalWidth > 0)
             {
                 TimelineCanvas.Width = totalWidth;
+                TimelineCanvas.MinWidth = totalWidth; // Ensure minimum size
             }
         }
 
         if (TimeRulerCanvas != null && totalWidth > 0)
         {
             TimeRulerCanvas.Width = totalWidth;
+            TimeRulerCanvas.MinWidth = totalWidth;
         }
+
+        // Force layout update before invalidating to ensure canvas bounds are correct
+        TimelineCanvas?.UpdateLayout();
+        TimeRulerCanvas?.UpdateLayout();
 
         // Invalidate cache if zoom or duration changed
         _timelineRenderer?.InvalidateCache();
@@ -472,6 +480,10 @@ public sealed partial class SceneBuilderPage : Page
     {
         // Skip hover tracking during drag operations
         if (_isDraggingKeyframe || _isDraggingPlayhead)
+            return;
+
+        // Guard against uninitialized state
+        if (ViewModel?.Tracks == null || ViewModel.Tracks.Count == 0)
             return;
 
         var pointerPoint = e.GetCurrentPoint(TimelineCanvas);
