@@ -164,18 +164,20 @@ public static class ColorConverter
 
     /// <summary>
     /// Interpolates between two colors in HSV color space to avoid muddy colors.
+    /// Brightness is handled separately and should not affect the color interpolation.
     /// </summary>
     /// <param name="start">Starting XY color.</param>
     /// <param name="end">Ending XY color.</param>
     /// <param name="t">Interpolation factor (0.0 to 1.0).</param>
-    /// <param name="startBrightness">Starting brightness.</param>
-    /// <param name="endBrightness">Ending brightness.</param>
+    /// <param name="startBrightness">Starting brightness (not used for color, kept for API compatibility).</param>
+    /// <param name="endBrightness">Ending brightness (not used for color, kept for API compatibility).</param>
     /// <returns>Interpolated XY color.</returns>
     public static HueColor InterpolateHsv(HueColor start, HueColor end, double t, double startBrightness = 1.0, double endBrightness = 1.0)
     {
-        // Convert to HSV
-        var (h1, s1, v1) = XyToHsv(start, startBrightness);
-        var (h2, s2, v2) = XyToHsv(end, endBrightness);
+        // Convert to HSV at full brightness to preserve color saturation
+        // Brightness is handled separately in the keyframe system
+        var (h1, s1, _) = XyToHsv(start, 1.0);
+        var (h2, s2, _) = XyToHsv(end, 1.0);
 
         // Interpolate hue using shortest path around the color wheel
         var hueDiff = h2 - h1;
@@ -193,9 +195,11 @@ public static class ColorConverter
         if (hue >= 360)
             hue -= 360;
 
-        // Interpolate saturation and value
+        // Interpolate saturation
         var saturation = s1 + (s2 - s1) * t;
-        var value = v1 + (v2 - v1) * t;
+
+        // Always use full value (1.0) for color - brightness is separate
+        var value = 1.0;
 
         // Convert back to XY
         var (xy, _) = HsvToXy(hue, saturation, value);
