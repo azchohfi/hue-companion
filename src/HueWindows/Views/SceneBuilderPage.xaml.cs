@@ -454,7 +454,7 @@ public sealed partial class SceneBuilderPage : Page
     }
 
 
-    private void TimeRulerCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private async void TimeRulerCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel == null)
             return;
@@ -476,6 +476,10 @@ public sealed partial class SceneBuilderPage : Page
 
         ViewModel.PlayheadPosition = timeSeconds;
         RenderTimeline();
+
+        // Update lights to match new playhead position
+        await ViewModel.UpdateLightsForPlayheadAsync();
+
         e.Handled = true;
     }
 
@@ -990,7 +994,7 @@ public sealed partial class SceneBuilderPage : Page
         TimelineCanvas.PointerReleased += TimelineCanvas_PlayheadDragEnd;
     }
 
-    private void TimelineCanvas_PlayheadDrag(object sender, PointerRoutedEventArgs e)
+    private async void TimelineCanvas_PlayheadDrag(object sender, PointerRoutedEventArgs e)
     {
         if (!_isDraggingPlayhead)
             return;
@@ -1011,6 +1015,9 @@ public sealed partial class SceneBuilderPage : Page
 
         ViewModel.PlayheadPosition = timeSeconds;
         UpdatePlayheadPosition();
+
+        // Update lights during scrubbing (throttled in ViewModel)
+        await ViewModel.UpdateLightsForPlayheadAsync();
     }
 
     private void TimelineCanvas_PlayheadDragEnd(object sender, PointerRoutedEventArgs e)
