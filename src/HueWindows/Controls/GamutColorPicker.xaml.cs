@@ -38,9 +38,8 @@ public sealed partial class GamutColorPicker : UserControl
     public event EventHandler<HueColor>? ColorChanged;
 
     // Rendering constants
-    private const float OuterRadius = 72f;    // Outer edge of hue ring
-    private const float InnerRadius = 50f;    // Inner edge of hue ring (saturation area)
-    private const float SelectorRadius = 6f;
+    private const float PickerRadius = 110f;  // Full picker radius (entire circle is clickable)
+    private const float SelectorRadius = 8f;
 
     // State
     private double _selectedHue = 0;          // 0-360
@@ -102,52 +101,31 @@ public sealed partial class GamutColorPicker : UserControl
 
         ds.Clear(Colors.Transparent);
 
-        // Draw hue ring
-        DrawHueRing(ds, cx, cy);
-
-        // Draw saturation area with gamut mask
-        DrawSaturationArea(ds, cx, cy);
+        // Draw unified color wheel (saturation from center to edge)
+        DrawColorWheel(ds, cx, cy);
 
         // Draw selection indicator
         DrawSelectionIndicator(ds, cx, cy);
     }
 
-    private void DrawHueRing(CanvasDrawingSession ds, float cx, float cy)
+    private void DrawColorWheel(CanvasDrawingSession ds, float cx, float cy)
     {
-        const int segments = 60;
-        for (int i = 0; i < segments; i++)
+        const int hueSegments = 60;
+        const int satSteps = 12;
+
+        for (int i = 0; i < hueSegments; i++)
         {
-            float startAngle = i * (360f / segments) - 90; // -90 to start at top
-            float sweepAngle = 360f / segments + 0.5f;     // Slight overlap
-
-            using var geometry = CreateArcGeometry(ds, cx, cy, OuterRadius, InnerRadius, startAngle, sweepAngle);
-
-            // Color for this segment
-            var hue = i * (360.0 / segments);
-            var color = HsvToColor(hue, 1.0, 1.0);
-
-            ds.FillGeometry(geometry, color);
-        }
-    }
-
-    private void DrawSaturationArea(CanvasDrawingSession ds, float cx, float cy)
-    {
-        const int segments = 60;
-        const int satSteps = 8;
-
-        for (int i = 0; i < segments; i++)
-        {
-            float startAngle = i * (360f / segments) - 90;
-            var hue = i * (360.0 / segments);
+            float startAngle = i * (360f / hueSegments) - 90; // -90 to start at top
+            var hue = i * (360.0 / hueSegments);
             var maxSat = GetMaxSaturation(hue);
 
             for (int s = 0; s < satSteps; s++)
             {
-                float outerSatRadius = InnerRadius * (1 - (float)s / satSteps);
-                float innerSatRadius = InnerRadius * (1 - (float)(s + 1) / satSteps);
-                if (innerSatRadius < 2) innerSatRadius = 0;
+                // From center (s=0) to edge (s=satSteps-1)
+                float innerRadius = PickerRadius * (float)s / satSteps;
+                float outerRadius = PickerRadius * (float)(s + 1) / satSteps;
 
-                float saturation = (float)s / satSteps;
+                float saturation = (float)(s + 1) / satSteps;
                 var isInGamut = saturation <= maxSat;
 
                 var color = HsvToColor(hue, saturation, 1.0);
@@ -157,13 +135,13 @@ public sealed partial class GamutColorPicker : UserControl
                     color = Color.FromArgb(100, color.R, color.G, color.B);
                 }
 
-                using var geometry = CreateArcGeometry(ds, cx, cy, outerSatRadius, innerSatRadius, startAngle, 360f / segments + 0.5f);
+                using var geometry = CreateArcGeometry(ds, cx, cy, outerRadius, innerRadius, startAngle, 360f / hueSegments + 0.5f);
                 ds.FillGeometry(geometry, color);
             }
         }
 
-        // Draw center (white)
-        ds.FillCircle(cx, cy, InnerRadius / satSteps, Colors.White);
+        // Draw white center
+        ds.FillCircle(cx, cy, PickerRadius / satSteps, Colors.White);
     }
 
     private void DrawSelectionIndicator(CanvasDrawingSession ds, float cx, float cy)
@@ -173,7 +151,7 @@ public sealed partial class GamutColorPicker : UserControl
         var maxSat = GetMaxSaturation(_selectedHue);
         var effectiveSat = Math.Min(_selectedSaturation, maxSat);
 
-        float radius = (float)(InnerRadius * effectiveSat);
+        float radius = (float)(PickerRadius * effectiveSat);
         float x = cx + radius * (float)Math.Cos(angleRad);
         float y = cy + radius * (float)Math.Sin(angleRad);
 
@@ -251,20 +229,9 @@ public sealed partial class GamutColorPicker : UserControl
         double angle = Math.Atan2(dy, dx) * 180 / Math.PI + 90;
         if (angle < 0) angle += 360;
 
-        // Determine if in hue ring or saturation area
-        if (distance >= InnerRadius && distance <= OuterRadius)
-        {
-            // Hue ring
-            _selectedHue = angle;
-            _isDraggingHue = true;
-        }
-        else if (distance < InnerRadius)
-        {
-            // Saturation area
-            _selectedHue = angle;
-            _selectedSaturation = distance / InnerRadius;
-            _isDraggingHue = false;
-        }
+        // Entire circle is clickable - hue is angle, saturation is distance from center
+        _selectedHue = angle;
+        _selectedSaturation = Math.Min(distance / PickerRadius, 1.0);
 
         // Clamp saturation to gamut
         var maxSat = GetMaxSaturation(_selectedHue);
