@@ -13,7 +13,7 @@ Transform the Scene Builder from functional to polished by migrating rendering t
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Win2D Foundation** - GPU-accelerated rendering with layered architecture
-- [ ] **Phase 2: Gradient Track Visuals** - Continuous color strips with Logic Pro aesthetic
+- [x] **Phase 2: Gradient Track Visuals** - Continuous color strips with Logic Pro aesthetic
 - [ ] **Phase 3: Interaction Polish** - Hover states, playhead improvements, ruler alignment
 - [ ] **Phase 4: Control Refinements** - Debounced inputs and improved color picker
 
@@ -47,8 +47,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Create GradientTrackRenderer with easing-aware gradient rendering
-- [ ] 02-02-PLAN.md — Integrate gradient renderer and add keyframe contrast outlines
+- [x] 02-01-PLAN.md — Create GradientTrackRenderer with easing-aware gradient rendering
+- [x] 02-02-PLAN.md — Integrate gradient renderer and add keyframe contrast outlines
 
 ### Phase 3: Interaction Polish
 **Goal**: Timeline interactions feel polished with clear visual affordances and accessibility compliance
@@ -87,6 +87,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Win2D Foundation | 3/3 | Complete | 2026-01-20 |
-| 2. Gradient Track Visuals | 0/2 | Planned | - |
+| 2. Gradient Track Visuals | 2/2 | Complete | 2026-01-21 |
 | 3. Interaction Polish | 0/0 | Not started | - |
 | 4. Control Refinements | 0/0 | Not started | - |
