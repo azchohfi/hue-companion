@@ -44,10 +44,11 @@ Plans:
   2. Gradient strips have rounded edges and clean borders matching Logic Pro aesthetic
   3. Keyframe markers are overlaid on gradient strips (not replaced by them)
   4. Gradient rendering maintains 60fps performance during playback
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 02-01-PLAN.md — Create GradientTrackRenderer with easing-aware gradient rendering
+- [ ] 02-02-PLAN.md — Integrate gradient renderer and add keyframe contrast outlines
 
 ### Phase 3: Interaction Polish
 **Goal**: Timeline interactions feel polished with clear visual affordances and accessibility compliance
@@ -81,11 +82,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Win2D Foundation | 3/3 | Complete | 2026-01-20 |
-| 2. Gradient Track Visuals | 0/0 | Not started | - |
+| 2. Gradient Track Visuals | 0/2 | Planned | - |
 | 3. Interaction Polish | 0/0 | Not started | - |
 | 4. Control Refinements | 0/0 | Not started | - |
