@@ -12,6 +12,14 @@ Scene Builder bug bash milestone. Two phases address color picker usability issu
 
 **Dependencies:** None (first phase of v0.3)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Consolidate XY-to-RGB conversions (fixes COLOR-01)
+- [ ] 05-02-PLAN.md — Create ColorGamut class with triangle math
+- [ ] 05-03-PLAN.md — Build GamutColorPicker custom control with Win2D
+- [ ] 05-04-PLAN.md — Integrate into SceneBuilderPage + fix positioning
+
 **Requirements:**
 - CPICK-01: Color picker uses hue ring with adaptive saturation limit per hue angle (no impossible selections)
 - CPICK-02: All selectable colors are realizable on Philips Hue bulbs
@@ -49,7 +57,7 @@ Scene Builder bug bash milestone. Two phases address color picker usability issu
 
 | Phase | Status | Requirements |
 |-------|--------|--------------|
-| Phase 5: Color Picker Overhaul | Pending | 7 |
+| Phase 5: Color Picker Overhaul | Planned | 7 |
 | Phase 6: Interaction Polish | Pending | 1 |
 
 **Total Requirements:** 8
