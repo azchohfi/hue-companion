@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Win2D Foundation** - GPU-accelerated rendering with layered architecture
 - [x] **Phase 2: Gradient Track Visuals** - Continuous color strips with Logic Pro aesthetic
 - [x] **Phase 3: Interaction Polish** - Hover states, playhead improvements, ruler alignment
-- [ ] **Phase 4: Control Refinements** - Debounced inputs and improved color picker
+- [x] **Phase 4: Control Refinements** - Debounced inputs and improved color picker
 
 ## Phase Details
 
@@ -79,8 +79,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Add 150ms debouncing to brightness slider and color picker
-- [ ] 04-02-PLAN.md — Replace ToggleSwitch with compact icon ToggleButtons and add accessibility metadata
+- [x] 04-01-PLAN.md — Add 150ms debouncing to brightness slider and color picker
+- [x] 04-02-PLAN.md — Replace ToggleSwitch with compact icon ToggleButtons and add accessibility metadata
 
 ## Progress
 
@@ -92,4 +92,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Win2D Foundation | 3/3 | Complete | 2026-01-20 |
 | 2. Gradient Track Visuals | 2/2 | Complete | 2026-01-21 |
 | 3. Interaction Polish | 3/3 | Complete | 2026-01-21 |
-| 4. Control Refinements | 0/2 | Not started | - |
+| 4. Control Refinements | 2/2 | Complete | 2026-01-21 |

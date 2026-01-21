@@ -15,27 +15,27 @@ Requirements for this polish milestone. Each maps to roadmap phases.
 
 ### Track Visuals
 
-- [ ] **TRAK-01**: Each track displays continuous gradient color strip showing interpolated color over time
-- [ ] **TRAK-02**: Gradient strips have rounded edges and clean borders (Logic Pro aesthetic)
-- [ ] **TRAK-03**: Tracks and keyframes show hover states on mouse over
+- [x] **TRAK-01**: Each track displays continuous gradient color strip showing interpolated color over time
+- [x] **TRAK-02**: Gradient strips have rounded edges and clean borders (Logic Pro aesthetic)
+- [x] **TRAK-03**: Tracks and keyframes show hover states on mouse over
 
 ### Playhead & Time Ruler
 
-- [ ] **PLAY-01**: Time ruler aligns correctly with keyframes when window is resized
-- [ ] **PLAY-02**: Playhead has 44px minimum drag hit area for accessibility
-- [ ] **PLAY-03**: Playhead shows visual affordance (cursor change, hover highlight) indicating draggability
+- [x] **PLAY-01**: Time ruler aligns correctly with keyframes when window is resized
+- [x] **PLAY-02**: Playhead has 44px minimum drag hit area for accessibility
+- [x] **PLAY-03**: Playhead shows visual affordance (cursor change, hover highlight) indicating draggability
 
 ### Controls
 
-- [ ] **CTRL-01**: Snap and loop use compact icon toggles with accessible on/off states
-- [ ] **CTRL-02**: Brightness and frequency sliders are debounced to prevent API flooding
-- [ ] **CTRL-03**: Keyboard shortcuts are documented in UI (tooltips or help)
+- [x] **CTRL-01**: Snap and loop use compact icon toggles with accessible on/off states
+- [x] **CTRL-02**: Brightness and frequency sliders are debounced to prevent API flooding
+- [x] **CTRL-03**: Keyboard shortcuts are documented in UI (tooltips or help)
 
 ### Color Picker
 
-- [ ] **PICK-01**: Color picker popup is smaller than current implementation
-- [ ] **PICK-02**: Color picker positions to avoid obscuring target keyframe
-- [ ] **PICK-03**: Color picker updates are debounced to prevent API spam
+- [x] **PICK-01**: Color picker popup is smaller than current implementation
+- [x] **PICK-02**: Color picker positions to avoid obscuring target keyframe
+- [x] **PICK-03**: Color picker updates are debounced to prevent API spam
 
 ## v2 Requirements
 
@@ -76,18 +76,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-01 | Phase 1 | Complete |
 | REND-02 | Phase 1 | Complete |
 | REND-03 | Phase 1 | Complete |
-| TRAK-01 | Phase 2 | Pending |
-| TRAK-02 | Phase 2 | Pending |
-| TRAK-03 | Phase 3 | Pending |
-| PLAY-01 | Phase 3 | Pending |
-| PLAY-02 | Phase 3 | Pending |
-| PLAY-03 | Phase 3 | Pending |
-| CTRL-01 | Phase 4 | Pending |
-| CTRL-02 | Phase 4 | Pending |
-| CTRL-03 | Phase 4 | Pending |
-| PICK-01 | Phase 4 | Pending |
-| PICK-02 | Phase 4 | Pending |
-| PICK-03 | Phase 4 | Pending |
+| TRAK-01 | Phase 2 | Complete |
+| TRAK-02 | Phase 2 | Complete |
+| TRAK-03 | Phase 3 | Complete |
+| PLAY-01 | Phase 3 | Complete |
+| PLAY-02 | Phase 3 | Complete |
+| PLAY-03 | Phase 3 | Complete |
+| CTRL-01 | Phase 4 | Complete |
+| CTRL-02 | Phase 4 | Complete |
+| CTRL-03 | Phase 4 | Complete |
+| PICK-01 | Phase 4 | Complete |
+| PICK-02 | Phase 4 | Complete |
+| PICK-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
