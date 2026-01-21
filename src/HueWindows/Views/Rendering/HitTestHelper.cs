@@ -33,7 +33,9 @@ public static class HitTestHelper
 {
     private const float KeyframeRadius = 8f;
     private const float KeyframeSelectedRadius = 10f;
-    private const float PlayheadHitWidth = 12f; // Wide hit area for easier dragging
+    private const float PlayheadHitWidth = 44f; // WCAG 2.5.5 AAA minimum
+    private const float PlayheadTriangleHitHeight = 44f; // Extended vertical hit area for handle
+    private const float PlayheadLineHitWidth = 12f; // Narrower hit area for line portion
     private const float TrackHeight = 50f;
 
     /// <summary>
@@ -82,10 +84,22 @@ public static class HitTestHelper
 
     private static bool HitTestPlayhead(Vector2 point, float playheadX, float height)
     {
-        // Simple rectangular hit test for playhead
-        var hitLeft = playheadX - PlayheadHitWidth / 2;
-        var hitRight = playheadX + PlayheadHitWidth / 2;
-        return point.X >= hitLeft && point.X <= hitRight && point.Y >= 0 && point.Y <= height;
+        // Top area: 44x44px hit zone for triangle handle (WCAG 2.5.5 compliant)
+        if (point.Y <= PlayheadTriangleHitHeight)
+        {
+            var hitLeft = playheadX - PlayheadHitWidth / 2;
+            var hitRight = playheadX + PlayheadHitWidth / 2;
+
+            if (point.X >= hitLeft && point.X <= hitRight)
+                return true;
+        }
+
+        // Rest of line: narrower hit area (12px wide) for precision
+        var lineHitLeft = playheadX - PlayheadLineHitWidth / 2;
+        var lineHitRight = playheadX + PlayheadLineHitWidth / 2;
+
+        return point.X >= lineHitLeft && point.X <= lineHitRight &&
+               point.Y >= PlayheadTriangleHitHeight && point.Y <= height;
     }
 
     private static HitTestResult? HitTestKeyframes(
