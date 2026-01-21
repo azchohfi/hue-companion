@@ -49,6 +49,12 @@ public sealed partial class SceneBuilderPage : Page
 
     private string? _sceneIdToLoad;
 
+    // Debounce timers for API calls
+    private DispatcherTimer? _brightnessDebounceTimer;
+    private double _pendingBrightness;
+    private DispatcherTimer? _colorDebounceTimer;
+    private (double x, double y) _pendingColor;
+
     public SceneBuilderPage()
     {
         this.InitializeComponent();
@@ -1139,52 +1145,96 @@ public sealed partial class SceneBuilderPage : Page
         ViewModel.SelectedKeyframe = null;
     }
 
-    private async void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    private void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
     {
-        if (ViewModel?.SelectedKeyframe != null)
+        if (ViewModel?.SelectedKeyframe == null)
+            return;
+
+        // Convert RGB to xy color space (approximation)
+        var r = args.NewColor.R / 255.0;
+        var g = args.NewColor.G / 255.0;
+        var b = args.NewColor.B / 255.0;
+
+        // Apply gamma correction
+        r = (r > 0.04045) ? Math.Pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = (g > 0.04045) ? Math.Pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = (b > 0.04045) ? Math.Pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+        // Convert to XYZ
+        var X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+        var Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+        var Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+
+        // Convert to xy
+        var sum = X + Y + Z;
+        if (sum <= 0)
+            return;
+
+        var x = X / sum;
+        var y = Y / sum;
+
+        // Immediate UI update for responsiveness
+        ViewModel.SelectedKeyframe.Color = new HueWindows.Core.Models.HueColor(x, y);
+        RenderTimeline();
+
+        // Store pending color for debounced API call
+        _pendingColor = (x, y);
+
+        // Debounce: only send API call after user stops adjusting for 150ms
+        if (_colorDebounceTimer == null)
         {
-            // Convert RGB to xy color space (approximation)
-            var r = args.NewColor.R / 255.0;
-            var g = args.NewColor.G / 255.0;
-            var b = args.NewColor.B / 255.0;
-
-            // Apply gamma correction
-            r = (r > 0.04045) ? Math.Pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-            g = (g > 0.04045) ? Math.Pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-            b = (b > 0.04045) ? Math.Pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-            // Convert to XYZ
-            var X = r * 0.4124 + g * 0.3576 + b * 0.1805;
-            var Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-            var Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
-
-            // Convert to xy
-            var sum = X + Y + Z;
-            if (sum > 0)
+            _colorDebounceTimer = new DispatcherTimer
             {
-                var x = X / sum;
-                var y = Y / sum;
-                ViewModel.SelectedKeyframe.Color = new HueWindows.Core.Models.HueColor(x, y);
-                RenderTimeline();
-
-                // Live preview on actual light
-                await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
-            }
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _colorDebounceTimer.Tick += async (s, e) =>
+            {
+                _colorDebounceTimer.Stop();
+                if (ViewModel?.SelectedKeyframe != null)
+                {
+                    await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
+                }
+            };
         }
+
+        _colorDebounceTimer.Stop();
+        _colorDebounceTimer.Start();
     }
 
-    private async void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
+        // Immediate UI updates for responsiveness
         if (BrightnessValueText != null)
             BrightnessValueText.Text = $"{(int)e.NewValue}%";
+
         if (ViewModel?.SelectedKeyframe != null)
         {
             ViewModel.SelectedKeyframe.Brightness = e.NewValue / 100.0;
             RenderTimeline();
-
-            // Live preview on actual light
-            await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
         }
+
+        // Store pending value for debounced API call
+        _pendingBrightness = e.NewValue / 100.0;
+
+        // Debounce: only send API call after user stops dragging for 150ms
+        if (_brightnessDebounceTimer == null)
+        {
+            _brightnessDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _brightnessDebounceTimer.Tick += async (s, args) =>
+            {
+                _brightnessDebounceTimer.Stop();
+                if (ViewModel?.SelectedKeyframe != null)
+                {
+                    await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
+                }
+            };
+        }
+
+        _brightnessDebounceTimer.Stop();
+        _brightnessDebounceTimer.Start();
     }
 
     private void TransitionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
