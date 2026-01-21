@@ -1,4 +1,5 @@
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
 using HueWindows.Core.ViewModels;
 using System.Collections.Generic;
 using System.Numerics;
@@ -17,12 +18,14 @@ public class KeyframeLayerRenderer
     /// <param name="ds">Canvas drawing session.</param>
     /// <param name="tracks">Collection of track view models containing keyframes.</param>
     /// <param name="selectedKeyframes">Set of currently selected keyframes for highlight rendering.</param>
+    /// <param name="hoveredKeyframe">Currently hovered keyframe (if any).</param>
     /// <param name="zoomLevel">Current zoom level (pixels per second).</param>
     /// <param name="trackHeight">Height of each track (typically 50 pixels).</param>
     public void Draw(
         CanvasDrawingSession ds,
         IEnumerable<TrackViewModel> tracks,
         IEnumerable<KeyframeViewModel> selectedKeyframes,
+        KeyframeViewModel? hoveredKeyframe,
         float zoomLevel,
         float trackHeight)
     {
@@ -42,6 +45,7 @@ public class KeyframeLayerRenderer
                 // Apply left margin to match gradient bar positioning
                 var x = GradientTrackRenderer.LeftMargin + (float)(keyframe.TimeSeconds * zoomLevel);
                 var isSelected = selectedSet.Contains(keyframe);
+                var isHovered = keyframe == hoveredKeyframe;
 
                 // Convert HueColor to RGB
                 var rgb = HueColorToRgb(keyframe.Color);
@@ -56,24 +60,80 @@ public class KeyframeLayerRenderer
                 var strokeWidth = isSelected ? 3.0f : 2.0f;
                 var strokeColor = isSelected ? selectionHighlightColor : normalStrokeColor;
 
-                // Determine contrast color based on keyframe color brightness
-                var colorBrightness = GetBrightness(rgb.r, rgb.g, rgb.b);
-                var contrastColor = colorBrightness > 0.5
-                    ? Color.FromArgb(255, 0, 0, 0)       // Black for bright keyframes
-                    : Color.FromArgb(255, 255, 255, 255); // White for dark keyframes
+                // Glow parameters: selected gets persistent glow, hovered gets lighter glow
+                var showGlow = isSelected || isHovered;
+                var glowRadius = isSelected ? 12f : 8f;
+                var glowOpacity = isSelected ? 0.8f : 0.6f;
 
-                // Draw contrast outline (slightly larger than keyframe for visibility on gradients)
-                ds.FillCircle(new Vector2(x, y), radius + 2, contrastColor);
-
-                // Draw filled circle
-                ds.FillCircle(new Vector2(x, y), radius, color);
-
-                // Draw stroke
-                ds.DrawCircle(new Vector2(x, y), radius, strokeColor, strokeWidth);
+                DrawKeyframeWithGlow(
+                    ds,
+                    new Vector2(x, y),
+                    radius,
+                    color,
+                    strokeColor,
+                    strokeWidth,
+                    showGlow,
+                    glowRadius,
+                    glowOpacity);
             }
 
             trackIndex++;
         }
+    }
+
+    /// <summary>
+    /// Draws a keyframe with optional glow effect for hover/selection state.
+    /// </summary>
+    private void DrawKeyframeWithGlow(
+        CanvasDrawingSession ds,
+        Vector2 position,
+        float radius,
+        Color keyframeColor,
+        Color strokeColor,
+        float strokeWidth,
+        bool showGlow,
+        float glowRadius,
+        float glowOpacity)
+    {
+        if (showGlow)
+        {
+            // Create CommandList for keyframe shape (required as ShadowEffect source)
+            using var commandList = new CanvasCommandList(ds);
+            using (var clDs = commandList.CreateDrawingSession())
+            {
+                clDs.FillCircle(position, radius, keyframeColor);
+            }
+
+            // Create glow with color matching keyframe
+            var glowColor = Color.FromArgb(
+                (byte)(255 * glowOpacity),
+                keyframeColor.R,
+                keyframeColor.G,
+                keyframeColor.B);
+
+            using var glowEffect = new ShadowEffect
+            {
+                Source = commandList,
+                BlurAmount = glowRadius,
+                ShadowColor = glowColor
+            };
+
+            // Draw glow centered on keyframe
+            ds.DrawImage(glowEffect);
+        }
+
+        // Draw contrast outline (slightly larger for visibility on gradients)
+        var colorBrightness = GetBrightness(keyframeColor.R, keyframeColor.G, keyframeColor.B);
+        var contrastColor = colorBrightness > 0.5
+            ? Color.FromArgb(255, 0, 0, 0)
+            : Color.FromArgb(255, 255, 255, 255);
+        ds.FillCircle(position, radius + 2, contrastColor);
+
+        // Draw filled keyframe circle
+        ds.FillCircle(position, radius, keyframeColor);
+
+        // Draw stroke
+        ds.DrawCircle(position, radius, strokeColor, strokeWidth);
     }
 
     /// <summary>
