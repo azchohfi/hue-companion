@@ -9,7 +9,7 @@ Bug fixes and usability improvements for Scene Builder color picker and interact
 
 ### Color Picker Redesign
 
-- [ ] **CPICK-01**: Color picker uses hue + saturation wheel clipped to Philips Hue gamut
+- [ ] **CPICK-01**: Color picker uses hue ring with adaptive saturation limit per hue angle (no impossible selections)
 - [ ] **CPICK-02**: All selectable colors are realizable on Philips Hue bulbs
 - [ ] **CPICK-03**: RGB text input fields removed from color picker
 - [ ] **CPICK-04**: Color picker circle reduced to ~50% of current size
