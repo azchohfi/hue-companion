@@ -29,7 +29,6 @@ public class KeyframeLayerRenderer
         float zoomLevel,
         float trackHeight)
     {
-        var selectionHighlightColor = Color.FromArgb(255, 96, 165, 250); // Accent blue
         var normalStrokeColor = Color.FromArgb(255, 255, 255, 255); // White
 
         // Convert selected keyframes to HashSet for O(1) lookup
@@ -57,8 +56,8 @@ public class KeyframeLayerRenderer
 
                 // Size and stroke based on selection
                 var radius = isSelected ? 10.0f : 8.0f;
-                var strokeWidth = isSelected ? 3.0f : 2.0f;
-                var strokeColor = isSelected ? selectionHighlightColor : normalStrokeColor;
+                var strokeWidth = isSelected ? 4.0f : 2.0f;
+                var strokeColor = isSelected ? Color.FromArgb(255, 0, 0, 0) : normalStrokeColor;
 
                 // Glow parameters: selected gets persistent glow, hovered gets lighter glow
                 var showGlow = isSelected || isHovered;
