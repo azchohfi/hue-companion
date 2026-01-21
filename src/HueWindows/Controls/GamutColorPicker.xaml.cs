@@ -55,6 +55,7 @@ public sealed partial class GamutColorPicker : UserControl
     {
         this.InitializeComponent();
         RecalculateMaxSaturation();
+        this.Unloaded += GamutColorPicker_Unloaded;
     }
 
     private static void OnSelectedColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -346,5 +347,11 @@ public sealed partial class GamutColorPicker : UserControl
         }
 
         if (h < 0) h += 360;
+    }
+
+    private void GamutColorPicker_Unloaded(object sender, RoutedEventArgs e)
+    {
+        // Remove from visual tree to release Win2D resources
+        ColorCanvas.RemoveFromVisualTree();
     }
 }
