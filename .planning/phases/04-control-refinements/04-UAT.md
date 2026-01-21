@@ -16,11 +16,9 @@ updated: 2026-01-21T19:50:00Z
 expected: Rapidly drag brightness slider - slider responds immediately, light updates only after stopping
 result: pass
 
-### 2. Color Picker Debouncing
-expected: In Scene Builder with keyframe selected, adjust color picker rapidly. Color preview should update instantly, but light only changes after you stop adjusting for ~150ms.
-result: issue
-reported: "This isn't great in practice, the light should update basically live update so people can preview in real life. This wasn't clear before, sorry about that."
-severity: major
+### 2. Color Picker Live Preview
+expected: In Scene Builder with keyframe selected, adjust color picker. Light updates in real-time as you drag through colors.
+result: pass (after gap closure 04-03)
 
 ### 3. Snap Toggle Compact Button
 expected: Snap toggle is now a small icon-only button (no "Snap:" text label). Hovering shows tooltip "Snap to Grid (hold Ctrl to temporarily disable)".
@@ -41,22 +39,11 @@ result: pass
 ## Summary
 
 total: 6
-passed: 5
-issues: 1
+passed: 6
+issues: 0
 pending: 0
 skipped: 0
 
 ## Gaps
 
-- truth: "Color picker updates light in real-time for live preview during adjustment"
-  status: failed
-  reason: "User reported: This isn't great in practice, the light should update basically live update so people can preview in real life. This wasn't clear before, sorry about that."
-  severity: major
-  test: 2
-  root_cause: "150ms debounce timer on color picker prevents live preview - user needs immediate updates to see colors on actual lights"
-  artifacts:
-    - path: "src/HueWindows/Views/SceneBuilderPage.xaml.cs"
-      issue: "_colorDebounceTimer delays API calls by 150ms"
-  missing:
-    - "Remove debounce timer from color picker, call UpdateLightForKeyframeAsync immediately"
-  debug_session: "inline diagnosis"
+[none - all issues resolved]
