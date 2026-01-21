@@ -49,20 +49,20 @@ Deferred from v0.2 to future milestones:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CPICK-01 | TBD | Pending |
-| CPICK-02 | TBD | Pending |
-| CPICK-03 | TBD | Pending |
-| CPICK-04 | TBD | Pending |
-| CPICK-05 | TBD | Pending |
-| COLOR-01 | TBD | Pending |
-| COLOR-02 | TBD | Pending |
-| INTER-01 | TBD | Pending |
+| CPICK-01 | Phase 5 | Pending |
+| CPICK-02 | Phase 5 | Pending |
+| CPICK-03 | Phase 5 | Pending |
+| CPICK-04 | Phase 5 | Pending |
+| CPICK-05 | Phase 5 | Pending |
+| COLOR-01 | Phase 5 | Pending |
+| COLOR-02 | Phase 5 | Pending |
+| INTER-01 | Phase 6 | Pending |
 
 **Coverage:**
 - v0.3 requirements: 8 total
-- Mapped to phases: 0
-- Unmapped: 8 ⚠️
+- Mapped to phases: 8
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-21*
-*Last updated: 2026-01-21 after initial definition*
+*Last updated: 2026-01-21 after roadmap creation*
