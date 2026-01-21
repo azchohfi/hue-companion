@@ -46,13 +46,9 @@ public class KeyframeLayerRenderer
                 var isSelected = selectedSet.Contains(keyframe);
                 var isHovered = keyframe == hoveredKeyframe;
 
-                // Convert HueColor to RGB
-                var rgb = HueColorToRgb(keyframe.Color);
-                var brightness = keyframe.Brightness;
-                var color = Color.FromArgb(255,
-                    (byte)(rgb.r * brightness),
-                    (byte)(rgb.g * brightness),
-                    (byte)(rgb.b * brightness));
+                // Convert HueColor to RGB using canonical ToRgb() method
+                var (r, g, b) = keyframe.Color.ToRgb(keyframe.Brightness);
+                var color = Color.FromArgb(255, r, g, b);
 
                 // Size and stroke based on selection
                 var radius = isSelected ? 10.0f : 8.0f;
@@ -142,32 +138,5 @@ public class KeyframeLayerRenderer
     private double GetBrightness(int r, int g, int b)
     {
         return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
-    }
-
-    /// <summary>
-    /// Converts HueColor (xy color space) to RGB.
-    /// This is a simplified approximation - real conversion requires the light's gamut.
-    /// </summary>
-    private (int r, int g, int b) HueColorToRgb(HueWindows.Core.Models.HueColor color)
-    {
-        var x = color.X;
-        var y = color.Y;
-        var z = 1.0 - x - y;
-
-        var Y = 1.0; // Brightness
-        var X = (Y / y) * x;
-        var Z = (Y / y) * z;
-
-        // XYZ to RGB (sRGB D65)
-        var r = X * 1.656492 - Y * 0.354851 - Z * 0.255038;
-        var g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
-        var b = X * 0.051713 - Y * 0.121364 + Z * 1.011530;
-
-        // Clamp and convert to 0-255
-        r = System.Math.Max(0, System.Math.Min(1, r));
-        g = System.Math.Max(0, System.Math.Min(1, g));
-        b = System.Math.Max(0, System.Math.Min(1, b));
-
-        return ((int)(r * 255), (int)(g * 255), (int)(b * 255));
     }
 }
