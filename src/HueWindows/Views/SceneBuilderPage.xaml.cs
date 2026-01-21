@@ -763,12 +763,6 @@ public sealed partial class SceneBuilderPage : Page
         RenderTimeline();
     }
 
-    private void SnapToggle_Toggled(object sender, RoutedEventArgs e)
-    {
-        // Re-render to show/hide grid lines
-        RenderTimeline();
-    }
-
     private void TimelineCanvas_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
         if (ViewModel == null)
