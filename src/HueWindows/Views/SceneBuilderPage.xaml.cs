@@ -335,7 +335,10 @@ public sealed partial class SceneBuilderPage : Page
             CanvasHeight: (float)sender.Size.Height,
             TrackHeight: trackHeight,
             SnapInterval: (float)ViewModel.SnapInterval,
-            IsSnapEnabled: ViewModel.IsSnapEnabled
+            IsSnapEnabled: ViewModel.IsSnapEnabled,
+            HoveredKeyframe: _hoveredKeyframe,
+            IsPlayheadHovered: _isPlayheadHovered,
+            IsPlayheadDragging: _isDraggingPlayhead
         );
     }
 

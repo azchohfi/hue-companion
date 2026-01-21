@@ -20,7 +20,10 @@ public record TimelineRenderContext(
     float CanvasHeight,
     float TrackHeight,
     float SnapInterval,
-    bool IsSnapEnabled
+    bool IsSnapEnabled,
+    KeyframeViewModel? HoveredKeyframe = null,
+    bool IsPlayheadHovered = false,
+    bool IsPlayheadDragging = false
 );
 
 /// <summary>
@@ -116,6 +119,7 @@ public class TimelineRenderer : IDisposable
             ds,
             context.Tracks,
             context.SelectedKeyframes,
+            context.HoveredKeyframe,
             context.ZoomLevel,
             context.TrackHeight
         );
@@ -124,7 +128,9 @@ public class TimelineRenderer : IDisposable
         _playheadRenderer.Draw(
             ds,
             GradientTrackRenderer.LeftMargin + (context.PlayheadPosition * context.ZoomLevel),
-            context.CanvasHeight
+            context.CanvasHeight,
+            context.IsPlayheadHovered,
+            context.IsPlayheadDragging
         );
     }
 
