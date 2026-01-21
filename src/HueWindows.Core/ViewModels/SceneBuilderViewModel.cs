@@ -272,8 +272,8 @@ public partial class SceneBuilderViewModel : ObservableObject
         foreach (var light in room.Lights)
         {
             // Use light's current color and brightness, or default to neutral white
-            var initialColor = light.Color ?? HueColor.White;
-            var initialBrightness = light.Brightness ?? 1.0;
+            var initialColor = light.CurrentColor ?? HueColor.White;
+            var initialBrightness = light.Brightness;
 
             var track = new TrackViewModel
             {
