@@ -76,10 +76,11 @@ Plans:
   3. Color picker popup is smaller and positions to avoid obscuring target keyframe
   4. Color picker updates are debounced to prevent API flooding during color adjustment
   5. Keyboard shortcuts are documented in UI via tooltips
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 04-01-PLAN.md — Add 150ms debouncing to brightness slider and color picker
+- [ ] 04-02-PLAN.md — Replace ToggleSwitch with compact icon ToggleButtons and add accessibility metadata
 
 ## Progress
 
@@ -91,4 +92,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Win2D Foundation | 3/3 | Complete | 2026-01-20 |
 | 2. Gradient Track Visuals | 2/2 | Complete | 2026-01-21 |
 | 3. Interaction Polish | 3/3 | Complete | 2026-01-21 |
-| 4. Control Refinements | 0/0 | Not started | - |
+| 4. Control Refinements | 0/2 | Not started | - |
