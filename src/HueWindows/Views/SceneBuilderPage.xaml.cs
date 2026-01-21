@@ -49,11 +49,9 @@ public sealed partial class SceneBuilderPage : Page
 
     private string? _sceneIdToLoad;
 
-    // Debounce timers for API calls
+    // Debounce timer for brightness API calls (color uses direct calls for real-time preview)
     private DispatcherTimer? _brightnessDebounceTimer;
     private double _pendingBrightness;
-    private DispatcherTimer? _colorDebounceTimer;
-    private (double x, double y) _pendingColor;
 
     public SceneBuilderPage()
     {
@@ -1139,7 +1137,7 @@ public sealed partial class SceneBuilderPage : Page
         ViewModel.SelectedKeyframe = null;
     }
 
-    private void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    private async void KeyframeColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
     {
         if (ViewModel?.SelectedKeyframe == null)
             return;
@@ -1171,28 +1169,8 @@ public sealed partial class SceneBuilderPage : Page
         ViewModel.SelectedKeyframe.Color = new HueWindows.Core.Models.HueColor(x, y);
         RenderTimeline();
 
-        // Store pending color for debounced API call
-        _pendingColor = (x, y);
-
-        // Debounce: only send API call after user stops adjusting for 150ms
-        if (_colorDebounceTimer == null)
-        {
-            _colorDebounceTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(150)
-            };
-            _colorDebounceTimer.Tick += async (s, e) =>
-            {
-                _colorDebounceTimer.Stop();
-                if (ViewModel?.SelectedKeyframe != null)
-                {
-                    await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
-                }
-            };
-        }
-
-        _colorDebounceTimer.Stop();
-        _colorDebounceTimer.Start();
+        // Direct API call for real-time light preview
+        await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
     }
 
     private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
