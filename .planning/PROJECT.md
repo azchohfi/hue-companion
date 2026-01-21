@@ -1,4 +1,15 @@
-# Scene Builder DAW Polish
+# Hue Companion
+
+## Current Milestone: v0.3 Scene Builder Bug Bash
+
+**Goal:** Fix color picker usability issues and keyframe interaction bugs discovered during v0.2 testing.
+
+**Target fixes:**
+- Replace full color wheel with temperature + saturation picker (always realizable on Hue)
+- Simplify color picker UI (remove RGB fields, reduce size)
+- Fix color picker popup positioning constraints
+- Fix keyframe drag color corruption
+- Change snap default to off
 
 ## What This Is
 
@@ -96,4 +107,4 @@ For future milestones (v2+):
 | Brightness slider 150ms debounce | Prevents API flooding while maintaining usable interaction | ✓ Good |
 
 ---
-*Last updated: 2026-01-21 after v0.2 milestone*
+*Last updated: 2026-01-21 after v0.3 milestone start*
