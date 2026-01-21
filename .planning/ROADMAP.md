@@ -59,10 +59,12 @@ Plans:
   2. Playhead has 44x44px minimum drag hit area meeting WCAG 2.5.5 accessibility standards
   3. Time ruler maintains alignment with keyframes when window is resized
   4. User receives visual feedback (cursor change, hover highlight) indicating playhead is draggable
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 03-01-PLAN.md — Hover state tracking infrastructure (cursor subclass, PointerMoved tracking)
+- [ ] 03-02-PLAN.md — Keyframe glow effects and playhead hover rendering
+- [ ] 03-03-PLAN.md — WCAG playhead hit area and ruler alignment verification
 
 ### Phase 4: Control Refinements
 **Goal**: Controls provide responsive interaction without API flooding
@@ -88,5 +90,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Win2D Foundation | 3/3 | Complete | 2026-01-20 |
 | 2. Gradient Track Visuals | 2/2 | Complete | 2026-01-21 |
-| 3. Interaction Polish | 0/0 | Not started | - |
+| 3. Interaction Polish | 0/3 | Planned | - |
 | 4. Control Refinements | 0/0 | Not started | - |
