@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** The track representation must feel like a real DAW — continuous color gradients showing what lights will do over time, with precise time alignment that users can trust.
-**Current focus:** Phase 2: Gradient Track Visuals
+**Current focus:** Phase 2: Gradient Track Visuals (completing)
 
 ## Current Position
 
 Phase: 2 of 4 (Gradient Track Visuals)
-Plan: 1 of ? (GradientTrackRenderer)
-Status: In progress
-Last activity: 2026-01-21 — Completed 02-01-PLAN.md (GradientTrackRenderer)
+Plan: 2 of 2 (Integration complete)
+Status: Verifying
+Last activity: 2026-01-21 — Completed 02-02-PLAN.md (Integration and Contrast Outlines)
 
-Progress: [███░░░░░░░] 30%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4 min
-- Total execution time: 0.3 hours
+- Total execution time: 0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-win2d-foundation | 3/3 | 14 min | 5 min |
-| 02-gradient-track-visuals | 1/? | 2 min | 2 min |
+| 02-gradient-track-visuals | 2/2 | 10 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 4m, 6m, 4m, 2m
-- Trend: Fast execution on single-task plans
+- Last 5 plans: 4m, 6m, 4m, 2m, 8m
+- Trend: Stable velocity (~5min average)
 
 *Updated after each plan completion*
 
@@ -56,6 +56,9 @@ Recent decisions affecting current work:
 - 02-01: 15 gradient stops (smooth visual without excessive GPU overhead)
 - 02-01: 5px minimum segment width (fall back to solid color below this)
 - 02-01: Instant transition at 99% position (hard cut effect)
+- 02-02: 4px corner radius (subtle rounding, not pill shape - user preference)
+- 02-02: Depth effect with highlight/shadow gradients (user requested polish)
+- 02-02: 14px left margin for timeline content (keyframes at t=0 visible)
 
 ### Pending Todos
 
@@ -67,7 +70,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21 11:42 UTC
-Stopped at: Completed 02-01-PLAN.md (GradientTrackRenderer)
+Last session: 2026-01-21 12:05 UTC
+Stopped at: Completed 02-02-PLAN.md, awaiting verification
 Resume file: None
-Next: Integrate GradientTrackRenderer into TimelineRenderer layer stack
+Next: Phase verification, then Phase 3 (Interaction Polish)
