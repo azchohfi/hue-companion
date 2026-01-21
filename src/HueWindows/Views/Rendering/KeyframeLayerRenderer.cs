@@ -55,6 +55,15 @@ public class KeyframeLayerRenderer
                 var strokeWidth = isSelected ? 3.0f : 2.0f;
                 var strokeColor = isSelected ? selectionHighlightColor : normalStrokeColor;
 
+                // Determine contrast color based on keyframe color brightness
+                var colorBrightness = GetBrightness(rgb.r, rgb.g, rgb.b);
+                var contrastColor = colorBrightness > 0.5
+                    ? Color.FromArgb(255, 0, 0, 0)       // Black for bright keyframes
+                    : Color.FromArgb(255, 255, 255, 255); // White for dark keyframes
+
+                // Draw contrast outline (slightly larger than keyframe for visibility on gradients)
+                ds.FillCircle(new Vector2(x, y), radius + 2, contrastColor);
+
                 // Draw filled circle
                 ds.FillCircle(new Vector2(x, y), radius, color);
 
@@ -64,6 +73,15 @@ public class KeyframeLayerRenderer
 
             trackIndex++;
         }
+    }
+
+    /// <summary>
+    /// Calculates perceived brightness of a color (0.0 to 1.0).
+    /// Uses standard luminance formula (ITU-R BT.601).
+    /// </summary>
+    private double GetBrightness(int r, int g, int b)
+    {
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
     }
 
     /// <summary>
