@@ -131,4 +131,123 @@ public class ColorGamut
 
     private static double DistanceSquared(double x1, double y1, double x2, double y2)
         => (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+
+    /// <summary>
+    /// Calculates the maximum achievable saturation for a given hue angle.
+    /// Returns a value from 0.0 to 1.0 representing how far from white (center)
+    /// the color can go while staying inside the gamut.
+    /// </summary>
+    /// <param name="hueDegrees">Hue angle in degrees (0-360).</param>
+    /// <returns>Maximum saturation (0.0-1.0) achievable for this hue.</returns>
+    public double GetMaxSaturationForHue(double hueDegrees)
+    {
+        // Convert hue to radians
+        double hueRadians = hueDegrees * Math.PI / 180.0;
+
+        // Calculate direction vector from white point toward edge
+        // In HSV, hue 0 is red (positive x direction in standard orientation)
+        // But CIE xy has different orientation, so we need to convert
+        // Using HSV->RGB->XY to get the edge direction for this hue
+        var edgeXy = HsvToXyDirection(hueDegrees);
+
+        double dx = edgeXy.X - WhitePoint.X;
+        double dy = edgeXy.Y - WhitePoint.Y;
+
+        // Normalize the direction
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 0.0001)
+            return 1.0; // Edge case: at white point
+
+        dx /= len;
+        dy /= len;
+
+        // Find where ray from white point intersects gamut boundary
+        double maxT = FindGamutIntersection(WhitePoint.X, WhitePoint.Y, dx, dy);
+
+        // The saturation is the ratio of gamut intersection distance to full saturation distance
+        // Full saturation distance is the distance from white to the HSV edge (len)
+        double saturation = maxT / len;
+
+        return Math.Clamp(saturation, 0.0, 1.0);
+    }
+
+    /// <summary>
+    /// Converts HSV hue (at full saturation and value) to CIE xy coordinates.
+    /// Used to determine the edge direction for saturation limiting.
+    /// </summary>
+    private static (double X, double Y) HsvToXyDirection(double hueDegrees)
+    {
+        // HSV to RGB at saturation=1, value=1
+        double c = 1.0;
+        double x = c * (1 - Math.Abs((hueDegrees / 60.0) % 2 - 1));
+
+        double r, g, b;
+        if (hueDegrees < 60) { r = c; g = x; b = 0; }
+        else if (hueDegrees < 120) { r = x; g = c; b = 0; }
+        else if (hueDegrees < 180) { r = 0; g = c; b = x; }
+        else if (hueDegrees < 240) { r = 0; g = x; b = c; }
+        else if (hueDegrees < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        // RGB to XYZ (sRGB D65) - simplified, no gamma for direction calc
+        double X = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
+        double Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+        double Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
+
+        // XYZ to xy
+        double sum = X + Y + Z;
+        if (sum == 0) return WhitePoint;
+
+        return (X / sum, Y / sum);
+    }
+
+    /// <summary>
+    /// Finds the intersection distance of a ray with the gamut triangle boundary.
+    /// </summary>
+    private double FindGamutIntersection(double ox, double oy, double dx, double dy)
+    {
+        // Check intersection with each edge, return minimum positive t
+        double minT = double.MaxValue;
+
+        // Red-Green edge
+        double t = RaySegmentIntersection(ox, oy, dx, dy, Red.X, Red.Y, Green.X, Green.Y);
+        if (t > 0 && t < minT) minT = t;
+
+        // Green-Blue edge
+        t = RaySegmentIntersection(ox, oy, dx, dy, Green.X, Green.Y, Blue.X, Blue.Y);
+        if (t > 0 && t < minT) minT = t;
+
+        // Blue-Red edge
+        t = RaySegmentIntersection(ox, oy, dx, dy, Blue.X, Blue.Y, Red.X, Red.Y);
+        if (t > 0 && t < minT) minT = t;
+
+        return minT == double.MaxValue ? 1.0 : minT;
+    }
+
+    /// <summary>
+    /// Calculates ray-segment intersection. Returns t parameter of ray, or -1 if no intersection.
+    /// Ray: origin + t * direction
+    /// Segment: from (ax,ay) to (bx,by)
+    /// </summary>
+    private static double RaySegmentIntersection(
+        double ox, double oy, double dx, double dy,
+        double ax, double ay, double bx, double by)
+    {
+        double sx = bx - ax;
+        double sy = by - ay;
+
+        double denom = dx * sy - dy * sx;
+        if (Math.Abs(denom) < 1e-10)
+            return -1; // Parallel
+
+        double t = ((ax - ox) * sy - (ay - oy) * sx) / denom;
+        double u = ((ax - ox) * dy - (ay - oy) * dx) / denom;
+
+        // t > 0 means intersection is ahead on ray
+        // 0 <= u <= 1 means intersection is on segment
+        if (t > 0 && u >= 0 && u <= 1)
+            return t;
+
+        return -1;
+    }
 }
