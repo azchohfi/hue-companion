@@ -238,6 +238,8 @@
                                                   Draw="TimelineCanvas_Draw"
                                                   CreateResources="TimelineCanvas_CreateResources"
                                                   PointerPressed="TimelineCanvas_PointerPressed"
+                                                  PointerMoved="TimelineCanvas_PointerMoved"
+                                                  PointerExited="TimelineCanvas_PointerExited"
                                                   PointerWheelChanged="TimelineCanvas_PointerWheelChanged"
                                                   RightTapped="TimelineCanvas_RightTapped"/>
                         </Grid>

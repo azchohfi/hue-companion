@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
 using Windows.UI;
+using Windows.UI.Core;
 using Windows.Storage.Pickers;
 using Windows.ApplicationModel.DataTransfer;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -31,6 +32,11 @@ public sealed partial class SceneBuilderPage : Page
     private bool _isDraggingKeyframe;
     private KeyframeViewModel? _draggingKeyframe;
     private TrackViewModel? _draggingTrack;
+
+    // Hover state tracking
+    private KeyframeViewModel? _hoveredKeyframe;
+    private bool _isPlayheadHovered;
+    private HitType _lastHitType = HitType.None;
 
     // Win2D rendering
     private TimelineRenderer? _timelineRenderer;
@@ -459,6 +465,77 @@ public sealed partial class SceneBuilderPage : Page
         e.Handled = true;
     }
 
+    private void TimelineCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        // Skip hover tracking during drag operations
+        if (_isDraggingKeyframe || _isDraggingPlayhead)
+            return;
+
+        var pointerPoint = e.GetCurrentPoint(TimelineCanvas);
+        var point = new Vector2((float)pointerPoint.Position.X, (float)pointerPoint.Position.Y);
+
+        // Calculate hit test parameters
+        var playheadX = GradientTrackRenderer.LeftMargin + (float)(ViewModel.PlayheadPosition * ViewModel.ZoomLevel);
+        var lightTracksHeight = ViewModel.Tracks.Count * 50f;
+        var canvasHeight = lightTracksHeight + ViewModel.EventTracks.Count * 50f;
+
+        var hitResult = HitTestHelper.HitTest(
+            TimelineCanvas,
+            point,
+            playheadX,
+            canvasHeight,
+            ViewModel.Tracks.ToList(),
+            ViewModel.EventTracks.ToList(),
+            ViewModel.SelectedKeyframes,
+            (float)ViewModel.ZoomLevel);
+
+        // Track state changes
+        var oldHoveredKeyframe = _hoveredKeyframe;
+        var oldPlayheadHovered = _isPlayheadHovered;
+
+        // Update hover state
+        _hoveredKeyframe = hitResult.Type == HitType.Keyframe ? hitResult.Keyframe : null;
+        _isPlayheadHovered = hitResult.Type == HitType.Playhead;
+
+        // Invalidate only if state changed
+        if (_hoveredKeyframe != oldHoveredKeyframe || _isPlayheadHovered != oldPlayheadHovered)
+        {
+            _lastHitType = hitResult.Type;
+            UpdateCursor(hitResult.Type);
+            TimelineCanvas.Invalidate();
+        }
+        else if (_lastHitType != hitResult.Type)
+        {
+            // Cursor change needed even if no keyframe/playhead hover change
+            _lastHitType = hitResult.Type;
+            UpdateCursor(hitResult.Type);
+        }
+    }
+
+    private void TimelineCanvas_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (_hoveredKeyframe != null || _isPlayheadHovered)
+        {
+            _hoveredKeyframe = null;
+            _isPlayheadHovered = false;
+            _lastHitType = HitType.None;
+            UpdateCursor(HitType.None);
+            TimelineCanvas.Invalidate();
+        }
+    }
+
+    private void UpdateCursor(HitType hitType)
+    {
+        var cursor = hitType switch
+        {
+            HitType.Keyframe => new CoreCursor(CoreCursorType.Hand, 0),
+            HitType.Playhead => new CoreCursor(CoreCursorType.Hand, 0),
+            _ => new CoreCursor(CoreCursorType.Arrow, 0)
+        };
+
+        CanvasControlCursorHelper.SetCursor(TimelineCanvas, cursor);
+    }
+
 
 
     private (int r, int g, int b) HueColorToRgb(HueWindows.Core.Models.HueColor color)
@@ -531,6 +608,9 @@ public sealed partial class SceneBuilderPage : Page
             _draggingKeyframe = null;
             _draggingTrack = null;
             TimelineCanvas.ReleasePointerCapture(e.Pointer);
+
+            // Restore hover cursor
+            UpdateCursor(_lastHitType);
 
             // Unwire events
             TimelineCanvas.PointerMoved -= TimelineCanvas_KeyframeDrag;
@@ -887,6 +967,10 @@ public sealed partial class SceneBuilderPage : Page
     {
         _isDraggingPlayhead = true;
         TimelineCanvas.CapturePointer(e.Pointer);
+
+        // Set grabbing cursor
+        CanvasControlCursorHelper.SetCursor(TimelineCanvas, new CoreCursor(CoreCursorType.SizeAll, 0));
+
         TimelineCanvas.PointerMoved += TimelineCanvas_PlayheadDrag;
         TimelineCanvas.PointerReleased += TimelineCanvas_PlayheadDragEnd;
     }
@@ -920,6 +1004,10 @@ public sealed partial class SceneBuilderPage : Page
         {
             _isDraggingPlayhead = false;
             TimelineCanvas.ReleasePointerCapture(e.Pointer);
+
+            // Restore hover cursor
+            UpdateCursor(_lastHitType);
+
             TimelineCanvas.PointerMoved -= TimelineCanvas_PlayheadDrag;
             TimelineCanvas.PointerReleased -= TimelineCanvas_PlayheadDragEnd;
         }
@@ -957,6 +1045,10 @@ public sealed partial class SceneBuilderPage : Page
                 _draggingTrack = track;
 
                 TimelineCanvas.CapturePointer(e.Pointer);
+
+                // Set grabbing cursor
+                CanvasControlCursorHelper.SetCursor(TimelineCanvas, new CoreCursor(CoreCursorType.SizeAll, 0));
+
                 TimelineCanvas.PointerMoved += TimelineCanvas_KeyframeDrag;
                 TimelineCanvas.PointerReleased += TimelineCanvas_KeyframeDragEnd;
 
