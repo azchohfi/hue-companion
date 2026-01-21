@@ -6,6 +6,7 @@
     xmlns:local="using:HueWindows.Views"
     xmlns:vm="using:HueWindows.Core.ViewModels"
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:controls="using:HueWindows.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -264,189 +265,6 @@
                     </StackPanel>
                 </Grid>
             </Border>
-
-            <!-- Keyframe Panel (overlay on keyframe selection) -->
-            <Border x:Name="SidePanel"
-                    Width="280"
-                    MaxHeight="500"
-                    Margin="0,0,16,16"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Visibility="Collapsed"
-                    Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
-                    CornerRadius="8"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
-                    <StackPanel Spacing="16">
-                        <!-- Panel Header -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="KeyframeTimeText"
-                                       Text="Keyframe @ 0.0s"
-                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
-                            <Button Grid.Column="1"
-                                    Click="CloseSidePanel_Click"
-                                    Style="{StaticResource IconButtonStyle}"
-                                    ToolTipService.ToolTip="Close">
-                                <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                            </Button>
-                        </Grid>
-
-                        <!-- Color Picker -->
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Color"
-                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                            <ColorPicker x:Name="KeyframeColorPicker"
-                                         ColorSpectrumShape="Ring"
-                                         IsAlphaEnabled="False"
-                                         IsHexInputVisible="False"
-                                         IsMoreButtonVisible="False"
-                                         ColorChanged="KeyframeColorPicker_ColorChanged"/>
-                        </StackPanel>
-
-                        <!-- Brightness Slider -->
-                        <StackPanel Spacing="8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Brightness"
-                                           Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                <TextBlock x:Name="BrightnessValueText"
-                                           Grid.Column="1"
-                                           Text="100%"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </Grid>
-                            <Slider x:Name="BrightnessSlider"
-                                    Minimum="0"
-                                    Maximum="100"
-                                    Value="100"
-                                    ValueChanged="BrightnessSlider_ValueChanged"/>
-                        </StackPanel>
-
-                        <!-- Transition Style -->
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Transition"
-                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                            <ComboBox x:Name="TransitionComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      SelectionChanged="TransitionComboBox_SelectionChanged">
-                                <ComboBoxItem Content="Linear" Tag="Linear"/>
-                                <ComboBoxItem Content="Ease In" Tag="EaseIn"/>
-                                <ComboBoxItem Content="Ease Out" Tag="EaseOut"/>
-                                <ComboBoxItem Content="Ease In-Out" Tag="EaseInOut" IsSelected="True"/>
-                                <ComboBoxItem Content="Instant" Tag="Instant"/>
-                            </ComboBox>
-                        </StackPanel>
-
-                        <!-- Panel Actions -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Duplicate"
-                                    Click="DuplicateKeyframe_Click"/>
-                            <Button Content="Delete"
-                                    Click="DeleteKeyframe_Click"/>
-                        </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-
-            <!-- Event Track Panel (overlay on event track selection) -->
-            <Border x:Name="EventSidePanel"
-                    Width="280"
-                    Margin="0,0,16,16"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Visibility="Collapsed"
-                    Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
-                    CornerRadius="8"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                <StackPanel Padding="16" Spacing="16">
-                    <!-- Panel Header -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <FontIcon x:Name="EventTrackIcon" Glyph="&#xE945;" FontSize="18" Margin="0,0,8,0"/>
-                        <TextBlock x:Name="EventTrackNameText"
-                                   Grid.Column="1"
-                                   Text="Lightning Flash"
-                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <Button Grid.Column="2"
-                                Click="CloseEventSidePanel_Click"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTipService.ToolTip="Close">
-                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                        </Button>
-                    </Grid>
-
-                    <!-- Effect Preset -->
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Effect"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                        <ComboBox x:Name="EventPresetComboBox"
-                                  HorizontalAlignment="Stretch"
-                                  SelectionChanged="EventPresetComboBox_SelectionChanged">
-                            <ComboBoxItem Content="Lightning Flash" Tag="LightningFlash"/>
-                            <ComboBoxItem Content="Sparkle" Tag="Sparkle"/>
-                            <ComboBoxItem Content="Candle Flicker" Tag="CandleFlicker"/>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <!-- Frequency Slider -->
-                    <StackPanel Spacing="8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Frequency"
-                                       Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                            <TextBlock x:Name="FrequencyValueText"
-                                       Grid.Column="1"
-                                       Text="Medium"
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        </Grid>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Rare" Grid.Column="0"
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                       VerticalAlignment="Center"/>
-                            <Slider x:Name="FrequencySlider"
-                                    Grid.Column="1"
-                                    Minimum="0"
-                                    Maximum="1"
-                                    StepFrequency="0.1"
-                                    Value="0.5"
-                                    Margin="8,0"
-                                    ValueChanged="FrequencySlider_ValueChanged"/>
-                            <TextBlock Text="Frequent" Grid.Column="2"
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Delete Button -->
-                    <Button Content="Delete Event Track"
-                            Click="DeleteEventTrack_Click"
-                            HorizontalAlignment="Stretch"/>
-                </StackPanel>
-            </Border>
         </Grid>
 
         <!-- Footer: Transport Controls (Two Rows) -->
@@ -611,6 +429,165 @@
                             Style="{StaticResource AccentButtonStyle}"/>
                 </Grid>
             </Grid>
+        </Border>
+
+        <!-- Keyframe Panel (overlay on keyframe selection) - moved outside Row 2 to allow overflow -->
+        <Border x:Name="SidePanel"
+                Grid.RowSpan="4"
+                Width="280"
+                MaxHeight="500"
+                Margin="0,0,52,16"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Visibility="Collapsed"
+                Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
+                CornerRadius="8"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                <StackPanel Spacing="16">
+                    <!-- Panel Header -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="KeyframeTimeText"
+                                   Text="Keyframe @ 0.0s"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <Button Grid.Column="1"
+                                Click="CloseSidePanel_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTipService.ToolTip="Close">
+                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Color Picker -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Color"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <controls:GamutColorPicker x:Name="KeyframeColorPicker"
+                                                   ColorChanged="GamutColorPicker_ColorChanged"/>
+                    </StackPanel>
+
+                    <!-- Transition Style -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Transition"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <ComboBox x:Name="TransitionComboBox"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="TransitionComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Linear" Tag="Linear"/>
+                            <ComboBoxItem Content="Ease In" Tag="EaseIn"/>
+                            <ComboBoxItem Content="Ease Out" Tag="EaseOut"/>
+                            <ComboBoxItem Content="Ease In-Out" Tag="EaseInOut" IsSelected="True"/>
+                            <ComboBoxItem Content="Instant" Tag="Instant"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Panel Actions -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Duplicate"
+                                Click="DuplicateKeyframe_Click"/>
+                        <Button Content="Delete"
+                                Click="DeleteKeyframe_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Event Track Panel (overlay on event track selection) - moved outside Row 2 to allow overflow -->
+        <Border x:Name="EventSidePanel"
+                Grid.RowSpan="4"
+                Width="280"
+                Margin="0,0,52,16"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Visibility="Collapsed"
+                Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
+                CornerRadius="8"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+            <StackPanel Padding="16" Spacing="16">
+                <!-- Panel Header -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <FontIcon x:Name="EventTrackIcon" Glyph="&#xE945;" FontSize="18" Margin="0,0,8,0"/>
+                    <TextBlock x:Name="EventTrackNameText"
+                               Grid.Column="1"
+                               Text="Lightning Flash"
+                               Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <Button Grid.Column="2"
+                            Click="CloseEventSidePanel_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTipService.ToolTip="Close">
+                        <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                    </Button>
+                </Grid>
+
+                <!-- Effect Preset -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Effect"
+                               Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                    <ComboBox x:Name="EventPresetComboBox"
+                              HorizontalAlignment="Stretch"
+                              SelectionChanged="EventPresetComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Lightning Flash" Tag="LightningFlash"/>
+                        <ComboBoxItem Content="Sparkle" Tag="Sparkle"/>
+                        <ComboBoxItem Content="Candle Flicker" Tag="CandleFlicker"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Frequency Slider -->
+                <StackPanel Spacing="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Frequency"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock x:Name="FrequencyValueText"
+                                   Grid.Column="1"
+                                   Text="Medium"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Rare" Grid.Column="0"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Slider x:Name="FrequencySlider"
+                                Grid.Column="1"
+                                Minimum="0"
+                                Maximum="1"
+                                StepFrequency="0.1"
+                                Value="0.5"
+                                Margin="8,0"
+                                ValueChanged="FrequencySlider_ValueChanged"/>
+                        <TextBlock Text="Frequent" Grid.Column="2"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Delete Button -->
+                <Button Content="Delete Event Track"
+                        Click="DeleteEventTrack_Click"
+                        HorizontalAlignment="Stretch"/>
+            </StackPanel>
         </Border>
     </Grid>
 </Page>
