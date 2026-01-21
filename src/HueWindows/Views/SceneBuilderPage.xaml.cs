@@ -1141,10 +1141,9 @@ public sealed partial class SceneBuilderPage : Page
         if (ViewModel.SelectedKeyframe == null || _isUpdatingPanel)
             return;
 
-        // Update keyframe color
+        // Update keyframe color AND brightness
         ViewModel.SelectedKeyframe.Color = color;
 
-        // Update brightness from picker
         if (sender is Controls.GamutColorPicker picker)
         {
             ViewModel.SelectedKeyframe.Brightness = picker.Brightness;
@@ -1156,23 +1155,8 @@ public sealed partial class SceneBuilderPage : Page
         // Invalidate timeline to show new color
         TimelineCanvas?.Invalidate();
 
-        // Live preview on light
-        await PreviewColorOnLight(color);
-    }
-
-    private async Task PreviewColorOnLight(HueColor color)
-    {
-        if (ViewModel.SelectedKeyframe == null)
-            return;
-
-        try
-        {
-            await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
-        }
-        catch
-        {
-            // Ignore preview errors
-        }
+        // Live preview on light (sends both color and brightness)
+        await ViewModel.UpdateLightForKeyframeAsync(ViewModel.SelectedKeyframe);
     }
 
 
