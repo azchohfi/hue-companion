@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A focused polish pass on the Hue Companion Scene Builder — the DAW-style timeline editor for creating animated light scenes. The goal is to elevate it from functional to polished, taking inspiration from professional DAWs like Ableton Live and Logic Pro.
+A polished DAW-style timeline editor for creating animated light scenes in Hue Companion. Features GPU-accelerated rendering via Win2D, continuous color gradient tracks showing light evolution over time, and professional interaction polish inspired by Ableton Live and Logic Pro.
 
 ## Core Value
 
@@ -12,41 +12,43 @@ The track representation must feel like a real DAW — continuous color gradient
 
 ### Validated
 
-Existing Scene Builder capabilities (working today):
+Shipped in v0.2:
 
-- ✓ Timeline with tracks per light — existing
-- ✓ Keyframe creation via click, deletion via right-click — existing
-- ✓ Keyframe drag repositioning — existing
-- ✓ Color picker for keyframe editing — existing
-- ✓ Event tracks for random effects (lightning, sparkle, flicker) — existing
-- ✓ Snap-to-grid with zoom-adaptive intervals — existing
-- ✓ 60fps playback with rate-limited light updates — existing
-- ✓ Scene save/load to JSON — existing
+- ✓ Timeline renders via Win2D CanvasControl for GPU acceleration — v0.2
+- ✓ Canvas uses layered architecture (ruler, tracks, keyframes, playhead) — v0.2
+- ✓ Rendering scales correctly on high-DPI displays — v0.2
+- ✓ Continuous gradient color strips showing interpolated color over time — v0.2
+- ✓ Gradient strips have rounded edges and clean borders (Logic Pro aesthetic) — v0.2
+- ✓ Keyframes show hover states with color-matched glow effects — v0.2
+- ✓ Playhead has 44px WCAG 2.5.5 compliant hit area — v0.2
+- ✓ Playhead shows hover highlight and cursor change — v0.2
+- ✓ Time ruler aligns correctly with keyframes on resize — v0.2
+- ✓ Compact icon toggles for snap/loop with screen reader support — v0.2
+- ✓ Brightness slider debounced (150ms) to prevent API flooding — v0.2
+- ✓ Color picker updates lights in real-time for preview — v0.2
+- ✓ Keyboard shortcuts documented in tooltips — v0.2
+
+Existing capabilities (pre-v0.2):
+
+- ✓ Timeline with tracks per light
+- ✓ Keyframe creation via click, deletion via right-click
+- ✓ Keyframe drag repositioning
+- ✓ Color picker for keyframe editing
+- ✓ Event tracks for random effects (lightning, sparkle, flicker)
+- ✓ Snap-to-grid with zoom-adaptive intervals
+- ✓ 60fps playback with rate-limited light updates
+- ✓ Scene save/load to JSON
 
 ### Active
 
-Track representation improvements:
+For future milestones (v2+):
 
-- [ ] Fix time ruler alignment bug (center-aligned, misaligns on window resize)
-- [ ] Continuous gradient color bars per track showing interpolated color over time
-- [ ] Keyframe markers overlaid on gradient strips
-- [ ] Logic Pro aesthetic — rounded edges, clean borders on gradient strips
-
-Bottom controls improvements:
-
-- [ ] Compact icon toggles for snap/loop (accessible on/off states)
-- [ ] Better button sizing and reflow behavior
-- [ ] Ableton-inspired minimal transport layout
-
-Color picker improvements:
-
-- [ ] Smaller color picker popup
-- [ ] Better positioning to avoid obscuring target keyframe
-
-Playhead improvements:
-
-- [ ] Larger drag hit area for playhead
-- [ ] Visual affordance indicating draggability (hover state, cursor change)
+- [ ] Track height adjustment (presets or drag-to-resize)
+- [ ] Track reordering via drag
+- [ ] Ableton-style minimal transport layout
+- [ ] Zoom presets via keyboard shortcuts (Z/X)
+- [ ] Marquee selection for multiple keyframes
+- [ ] Multi-keyframe move/delete
 
 ### Out of Scope
 
@@ -57,29 +59,41 @@ Playhead improvements:
 
 ## Context
 
-**Existing codebase:** WinUI 3 app with MVVM pattern using CommunityToolkit.Mvvm. Scene Builder is in `Views/SceneBuilderPage.xaml` with `Core/ViewModels/SceneBuilderViewModel.cs`.
+**Current state:** v0.2 shipped with 13,700+ lines added across 68 files. Scene Builder now has GPU-accelerated rendering with professional DAW-style visuals.
 
-**Graphics:** Uses Microsoft.Graphics.Win2D for timeline rendering. Canvas is manually drawn via `RenderTimeline()` method.
+**Codebase:** WinUI 3 app with MVVM pattern using CommunityToolkit.Mvvm.
 
-**Current rendering approach:** Keyframes drawn as colored circles on canvas. Time ruler rendered with tick marks. Playhead is a vertical line.
+**Key files:**
+- `Views/SceneBuilderPage.xaml` — Timeline UI and controls
+- `Views/SceneBuilderPage.xaml.cs` — Rendering, hit testing, interaction (~1,300 LOC)
+- `Rendering/*.cs` — Win2D renderer classes (~350 LOC)
+- `Core/ViewModels/SceneBuilderViewModel.cs` — State and keyframe logic
 
-**Reference DAWs:**
-- Ableton Live — minimal transport controls, clean aesthetic
-- Logic Pro — rounded edges, polished borders on track lanes
+**Graphics:** Win2D layered architecture with separate renderers:
+- TimeRulerRenderer — Time scale and tick marks
+- GradientTrackRenderer — Color gradient strips with easing interpolation
+- KeyframeLayerRenderer — Keyframe circles with glow effects
+- PlayheadRenderer — Playhead line with hover thickness
 
 ## Constraints
 
-- **Platform:** WinUI 3 / Windows App SDK — must use available controls and Win2D
-- **Performance:** 60fps timeline rendering must be maintained during playback
-- **Accessibility:** Icon toggles need proper accessible states (not just visual)
+- **Platform:** WinUI 3 / Windows App SDK
+- **Performance:** 60fps timeline rendering maintained during playback
+- **Accessibility:** WCAG 2.5.5 compliance for touch targets, screen reader support
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Gradient strips behind existing keyframe markers | User prefers current keyframe circles, gradient adds context without replacing them | — Pending |
-| Logic Pro aesthetic for borders | Rounded edges and clean borders match desired polish level | — Pending |
-| Ableton-style icon toggles | Compact, recognizable, good reflow behavior | — Pending |
+| Gradient strips behind keyframe markers | User prefers current keyframe circles, gradient adds context | ✓ Good |
+| Logic Pro aesthetic (4px corner radius) | Subtle rounding, not pill shape — user preference | ✓ Good |
+| Win2D layered renderer architecture | Separate classes per layer for independent invalidation | ✓ Good |
+| 15 gradient stops | Smooth visual without excessive GPU overhead | ✓ Good |
+| Win2D ShadowEffect for glow | GPU-accelerated, color-matched glow rendering | ✓ Good |
+| 44px playhead hit area | WCAG 2.5.5 compliance, easier to grab | ✓ Good |
+| AutomationProperties.AcceleratorKey | Screen reader keyboard shortcut announcements | ✓ Good |
+| Color picker real-time preview | Users need to see colors on physical lights immediately | ✓ Good (adjusted from debounced) |
+| Brightness slider 150ms debounce | Prevents API flooding while maintaining usable interaction | ✓ Good |
 
 ---
-*Last updated: 2026-01-20 after initialization*
+*Last updated: 2026-01-21 after v0.2 milestone*
