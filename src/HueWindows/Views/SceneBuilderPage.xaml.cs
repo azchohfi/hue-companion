@@ -201,48 +201,56 @@ public sealed partial class SceneBuilderPage : Page
 
     private async void PlaybackTimer_Tick(object? sender, object e)
     {
-        if (ViewModel == null || !ViewModel.IsPlaying)
-            return;
-
-        var now = DateTime.Now;
-        var deltaSeconds = (now - _lastFrameTime).TotalSeconds;
-        _lastFrameTime = now;
-
-        ViewModel.PlayheadPosition += deltaSeconds;
-
-        // Check if we've reached the end
-        if (ViewModel.PlayheadPosition >= ViewModel.DurationSeconds)
+        try
         {
-            if (ViewModel.IsLooping)
-            {
-                ViewModel.PlayheadPosition = 0;
-                InitializeEventPlayback(); // Reset event timers on loop
-                // Full re-render when looping back (ruler needs update)
-                RenderTimeline();
+            if (ViewModel == null || !ViewModel.IsPlaying)
                 return;
-            }
-            else
+
+            var now = DateTime.Now;
+            var deltaSeconds = (now - _lastFrameTime).TotalSeconds;
+            _lastFrameTime = now;
+
+            ViewModel.PlayheadPosition += deltaSeconds;
+
+            // Check if we've reached the end
+            if (ViewModel.PlayheadPosition >= ViewModel.DurationSeconds)
             {
-                ViewModel.PlayheadPosition = ViewModel.DurationSeconds;
-                ViewModel.IsPlaying = false;
-                _playbackTimer?.Stop();
-                UpdatePlayButtonState();
+                if (ViewModel.IsLooping)
+                {
+                    ViewModel.PlayheadPosition = 0;
+                    InitializeEventPlayback(); // Reset event timers on loop
+                    // Full re-render when looping back (ruler needs update)
+                    RenderTimeline();
+                    // Don't skip light update on loop - fall through to update lights at position 0
+                }
+                else
+                {
+                    ViewModel.PlayheadPosition = ViewModel.DurationSeconds;
+                    ViewModel.IsPlaying = false;
+                    _playbackTimer?.Stop();
+                    UpdatePlayButtonState();
+                    return; // Only return early when stopping, not when looping
+                }
             }
+
+            // Efficiently update just the playhead position (not full re-render)
+            UpdatePlayheadPosition();
+
+            // Rate-limit light updates to ~10 per second to avoid flooding the bridge
+            var msSinceLastUpdate = (now - _lastLightUpdateTime).TotalMilliseconds;
+            if (msSinceLastUpdate >= LightUpdateIntervalMs)
+            {
+                _lastLightUpdateTime = now;
+                await ViewModel.UpdateLightsForPlayheadAsync();
+            }
+
+            // Check for event track triggers
+            CheckEventTriggers();
         }
-
-        // Efficiently update just the playhead position (not full re-render)
-        UpdatePlayheadPosition();
-
-        // Rate-limit light updates to ~10 per second to avoid flooding the bridge
-        var msSinceLastUpdate = (now - _lastLightUpdateTime).TotalMilliseconds;
-        if (msSinceLastUpdate >= LightUpdateIntervalMs)
+        catch
         {
-            _lastLightUpdateTime = now;
-            await ViewModel.UpdateLightsForPlayheadAsync();
+            // Prevent exceptions from crashing the timer
         }
-
-        // Check for event track triggers
-        CheckEventTriggers();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)

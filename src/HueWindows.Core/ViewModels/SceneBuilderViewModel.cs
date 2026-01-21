@@ -472,15 +472,16 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// </summary>
     public async Task UpdateLightsForPlayheadAsync()
     {
-        if (SelectedRoom == null || Tracks.Count == 0 || _bridgeService == null)
+        if (Tracks.Count == 0)
             return;
 
-        // Throttle updates to avoid overwhelming the bridge
-        var now = DateTime.UtcNow;
-        if ((now - _lastPlayheadUpdate).TotalMilliseconds < PlayheadUpdateThrottleMs)
+        // Ensure we have a bridge service
+        var bridgeService = _bridgeService ?? _multiBridgeService.GetDefaultBridgeService();
+        if (bridgeService == null)
             return;
 
-        _lastPlayheadUpdate = now;
+        // Note: Throttling is handled by the caller (SceneBuilderPage)
+        // to avoid double-throttling which can cause missed updates
 
         foreach (var track in Tracks)
         {
@@ -490,8 +491,15 @@ public partial class SceneBuilderViewModel : ObservableObject
             var (color, brightness) = InterpolateAtTime(track, PlayheadPosition);
 
             // Send to light
-            await _bridgeService.SetLightColorAsync(lightId, color);
-            await _bridgeService.SetLightBrightnessAsync(lightId, brightness);
+            try
+            {
+                await bridgeService.SetLightColorAsync(lightId, color);
+                await bridgeService.SetLightBrightnessAsync(lightId, brightness);
+            }
+            catch
+            {
+                // Continue with other lights if one fails
+            }
         }
     }
 
@@ -500,7 +508,9 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// </summary>
     public async Task UpdateLightForKeyframeAsync(KeyframeViewModel keyframe)
     {
-        if (_bridgeService == null) return;
+        // Ensure we have a bridge service
+        var bridgeService = _bridgeService ?? _multiBridgeService.GetDefaultBridgeService();
+        if (bridgeService == null) return;
 
         // Find which track this keyframe belongs to
         foreach (var track in Tracks)
@@ -509,8 +519,8 @@ public partial class SceneBuilderViewModel : ObservableObject
             {
                 if (Guid.TryParse(track.LightId, out var lightId))
                 {
-                    await _bridgeService.SetLightColorAsync(lightId, keyframe.Color);
-                    await _bridgeService.SetLightBrightnessAsync(lightId, keyframe.Brightness);
+                    await bridgeService.SetLightColorAsync(lightId, keyframe.Color);
+                    await bridgeService.SetLightBrightnessAsync(lightId, keyframe.Brightness);
                 }
                 break;
             }
@@ -524,7 +534,12 @@ public partial class SceneBuilderViewModel : ObservableObject
     /// <param name="trackIndex">The index of the light track to affect.</param>
     public async Task FireEventAsync(EventTrackViewModel eventTrack, int trackIndex)
     {
-        if (SelectedRoom == null || Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count || _bridgeService == null)
+        if (Tracks.Count == 0 || trackIndex < 0 || trackIndex >= Tracks.Count)
+            return;
+
+        // Ensure we have a bridge service
+        var bridgeService = _bridgeService ?? _multiBridgeService.GetDefaultBridgeService();
+        if (bridgeService == null)
             return;
 
         var track = Tracks[trackIndex];
@@ -542,16 +557,16 @@ public partial class SceneBuilderViewModel : ObservableObject
         };
 
         // Flash the light
-        await _bridgeService.SetLightColorAsync(lightId, flashColor);
-        await _bridgeService.SetLightBrightnessAsync(lightId, flashBrightness);
+        await bridgeService.SetLightColorAsync(lightId, flashColor);
+        await bridgeService.SetLightBrightnessAsync(lightId, flashBrightness);
 
         // Brief delay then return to interpolated state
         await Task.Delay(100);
 
         // Return to the current playhead state for this track
         var (currentColor, currentBrightness) = InterpolateAtTime(track, PlayheadPosition);
-        await _bridgeService.SetLightColorAsync(lightId, currentColor);
-        await _bridgeService.SetLightBrightnessAsync(lightId, currentBrightness);
+        await bridgeService.SetLightColorAsync(lightId, currentColor);
+        await bridgeService.SetLightBrightnessAsync(lightId, currentBrightness);
     }
 
     private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
