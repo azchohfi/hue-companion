@@ -788,32 +788,16 @@ public sealed partial class RoomDetailPage : Page
     {
         if (sender is Button button && button.Tag is NativeEffectInfo effect)
         {
-            var flyout = new Flyout
+            Style? flyoutStyle = null;
+            if (Resources.TryGetValue("EffectFlyoutPresenterStyle", out var style) && style is Style s)
             {
-                ShouldConstrainToRootBounds = false
-            };
-
-            // Safely get style from resources
-            if (Resources.TryGetValue("EffectFlyoutPresenterStyle", out var style) && style is Style flyoutStyle)
-            {
-                flyout.FlyoutPresenterStyle = flyoutStyle;
+                flyoutStyle = s;
             }
 
-            var flyoutContent = new NativeEffectFlyout { Effect = effect };
-            flyoutContent.ApplyRequested += async (s, args) =>
-            {
-                flyout.Hide();
-                await ApplyNativeEffectAsync(args);
-            };
-            flyoutContent.SaveRequested += async (s, args) =>
-            {
-                flyout.Hide();
-                await SaveNativeEffectAsSceneAsync(args);
-            };
-
-            flyout.Content = flyoutContent;
-            flyout.Opening += (s, args) => flyoutContent.AnimateEntrance();
-            flyout.ShowAt(button);
+            NativeEffectHelper.ShowNativeEffectFlyout(
+                button, effect, flyoutStyle,
+                ApplyNativeEffectAsync,
+                SaveNativeEffectAsSceneAsync);
         }
     }
 
