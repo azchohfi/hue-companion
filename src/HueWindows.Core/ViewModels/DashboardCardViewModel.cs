@@ -16,6 +16,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
+    private readonly ISettingsService _settingsService;
     private readonly string? _bridgeId;
 
     // The underlying data (only one will be set)
@@ -136,11 +137,13 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     public DashboardCardViewModel(
         RoomModel room,
         IMultiBridgeService multiBridgeService,
-        IPinnedItemsService pinnedItemsService)
+        IPinnedItemsService pinnedItemsService,
+        ISettingsService settingsService)
     {
         _room = room;
         _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
+        _settingsService = settingsService;
         _bridgeId = room.BridgeId;
 
         ItemId = room.Id;
@@ -151,7 +154,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         Brightness = room.Brightness;
         DominantColor = room.DominantColor;
         LightCount = room.Lights.Count;
-        RoomIcon = RoomIconHelper.GetIconForArchetype(room.Archetype);
+        RoomIcon = RoomIconHelper.GetIconForRoom(room.Id, room.Archetype, settingsService.Settings.CustomRoomIcons);
     }
 
     /// <summary>
@@ -161,11 +164,13 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         LightModel light,
         IMultiBridgeService multiBridgeService,
         IPinnedItemsService pinnedItemsService,
+        ISettingsService settingsService,
         string? bridgeId = null)
     {
         _light = light;
         _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
+        _settingsService = settingsService;
         _bridgeId = bridgeId;
 
         ItemId = light.Id;

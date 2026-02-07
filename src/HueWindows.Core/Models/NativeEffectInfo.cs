@@ -28,7 +28,7 @@ public class NativeEffectInfo
     /// <summary>
     /// Default speed (0.0-1.0).
     /// </summary>
-    public double DefaultSpeed { get; init; } = 0.5;
+    public double DefaultSpeed { get; init; } = 0.08;
 
     /// <summary>
     /// Default brightness (0.0-1.0).

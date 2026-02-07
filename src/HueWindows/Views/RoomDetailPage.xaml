@@ -64,11 +64,12 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Room icon (no longer tappable for color) -->
+                    <!-- Room icon (tap to change) -->
                     <Border x:Name="HeaderIconContainer" Grid.Column="0" Width="48" Height="48" CornerRadius="24"
-                            Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,16,0">
+                            Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,16,0"
+                            Tapped="HeaderIcon_Tapped">
                         <FontIcon x:Name="RoomIcon"
-                                  Glyph="&#xE781;"
+                                  Glyph="{x:Bind ViewModel.RoomIconGlyph, Mode=OneWay}"
                                   FontSize="22"
                                   Foreground="Transparent"/>
                     </Border>

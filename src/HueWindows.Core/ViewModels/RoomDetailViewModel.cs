@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -16,13 +17,18 @@ public partial class RoomDetailViewModel : ObservableObject
     private readonly IAnimationService _animationService;
     private readonly ISceneStorageService _sceneStorageService;
     private readonly IRoomSceneAssignmentService _assignmentService;
+    private readonly ISettingsService _settingsService;
     private IHueBridgeService? _bridgeService; // Set when loading room based on BridgeId
     private Guid _groupId;
     private LightGroupType _groupType = LightGroupType.Room;
     private string? _bridgeId; // Track which bridge this room belongs to
+    private RoomArchetype _roomArchetype;
 
     [ObservableProperty]
     private string _roomName = string.Empty;
+
+    [ObservableProperty]
+    private string _roomIconGlyph = "\uE781";
 
     [ObservableProperty]
     private string _groupTypeLabel = "Room";
@@ -88,12 +94,14 @@ public partial class RoomDetailViewModel : ObservableObject
         IMultiBridgeService multiBridgeService,
         IAnimationService animationService,
         ISceneStorageService sceneStorageService,
-        IRoomSceneAssignmentService assignmentService)
+        IRoomSceneAssignmentService assignmentService,
+        ISettingsService settingsService)
     {
         _multiBridgeService = multiBridgeService;
         _animationService = animationService;
         _sceneStorageService = sceneStorageService;
         _assignmentService = assignmentService;
+        _settingsService = settingsService;
 
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
@@ -162,6 +170,8 @@ public partial class RoomDetailViewModel : ObservableObject
 
         var group = groupResult.Value!;
         RoomName = group.DisplayName;
+        _roomArchetype = group.Archetype;
+        RoomIconGlyph = RoomIconHelper.GetIconForRoom(_groupId, _roomArchetype, _settingsService.Settings.CustomRoomIcons);
         IsOn = group.IsOn;
         Brightness = group.Brightness;
 
@@ -442,6 +452,35 @@ public partial class RoomDetailViewModel : ObservableObject
     private async Task StopAnimationAsync()
     {
         await _animationService.StopSceneInRoomAsync(_groupId);
+    }
+
+    /// <summary>
+    /// Event raised when the custom icon is changed so other views can update.
+    /// </summary>
+    public event EventHandler<string>? CustomIconChanged;
+
+    /// <summary>
+    /// Gets the current group ID.
+    /// </summary>
+    public Guid GroupId => _groupId;
+
+    [RelayCommand]
+    private async Task SetCustomIconAsync(string glyph)
+    {
+        _settingsService.Settings.CustomRoomIcons[_groupId.ToString()] = glyph;
+        await _settingsService.SaveAsync();
+        RoomIconGlyph = glyph;
+        CustomIconChanged?.Invoke(this, glyph);
+    }
+
+    [RelayCommand]
+    private async Task ResetIconAsync()
+    {
+        _settingsService.Settings.CustomRoomIcons.Remove(_groupId.ToString());
+        await _settingsService.SaveAsync();
+        var defaultGlyph = RoomIconHelper.GetIconForArchetype(_roomArchetype);
+        RoomIconGlyph = defaultGlyph;
+        CustomIconChanged?.Invoke(this, defaultGlyph);
     }
 
     /// <summary>

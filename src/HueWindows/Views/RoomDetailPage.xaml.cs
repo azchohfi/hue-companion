@@ -354,6 +354,7 @@ public sealed partial class RoomDetailPage : Page
 
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         ViewModel.LightSelected += OnLightSelected;
+        ViewModel.CustomIconChanged += OnCustomIconChanged;
 
         // Reset animation indices for entrance animations
         _lightEntranceIndex = 0;
@@ -876,12 +877,56 @@ public sealed partial class RoomDetailPage : Page
         UpdateWrapGridItemSize(NativeEffectsGrid, 160);
     }
 
+    private void HeaderIcon_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        var flyout = new Flyout
+        {
+            Placement = FlyoutPlacementMode.Bottom,
+            ShouldConstrainToRootBounds = false
+        };
+        flyout.FlyoutPresenterStyle = new Style(typeof(FlyoutPresenter));
+        flyout.FlyoutPresenterStyle.Setters.Add(new Setter(FlyoutPresenter.BackgroundProperty, new SolidColorBrush(Microsoft.UI.Colors.Transparent)));
+        flyout.FlyoutPresenterStyle.Setters.Add(new Setter(FlyoutPresenter.PaddingProperty, new Thickness(0)));
+        flyout.FlyoutPresenterStyle.Setters.Add(new Setter(FlyoutPresenter.CornerRadiusProperty, new CornerRadius(12)));
+
+        var picker = new IconPickerFlyout();
+        picker.IconSelected += (s, glyph) =>
+        {
+            flyout.Hide();
+            ViewModel.SetCustomIconCommand.Execute(glyph);
+        };
+        picker.ResetRequested += (s, _) =>
+        {
+            flyout.Hide();
+            ViewModel.ResetIconCommand.Execute(null);
+        };
+
+        flyout.Content = picker;
+        flyout.Opening += (s, _) => picker.AnimateEntrance();
+        flyout.ShowAt(HeaderIconContainer);
+        e.Handled = true;
+    }
+
+    private void OnCustomIconChanged(object? sender, string glyph)
+    {
+        // Update the nav item icon in MainWindow
+        try
+        {
+            App.MainWindow.UpdateNavItemIcon(ViewModel.GroupId, glyph);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[RoomDetailPage] Non-critical error updating nav icon: {ex.Message}");
+        }
+    }
+
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
 
         ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         ViewModel.LightSelected -= OnLightSelected;
+        ViewModel.CustomIconChanged -= OnCustomIconChanged;
 
         _brightnessDebounceTimer?.Stop();
     }

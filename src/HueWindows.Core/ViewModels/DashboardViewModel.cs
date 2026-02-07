@@ -18,6 +18,7 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IMessenger _messenger;
+    private readonly ISettingsService _settingsService;
 
     [ObservableProperty]
     private ObservableCollection<RoomCardViewModel> _roomCards = new();
@@ -48,10 +49,12 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 
     public DashboardViewModel(
         IMultiBridgeService multiBridgeService,
-        IMessenger messenger)
+        IMessenger messenger,
+        ISettingsService settingsService)
     {
         _multiBridgeService = multiBridgeService;
         _messenger = messenger;
+        _settingsService = settingsService;
 
         // Subscribe to light state changes
         _multiBridgeService.LightStateChanged += OnMultiBridgeLightStateChanged;
@@ -84,7 +87,7 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 
                 if (bridgeService != null)
                 {
-                    var cardVm = new RoomCardViewModel(room, bridgeService);
+                    var cardVm = new RoomCardViewModel(room, bridgeService, _settingsService.Settings.CustomRoomIcons);
                     cardVm.RoomTapped += OnRoomTapped;
                     RoomCards.Add(cardVm);
                 }
@@ -118,7 +121,7 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
 
                 if (bridgeService != null)
                 {
-                    var cardVm = new RoomCardViewModel(zone, bridgeService);
+                    var cardVm = new RoomCardViewModel(zone, bridgeService, _settingsService.Settings.CustomRoomIcons);
                     cardVm.RoomTapped += OnRoomTapped;
                     ZoneCards.Add(cardVm);
                 }
@@ -309,7 +312,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         }
     }
 
-    public RoomCardViewModel(RoomModel room, IHueBridgeService bridgeService)
+    public RoomCardViewModel(RoomModel room, IHueBridgeService bridgeService, Dictionary<string, string>? customIcons = null)
     {
         _room = room;
         _bridgeService = bridgeService;
@@ -319,7 +322,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         _brightness = room.Brightness;
         _dominantColor = room.DominantColor;
         _lightCount = room.Lights.Count;
-        _roomIcon = RoomIconHelper.GetIconForArchetype(room.Archetype);
+        _roomIcon = RoomIconHelper.GetIconForRoom(room.Id, room.Archetype, customIcons);
     }
 
     partial void OnIsOnChanged(bool value)

@@ -574,9 +574,25 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             Content = group.Name,
             Tag = new NavigationTag(group.GroupType, group.Id),
-            Icon = new FontIcon { Glyph = RoomIconHelper.GetIconForArchetype(group.Archetype) },
+            Icon = new FontIcon { Glyph = RoomIconHelper.GetIconForRoom(group.Id, group.Archetype, _settingsService.Settings.CustomRoomIcons) },
             SelectsOnInvoked = true
         };
+    }
+
+    /// <summary>
+    /// Updates the nav item icon for a specific room/zone.
+    /// Called when the user changes a custom icon from the room detail page.
+    /// </summary>
+    public void UpdateNavItemIcon(Guid groupId, string glyph)
+    {
+        foreach (var navItem in _roomNavItems.Concat(_zoneNavItems))
+        {
+            if (navItem.Tag is NavigationTag tag && tag.Id == groupId)
+            {
+                navItem.Icon = new FontIcon { Glyph = glyph };
+                break;
+            }
+        }
     }
 
     /// <summary>

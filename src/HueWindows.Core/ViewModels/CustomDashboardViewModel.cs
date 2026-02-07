@@ -14,6 +14,7 @@ public partial class CustomDashboardViewModel : ObservableObject
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
+    private readonly ISettingsService _settingsService;
 
     [ObservableProperty]
     private ObservableCollection<DashboardCardViewModel> _pinnedCards = new();
@@ -34,10 +35,12 @@ public partial class CustomDashboardViewModel : ObservableObject
 
     public CustomDashboardViewModel(
         IMultiBridgeService multiBridgeService,
-        IPinnedItemsService pinnedItemsService)
+        IPinnedItemsService pinnedItemsService,
+        ISettingsService settingsService)
     {
         _multiBridgeService = multiBridgeService;
         _pinnedItemsService = pinnedItemsService;
+        _settingsService = settingsService;
 
         // Subscribe to light state changes from all bridges
         _multiBridgeService.LightStateChanged += OnLightStateChanged;
@@ -98,14 +101,14 @@ public partial class CustomDashboardViewModel : ObservableObject
             {
                 if (allGroups.TryGetValue(pinned.Id, out var group))
                 {
-                    cardVm = new DashboardCardViewModel(group, _multiBridgeService, _pinnedItemsService);
+                    cardVm = new DashboardCardViewModel(group, _multiBridgeService, _pinnedItemsService, _settingsService);
                 }
             }
             else if (pinned.Type == PinnedItemType.Light)
             {
                 if (allLights.TryGetValue(pinned.Id, out var light))
                 {
-                    cardVm = new DashboardCardViewModel(light, _multiBridgeService, _pinnedItemsService);
+                    cardVm = new DashboardCardViewModel(light, _multiBridgeService, _pinnedItemsService, _settingsService);
                 }
             }
 

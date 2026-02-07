@@ -41,6 +41,11 @@ public class AppSettings
     /// Whether to start minimized to system tray.
     /// </summary>
     public bool StartMinimized { get; set; } = false;
+
+    /// <summary>
+    /// Custom icon overrides per room/zone (room ID string -> glyph string).
+    /// </summary>
+    public Dictionary<string, string> CustomRoomIcons { get; set; } = new();
 }
 
 /// <summary>

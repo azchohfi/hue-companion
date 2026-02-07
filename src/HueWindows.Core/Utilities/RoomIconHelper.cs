@@ -3,10 +3,25 @@ using HueWindows.Core.Models;
 namespace HueWindows.Core.Utilities;
 
 /// <summary>
+/// An icon choice for the icon picker.
+/// </summary>
+public record IconItem(string Glyph, string Name);
+
+/// <summary>
 /// Provides a single source of truth for mapping room archetypes to icon glyphs.
 /// </summary>
 public static class RoomIconHelper
 {
+    /// <summary>
+    /// Gets the icon for a room, checking custom overrides first, then falling back to archetype.
+    /// </summary>
+    public static string GetIconForRoom(Guid roomId, RoomArchetype archetype, Dictionary<string, string>? customIcons)
+    {
+        if (customIcons != null && customIcons.TryGetValue(roomId.ToString(), out var custom))
+            return custom;
+        return GetIconForArchetype(archetype);
+    }
+
     /// <summary>
     /// Gets the Segoe Fluent Icons glyph for the given room archetype.
     /// </summary>
@@ -56,4 +71,99 @@ public static class RoomIconHelper
             _ => "\uE781"                            // Default light bulb
         };
     }
+
+    /// <summary>
+    /// Gets all available icons for the icon picker.
+    /// </summary>
+    public static IReadOnlyList<IconItem> GetAllIcons() => AllIcons;
+
+    private static readonly IReadOnlyList<IconItem> AllIcons = new List<IconItem>
+    {
+        // Lighting
+        new("\uE781", "Light Bulb"),
+        new("\uE706", "Sun"),
+        new("\uE8EA", "Moon"),
+        new("\uE9A8", "Fireplace"),
+        new("\uE8F9", "Flame"),
+        new("\uE7B1", "Sparkle"),
+
+        // Rooms
+        new("\uE80F", "Home"),
+        new("\uE7F4", "Couch"),
+        new("\uED56", "Kitchen"),
+        new("\uE799", "Dining"),
+        new("\uEC32", "Bed"),
+        new("\uE9FC", "Shower"),
+        new("\uE7AD", "Door"),
+        new("\uE8AF", "Cabinet"),
+
+        // Work & Study
+        new("\uE821", "Briefcase"),
+        new("\uE7F8", "Computer"),
+        new("\uE722", "Camera"),
+        new("\uE736", "Book"),
+        new("\uE70B", "Edit"),
+        new("\uE8A1", "Clipboard"),
+
+        // Entertainment
+        new("\uE8D6", "Music"),
+        new("\uE7FC", "Game"),
+        new("\uE768", "Play"),
+        new("\uE714", "Video"),
+        new("\uE7F5", "Headphone"),
+        new("\uE8B8", "Slideshow"),
+
+        // Nature & Outdoors
+        new("\uE8B3", "Outdoor"),
+        new("\uE8E2", "Leaf"),
+        new("\uE8A2", "Water"),
+        new("\uE7C4", "Globe"),
+        new("\uE9CE", "Cloud"),
+        new("\uE916", "Snowflake"),
+        new("\uE869", "Bug"),
+
+        // Transport & Places
+        new("\uE804", "Car"),
+        new("\uE8B0", "Walking"),
+        new("\uE805", "Fitness"),
+        new("\uE709", "Airplane"),
+        new("\uE806", "Map"),
+
+        // Symbols & Shapes
+        new("\uE734", "Star"),
+        new("\uE735", "Star Filled"),
+        new("\uE7C8", "Heart"),
+        new("\uE76E", "Diamond"),
+        new("\uE91B", "Palette"),
+        new("\uE790", "Color"),
+        new("\uE945", "Wand"),
+        new("\uE77B", "Pin"),
+
+        // Arrows & Navigation
+        new("\uE74A", "Up Arrow"),
+        new("\uE74B", "Down Arrow"),
+        new("\uE72A", "Back"),
+        new("\uE72B", "Forward"),
+
+        // People & Social
+        new("\uE77B", "Contact"),
+        new("\uE716", "People"),
+        new("\uE8D4", "Chat"),
+        new("\uE715", "Email"),
+
+        // Food & Drink
+        new("\uE8A6", "Wine"),
+        new("\uEC32", "Dining"),
+        new("\uE7A7", "Coffee"),
+
+        // Misc
+        new("\uE713", "Settings"),
+        new("\uE72E", "Lock"),
+        new("\uE7EF", "Shield"),
+        new("\uE8B7", "Wrench"),
+        new("\uE74C", "Check"),
+        new("\uE783", "Stopwatch"),
+        new("\uE823", "Gift"),
+        new("\uE8D1", "Flag"),
+    };
 }
