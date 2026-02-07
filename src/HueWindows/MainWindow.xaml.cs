@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 using HueWindows.Helpers;
 using HueWindows.Utilities;
 using HueWindows.Views;
@@ -307,70 +308,53 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void NavigateToInitialPage()
     {
-        var hasBridge = await _settingsService.HasConfiguredBridgeAsync();
-        var cmdArgs = App.CommandLineArgs;
-
-        if (hasBridge)
+        try
         {
-            // Auto-connect to all configured bridges
-            await _multiBridgeService.ConnectAllAsync();
+            var hasBridge = await _settingsService.HasConfiguredBridgeAsync();
+            var cmdArgs = App.CommandLineArgs;
 
-            // Get navigation target from command-line args
-            // Note: For multi-bridge, name resolution uses first connected bridge
-            NavigationTarget? navTarget = null;
-            if (cmdArgs.IsValid && cmdArgs.Page != null)
+            if (hasBridge)
             {
-                if (!string.IsNullOrEmpty(cmdArgs.Name))
+                // Auto-connect to all configured bridges
+                await _multiBridgeService.ConnectAllAsync();
+
+                // Get navigation target from command-line args
+                // Note: For multi-bridge, name resolution uses first connected bridge
+                NavigationTarget? navTarget = null;
+                if (cmdArgs.IsValid && cmdArgs.Page != null)
                 {
-                    // Search all bridges for name resolution
-                    navTarget = await NavigationTarget.ResolveAsync(cmdArgs, _multiBridgeService);
+                    if (!string.IsNullOrEmpty(cmdArgs.Name))
+                    {
+                        // Search all bridges for name resolution
+                        navTarget = await NavigationTarget.ResolveAsync(cmdArgs, _multiBridgeService);
+                    }
+                    else
+                    {
+                        navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
+                    }
+                }
+
+                if (navTarget != null)
+                {
+                    // Command-line navigation takes precedence
+                    NavigateToTarget(navTarget);
                 }
                 else
                 {
-                    navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
+                    // Default navigation behavior
+                    if (_pinnedItemsService.HasPinnedItems)
+                    {
+                        _navigationService.NavigateTo<MyDashboardPage>();
+                        NavView.SelectedItem = MyDashboardNavItem;
+                    }
+                    else
+                    {
+                        _navigationService.NavigateTo<DashboardPage>();
+                        NavView.SelectedItem = DashboardNavItem;
+                    }
                 }
-            }
 
-            if (navTarget != null)
-            {
-                // Command-line navigation takes precedence
-                NavigateToTarget(navTarget);
-            }
-            else
-            {
-                // Default navigation behavior
-                if (_pinnedItemsService.HasPinnedItems)
-                {
-                    _navigationService.NavigateTo<MyDashboardPage>();
-                    NavView.SelectedItem = MyDashboardNavItem;
-                }
-                else
-                {
-                    _navigationService.NavigateTo<DashboardPage>();
-                    NavView.SelectedItem = DashboardNavItem;
-                }
-            }
-
-            // Set up screenshot mode timer if enabled
-            if (cmdArgs.ScreenshotMode)
-            {
-                SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
-            }
-        }
-        else
-        {
-            // No bridge configured - can only navigate to setup/settings (no name resolution possible)
-            NavigationTarget? navTarget = null;
-            if (cmdArgs.IsValid && cmdArgs.Page != null)
-            {
-                // Only use sync resolution (can't resolve names without bridge connection)
-                navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
-            }
-
-            if (navTarget != null && (navTarget.PageType == typeof(SetupPage) || navTarget.PageType == typeof(SettingsPage)))
-            {
-                NavigateToTarget(navTarget);
-
+                // Set up screenshot mode timer if enabled
                 if (cmdArgs.ScreenshotMode)
                 {
                     SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
@@ -378,8 +362,32 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             }
             else
             {
-                _navigationService.NavigateTo<SetupPage>();
+                // No bridge configured - can only navigate to setup/settings (no name resolution possible)
+                NavigationTarget? navTarget = null;
+                if (cmdArgs.IsValid && cmdArgs.Page != null)
+                {
+                    // Only use sync resolution (can't resolve names without bridge connection)
+                    navTarget = NavigationTarget.FromCommandLineArgs(cmdArgs);
+                }
+
+                if (navTarget != null && (navTarget.PageType == typeof(SetupPage) || navTarget.PageType == typeof(SettingsPage)))
+                {
+                    NavigateToTarget(navTarget);
+
+                    if (cmdArgs.ScreenshotMode)
+                    {
+                        SetupScreenshotModeTimer(cmdArgs.ScreenshotDelayMs);
+                    }
+                }
+                else
+                {
+                    _navigationService.NavigateTo<SetupPage>();
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] NavigateToInitialPage failed: {ex.Message}");
         }
     }
 
@@ -502,10 +510,17 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void NavView_PaneOpened(NavigationView sender, object args)
     {
-        // Load child items when pane opens
-        if (!_itemsLoaded && _multiBridgeService.ConnectionStatus.Any(kvp => kvp.Value))
+        try
         {
-            await LoadChildNavigationItemsAsync();
+            // Load child items when pane opens
+            if (!_itemsLoaded && _multiBridgeService.ConnectionStatus.Any(kvp => kvp.Value))
+            {
+                await LoadChildNavigationItemsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] NavView_PaneOpened failed: {ex.Message}");
         }
     }
 
@@ -559,7 +574,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             Content = group.Name,
             Tag = new NavigationTag(group.GroupType, group.Id),
-            Icon = new FontIcon { Glyph = GetIconForArchetype(group.Archetype) },
+            Icon = new FontIcon { Glyph = RoomIconHelper.GetIconForArchetype(group.Archetype) },
             SelectsOnInvoked = true
         };
     }
@@ -588,50 +603,4 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         NavView.Resources["NavigationViewSelectionIndicatorForeground"] = new SolidColorBrush(color);
     }
 
-    private static string GetIconForArchetype(RoomArchetype archetype)
-    {
-        return archetype switch
-        {
-            RoomArchetype.LivingRoom => "\uE7F4",
-            RoomArchetype.Lounge => "\uE7F4",
-            RoomArchetype.Kitchen => "\uED56",
-            RoomArchetype.Dining => "\uE799",
-            RoomArchetype.Bedroom => "\uEC32",
-            RoomArchetype.KidsBedroom => "\uEC32",
-            RoomArchetype.GuestRoom => "\uEC32",
-            RoomArchetype.Bathroom => "\uE9FC",
-            RoomArchetype.Toilet => "\uE9FC",
-            RoomArchetype.Nursery => "\uE734",
-            RoomArchetype.Recreation => "\uE7FC",
-            RoomArchetype.ManCave => "\uE7FC",
-            RoomArchetype.Office => "\uE821",
-            RoomArchetype.Computer => "\uE7F8",
-            RoomArchetype.Studio => "\uE722",
-            RoomArchetype.Gym => "\uE805",
-            RoomArchetype.Hallway => "\uE8B0",
-            RoomArchetype.Staircase => "\uE74A",
-            RoomArchetype.FrontDoor => "\uE7AD",
-            RoomArchetype.Garage => "\uE804",
-            RoomArchetype.Carport => "\uE804",
-            RoomArchetype.Driveway => "\uE804",
-            RoomArchetype.Terrace => "\uE8B3",
-            RoomArchetype.Garden => "\uE8E2",
-            RoomArchetype.Balcony => "\uE8B3",
-            RoomArchetype.Porch => "\uE8B3",
-            RoomArchetype.Pool => "\uE8A2",
-            RoomArchetype.Barbecue => "\uE8F9",
-            RoomArchetype.Home => "\uE80F",
-            RoomArchetype.Downstairs => "\uE74B",
-            RoomArchetype.Upstairs => "\uE74A",
-            RoomArchetype.TopFloor => "\uE74A",
-            RoomArchetype.Attic => "\uE74A",
-            RoomArchetype.Music => "\uE8D6",
-            RoomArchetype.TV => "\uE7F4",
-            RoomArchetype.Reading => "\uE736",
-            RoomArchetype.Closet => "\uE8AF",
-            RoomArchetype.Storage => "\uE8AF",
-            RoomArchetype.LaundryRoom => "\uE8AF",
-            _ => "\uE781"
-        };
-    }
 }

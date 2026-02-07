@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -150,7 +151,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         Brightness = room.Brightness;
         DominantColor = room.DominantColor;
         LightCount = room.Lights.Count;
-        RoomIcon = GetIconForArchetype(room.Archetype);
+        RoomIcon = RoomIconHelper.GetIconForArchetype(room.Archetype);
     }
 
     /// <summary>
@@ -195,11 +196,11 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
 
         if (_room != null)
         {
-            _ = bridgeService.SetRoomOnAsync(ItemId, value);
+            bridgeService.SetRoomOnAsync(ItemId, value).FireAndForget();
         }
         else if (_light != null)
         {
-            _ = bridgeService.SetLightOnAsync(ItemId, value);
+            bridgeService.SetLightOnAsync(ItemId, value).FireAndForget();
         }
 
         OnPropertyChanged(nameof(BackgroundColorRgb));
@@ -330,50 +331,4 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         OnPropertyChanged(nameof(LightColors));
     }
 
-    private static string GetIconForArchetype(RoomArchetype archetype)
-    {
-        return archetype switch
-        {
-            RoomArchetype.LivingRoom => "\uE7F4",
-            RoomArchetype.Lounge => "\uE7F4",
-            RoomArchetype.Kitchen => "\uED56",
-            RoomArchetype.Dining => "\uE799",
-            RoomArchetype.Bedroom => "\uEC32",
-            RoomArchetype.KidsBedroom => "\uEC32",
-            RoomArchetype.GuestRoom => "\uEC32",
-            RoomArchetype.Bathroom => "\uE9FC",
-            RoomArchetype.Toilet => "\uE9FC",
-            RoomArchetype.Nursery => "\uE734",
-            RoomArchetype.Recreation => "\uE7FC",
-            RoomArchetype.ManCave => "\uE7FC",
-            RoomArchetype.Office => "\uE821",
-            RoomArchetype.Computer => "\uE7F8",
-            RoomArchetype.Studio => "\uE722",
-            RoomArchetype.Gym => "\uE805",
-            RoomArchetype.Hallway => "\uE8B0",
-            RoomArchetype.Staircase => "\uE74A",
-            RoomArchetype.FrontDoor => "\uE7AD",
-            RoomArchetype.Garage => "\uE804",
-            RoomArchetype.Carport => "\uE804",
-            RoomArchetype.Driveway => "\uE804",
-            RoomArchetype.Terrace => "\uE8B3",
-            RoomArchetype.Garden => "\uE8E2",
-            RoomArchetype.Balcony => "\uE8B3",
-            RoomArchetype.Porch => "\uE8B3",
-            RoomArchetype.Pool => "\uE8A2",
-            RoomArchetype.Barbecue => "\uE8F9",
-            RoomArchetype.Home => "\uE80F",
-            RoomArchetype.Downstairs => "\uE74B",
-            RoomArchetype.Upstairs => "\uE74A",
-            RoomArchetype.TopFloor => "\uE74A",
-            RoomArchetype.Attic => "\uE74A",
-            RoomArchetype.Music => "\uE8D6",
-            RoomArchetype.TV => "\uE7F4",
-            RoomArchetype.Reading => "\uE736",
-            RoomArchetype.Closet => "\uE8AF",
-            RoomArchetype.Storage => "\uE8AF",
-            RoomArchetype.LaundryRoom => "\uE8AF",
-            _ => "\uE781"
-        };
-    }
 }
