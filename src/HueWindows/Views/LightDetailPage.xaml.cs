@@ -134,8 +134,8 @@ public sealed partial class LightDetailPage : Page
     {
         if (!isActive)
         {
-            AnimateBorderOpacity(OutlineBorder, 0.0);
-            AnimateBorderOpacity(OutlineBorder2, 0.0);
+            AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
+            AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
             return;
         }
 
@@ -144,26 +144,10 @@ public sealed partial class LightDetailPage : Page
 
         newBorder.BorderBrush = new SolidColorBrush(_accentColor);
 
-        AnimateBorderOpacity(newBorder, 1.0);
-        AnimateBorderOpacity(oldBorder, 0.0);
+        AnimationHelper.AnimateOpacity(newBorder, 1.0);
+        AnimationHelper.AnimateOpacity(oldBorder, 0.0);
 
         _useFirstBorder = !_useFirstBorder;
-    }
-
-    private void AnimateBorderOpacity(Border border, double targetOpacity)
-    {
-        var animation = new DoubleAnimation
-        {
-            To = targetOpacity,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, border);
-        Storyboard.SetTargetProperty(animation, "Opacity");
-        storyboard.Begin();
     }
 
     private void UpdateToggleColor(bool isActive)
@@ -178,7 +162,7 @@ public sealed partial class LightDetailPage : Page
             LightToggle.Background = _toggleBrush;
         }
 
-        AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+        AnimationHelper.AnimateColor(_toggleBrush, _currentToggleColor, targetColor);
         _currentToggleColor = targetColor;
     }
 
@@ -200,7 +184,7 @@ public sealed partial class LightDetailPage : Page
             LightIcon.Foreground = _lightIconBrush;
         }
 
-        AnimateSolidBrushColor(_lightIconBrush, _currentLightIconColor, targetColor);
+        AnimationHelper.AnimateColor(_lightIconBrush, _currentLightIconColor, targetColor);
         _currentLightIconColor = targetColor;
     }
 
@@ -222,7 +206,7 @@ public sealed partial class LightDetailPage : Page
             BrightnessIcon.Foreground = _brightnessIconBrush;
         }
 
-        AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+        AnimationHelper.AnimateColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
         _currentBrightnessIconColor = targetColor;
     }
 
@@ -244,7 +228,7 @@ public sealed partial class LightDetailPage : Page
             ColorIcon.Foreground = _colorIconBrush;
         }
 
-        AnimateSolidBrushColor(_colorIconBrush, _currentColorIconColor, targetColor);
+        AnimationHelper.AnimateColor(_colorIconBrush, _currentColorIconColor, targetColor);
         _currentColorIconColor = targetColor;
     }
 
@@ -266,26 +250,8 @@ public sealed partial class LightDetailPage : Page
             TemperatureIcon.Foreground = _temperatureIconBrush;
         }
 
-        AnimateSolidBrushColor(_temperatureIconBrush, _currentTemperatureIconColor, targetColor);
+        AnimationHelper.AnimateColor(_temperatureIconBrush, _currentTemperatureIconColor, targetColor);
         _currentTemperatureIconColor = targetColor;
-    }
-
-    private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
-    {
-        var animation = new ColorAnimation
-        {
-            From = from,
-            To = to,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-            EnableDependentAnimation = true
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, brush);
-        Storyboard.SetTargetProperty(animation, "Color");
-        storyboard.Begin();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)

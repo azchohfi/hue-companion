@@ -160,8 +160,8 @@ public sealed partial class RoomDetailPage : Page
             }
             else
             {
-                AnimateBorderOpacity(OutlineBorder, 0.0);
-                AnimateBorderOpacity(OutlineBorder2, 0.0);
+                AnimationHelper.AnimateOpacity(OutlineBorder, 0.0);
+                AnimationHelper.AnimateOpacity(OutlineBorder2, 0.0);
             }
             return;
         }
@@ -185,8 +185,8 @@ public sealed partial class RoomDetailPage : Page
             newBorder.BorderBrush = CreateGradientBrush(colors);
 
             // Cross-fade: fade in new, fade out old
-            AnimateBorderOpacity(newBorder, 1.0);
-            AnimateBorderOpacity(oldBorder, 0.0);
+            AnimationHelper.AnimateOpacity(newBorder, 1.0);
+            AnimationHelper.AnimateOpacity(oldBorder, 0.0);
 
             // Toggle for next update
             _useFirstBorder = !_useFirstBorder;
@@ -227,22 +227,6 @@ public sealed partial class RoomDetailPage : Page
         return brush;
     }
 
-    private void AnimateBorderOpacity(Border border, double targetOpacity)
-    {
-        var animation = new DoubleAnimation
-        {
-            To = targetOpacity,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, border);
-        Storyboard.SetTargetProperty(animation, "Opacity");
-        storyboard.Begin();
-    }
-
     private void UpdateToggleColor(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
     {
         if (RoomToggle == null) return;
@@ -264,7 +248,7 @@ public sealed partial class RoomDetailPage : Page
         }
         else
         {
-            AnimateSolidBrushColor(_toggleBrush, _currentToggleColor, targetColor);
+            AnimationHelper.AnimateColor(_toggleBrush, _currentToggleColor, targetColor);
         }
         _currentToggleColor = targetColor;
     }
@@ -296,7 +280,7 @@ public sealed partial class RoomDetailPage : Page
         }
         else
         {
-            AnimateSolidBrushColor(_roomIconBrush, _currentRoomIconColor, targetColor);
+            AnimationHelper.AnimateColor(_roomIconBrush, _currentRoomIconColor, targetColor);
         }
         _currentRoomIconColor = targetColor;
     }
@@ -328,7 +312,7 @@ public sealed partial class RoomDetailPage : Page
         }
         else
         {
-            AnimateSolidBrushColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
+            AnimationHelper.AnimateColor(_brightnessIconBrush, _currentBrightnessIconColor, targetColor);
         }
         _currentBrightnessIconColor = targetColor;
     }
@@ -359,27 +343,9 @@ public sealed partial class RoomDetailPage : Page
         }
         else
         {
-            AnimateSolidBrushColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
+            AnimationHelper.AnimateColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
         }
         _currentColorButtonColor = targetColor;
-    }
-
-    private void AnimateSolidBrushColor(SolidColorBrush brush, Color from, Color to)
-    {
-        var animation = new ColorAnimation
-        {
-            From = from,
-            To = to,
-            Duration = new Duration(TimeSpan.FromMilliseconds(AppConstants.Animation.StandardDurationMs)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-            EnableDependentAnimation = true
-        };
-
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        Storyboard.SetTarget(animation, brush);
-        Storyboard.SetTargetProperty(animation, "Color");
-        storyboard.Begin();
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
