@@ -32,6 +32,26 @@
             <!-- Button overlay colors -->
             <SolidColorBrush x:Key="ButtonHoverOverlayBrush" Color="#15FFFFFF"/>
             <SolidColorBrush x:Key="ButtonPressedOverlayBrush" Color="#10000000"/>
+            <!-- Toggle switch off-state track -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#30FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#40FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#25FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="#15FFFFFF"/>
+            <!-- Toggle switch off-state border -->
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#40FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#50FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#35FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#20FFFFFF"/>
+            <!-- Toggle switch knob off-state -->
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#F0FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#E0FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF"/>
+            <!-- Toggle switch knob on-state -->
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#E8FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#80FFFFFF"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <!-- Card gradient colors for light theme (90% opacity for ambient wash bleed-through) -->
@@ -59,6 +79,26 @@
             <!-- Button overlay colors -->
             <SolidColorBrush x:Key="ButtonHoverOverlayBrush" Color="#10000000"/>
             <SolidColorBrush x:Key="ButtonPressedOverlayBrush" Color="#15000000"/>
+            <!-- Toggle switch off-state track -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#20000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#30000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="#10000000"/>
+            <!-- Toggle switch off-state border -->
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#30000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#40000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#25000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#15000000"/>
+            <!-- Toggle switch knob off-state -->
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#FF000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FF1A1A1A"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#E0000000"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60000000"/>
+            <!-- Toggle switch knob on-state -->
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#E8FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#80FFFFFF"/>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -67,21 +107,10 @@
 
     <!-- =====================================================
          ToggleSwitch Premium Styling - Theme Resource Overrides
+         (Off-state track, border, and knob overrides are in ThemeDictionaries above)
          ===================================================== -->
 
-    <!-- Track (Off State) - Deeper with transparency -->
-    <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#30FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#40FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#25FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="#15FFFFFF"/>
-
-    <!-- Track Border (Off State) - Subtle definition -->
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#40FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#50FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#35FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#20FFFFFF"/>
-
-    <!-- Track (On State) - Accent color -->
+    <!-- Track (On State) - Accent color (theme-independent) -->
     <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="AccentFillColorDefaultBrush"/>
     <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="AccentFillColorSecondaryBrush"/>
     <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="AccentFillColorTertiaryBrush"/>
@@ -92,18 +121,6 @@
     <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="Transparent"/>
     <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="Transparent"/>
     <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="Transparent"/>
-
-    <!-- Knob (Off State) - Clean white with subtle transparency -->
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#F0FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#E0FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF"/>
-
-    <!-- Knob (On State) - Bright white for contrast -->
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#E8FFFFFF"/>
-    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#80FFFFFF"/>
 
     <!-- =====================================================
          Text Styles
@@ -129,15 +146,6 @@
 
     <!-- Card Style -->
     <Style x:Key="CardStyle" TargetType="Grid">
-        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-        <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16"/>
-        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-    </Style>
-
-    <!-- Elevated Card Style (for interactive cards) -->
-    <Style x:Key="ElevatedCardStyle" TargetType="Grid">
         <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Padding" Value="16"/>
@@ -409,7 +417,7 @@
     <!-- Color SplitButton Style -->
     <Style x:Key="ColorSplitButtonStyle" TargetType="SplitButton">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Padding" Value="0"/>

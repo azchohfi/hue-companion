@@ -95,9 +95,9 @@ public static class ColorConverter
         var Z = (Y / y) * z;
 
         // Convert XYZ to RGB using sRGB D65 matrix
-        var r = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
-        var g = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
-        var b = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
+        var r = X * 3.2404542 - Y * 1.5371385 - Z * 0.4985314;
+        var g = -X * 0.9692660 + Y * 1.8760108 + Z * 0.0415560;
+        var b = X * 0.0556434 - Y * 0.2040259 + Z * 1.0572252;
 
         // Apply gamma correction
         r = ApplyGamma(r);
@@ -123,9 +123,9 @@ public static class ColorConverter
         b = RemoveGamma(b);
 
         // Convert RGB to XYZ using sRGB D65 matrix
-        var X = r * 0.4124 + g * 0.3576 + b * 0.1805;
-        var Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-        var Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+        var X = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
+        var Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+        var Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
 
         // Convert XYZ to xy
         var sum = X + Y + Z;

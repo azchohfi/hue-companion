@@ -13,19 +13,15 @@
         <Grid.RenderTransform>
             <ScaleTransform x:Name="RootScaleTransform" ScaleX="1" ScaleY="1"/>
         </Grid.RenderTransform>
-        <!-- Dark gradient background matching card style -->
+        <!-- Theme-aware background -->
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                <GradientStop Color="#FF252528" Offset="0.5"/>
-                <GradientStop Color="#FF1E1E22" Offset="1"/>
-            </LinearGradientBrush>
+            <SolidColorBrush Color="{ThemeResource SystemFillColorSolidNeutral}"/>
         </Grid.Background>
 
         <StackPanel Spacing="12">
             <TextBlock Text="Choose Color"
                        Style="{StaticResource SubtitleTextBlockStyle}"
-                       Foreground="#FFFFFFFF"/>
+                       Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
 
             <ColorPicker x:Name="ColorPicker"
                          ColorSpectrumShape="Ring"

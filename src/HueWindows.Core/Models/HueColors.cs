@@ -8,7 +8,7 @@ public static class HueColors
     /// <summary>
     /// Warm white (2700K equivalent, cozy indoor lighting).
     /// </summary>
-    public static readonly HueColor WarmWhite = new(0.45, 0.41);
+    public static readonly HueColor WarmWhite = HueColor.WarmWhite;
 
     /// <summary>
     /// Cool white (4000K equivalent, bright daylight).

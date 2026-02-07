@@ -8,12 +8,12 @@ public class HueColor
     /// <summary>
     /// X coordinate in CIE color space (0.0 to 1.0).
     /// </summary>
-    public double X { get; set; }
+    public double X { get; init; }
 
     /// <summary>
     /// Y coordinate in CIE color space (0.0 to 1.0).
     /// </summary>
-    public double Y { get; set; }
+    public double Y { get; init; }
 
     /// <summary>
     /// Creates a HueColor from CIE xy coordinates.

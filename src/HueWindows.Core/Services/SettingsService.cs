@@ -17,13 +17,20 @@ public class SettingsService : ISettingsService
     };
 
     /// <inheritdoc/>
-    public AppSettings Settings { get; private set; } = new();
+    public AppSettings Settings { get; set; } = new();
 
-    public SettingsService()
+    public SettingsService(string? basePath = null)
     {
-        // Store settings in LocalAppData
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appFolder = Path.Combine(localAppData, "HueWindows");
+        string appFolder;
+        if (basePath != null)
+        {
+            appFolder = basePath;
+        }
+        else
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            appFolder = Path.Combine(localAppData, "HueWindows");
+        }
         Directory.CreateDirectory(appFolder);
         _settingsPath = Path.Combine(appFolder, SettingsFileName);
     }

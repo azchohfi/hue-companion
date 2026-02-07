@@ -192,6 +192,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
 {
     private readonly IHueBridgeService _bridgeService;
     private readonly RoomModel _room;
+    private IReadOnlyList<(byte R, byte G, byte B)>? _lightColorsCache;
 
     public Guid RoomId => _room.Id;
 
@@ -249,20 +250,24 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
 
     /// <summary>
     /// Gets all unique light colors in the room as RGB values for gradient display.
+    /// Cached and invalidated when light state changes.
     /// </summary>
-    public List<(byte R, byte G, byte B)> LightColors
+    public IReadOnlyList<(byte R, byte G, byte B)> LightColors
     {
         get
         {
-            if (!IsOn) return new List<(byte R, byte G, byte B)>();
+            if (!IsOn) return Array.Empty<(byte R, byte G, byte B)>();
 
-            var colors = _room.Lights
-                .Where(l => l.IsOn && l.CurrentColor != null)
-                .Select(l => l.CurrentColor!.ToRgb(1.0))
-                .Distinct()
-                .ToList();
+            if (_lightColorsCache == null)
+            {
+                _lightColorsCache = _room.Lights
+                    .Where(l => l.IsOn && l.CurrentColor != null)
+                    .Select(l => l.CurrentColor!.ToRgb(1.0))
+                    .Distinct()
+                    .ToList();
+            }
 
-            return colors;
+            return _lightColorsCache;
         }
     }
 
@@ -322,23 +327,20 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         // Send command to bridge when toggle changes
         _bridgeService.SetRoomOnAsync(RoomId, value).FireAndForget();
 
-        // Update computed color properties
-        OnPropertyChanged(nameof(BackgroundColorRgb));
-        OnPropertyChanged(nameof(UseBlackText));
+        // Invalidate cached colors and update computed properties
+        InvalidateLightColorsCache();
     }
 
     partial void OnBrightnessChanged(double value)
     {
-        // Update computed color properties when brightness changes
-        OnPropertyChanged(nameof(BackgroundColorRgb));
-        OnPropertyChanged(nameof(UseBlackText));
+        // Invalidate cached colors and update computed properties when brightness changes
+        InvalidateLightColorsCache();
     }
 
     partial void OnDominantColorChanged(HueColor? value)
     {
-        // Update computed color properties when color changes
-        OnPropertyChanged(nameof(BackgroundColorRgb));
-        OnPropertyChanged(nameof(UseBlackText));
+        // Invalidate cached colors and update computed properties when color changes
+        InvalidateLightColorsCache();
     }
 
     [RelayCommand]
@@ -385,15 +387,24 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
         }
 
         DominantColor = color;
-        OnPropertyChanged(nameof(BackgroundColorRgb));
-        OnPropertyChanged(nameof(UseBlackText));
-        OnPropertyChanged(nameof(LightColors));
+        InvalidateLightColorsCache();
     }
 
     [RelayCommand]
     private void TapRoom()
     {
-        RoomTapped?.Invoke(this, (RoomId, _room.GroupType, IsOn, LightColors));
+        RoomTapped?.Invoke(this, (RoomId, _room.GroupType, IsOn, LightColors.ToList()));
+    }
+
+    /// <summary>
+    /// Invalidates the cached light colors and raises PropertyChanged for all color-dependent properties.
+    /// </summary>
+    private void InvalidateLightColorsCache()
+    {
+        _lightColorsCache = null;
+        OnPropertyChanged(nameof(LightColors));
+        OnPropertyChanged(nameof(BackgroundColorRgb));
+        OnPropertyChanged(nameof(UseBlackText));
     }
 
     /// <summary>
@@ -429,9 +440,7 @@ public partial class RoomCardViewModel : ObservableObject, IRoomCardViewModel
 
         OnPropertyChanged(nameof(BrightnessPercent));
         OnPropertyChanged(nameof(BrightnessDisplayText));
-        OnPropertyChanged(nameof(BackgroundColorRgb));
-        OnPropertyChanged(nameof(UseBlackText));
-        OnPropertyChanged(nameof(LightColors));
+        InvalidateLightColorsCache();
     }
 
 }

@@ -8,14 +8,14 @@ namespace HueWindows.Tests.Services;
 public class SceneStorageServiceTests : IDisposable
 {
     private readonly string _testDirectory;
-    private readonly SceneStorageServiceTestable _service;
+    private readonly SceneStorageService _service;
 
     public SceneStorageServiceTests()
     {
         // Use a unique temp directory for each test
         _testDirectory = Path.Combine(Path.GetTempPath(), $"HueWindowsSceneTest_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDirectory);
-        _service = new SceneStorageServiceTestable(_testDirectory);
+        _service = new SceneStorageService(_testDirectory);
     }
 
     public void Dispose()
@@ -387,150 +387,5 @@ public class SceneStorageServiceTests : IDisposable
                 }
             }
         };
-    }
-
-    /// <summary>
-    /// Testable version of SceneStorageService that allows custom directory.
-    /// </summary>
-    private class SceneStorageServiceTestable : SceneStorageService
-    {
-        private readonly string _testUserScenesPath;
-
-        public SceneStorageServiceTestable(string testDirectory)
-        {
-            _testUserScenesPath = testDirectory;
-        }
-
-        public new string UserScenesPath => _testUserScenesPath;
-
-        public new async Task<Result> SaveSceneAsync(AnimatedSceneModel scene)
-        {
-            // Validate before saving
-            var validationResult = ValidateScene(scene);
-            if (validationResult.IsFailure)
-            {
-                return validationResult;
-            }
-
-            // Don't allow overwriting built-in scenes
-            if (scene.IsBuiltIn)
-            {
-                return Result.Failure("Cannot overwrite built-in scenes");
-            }
-
-            try
-            {
-                var fileName = $"{scene.Id}.json";
-                var filePath = Path.Combine(_testUserScenesPath, fileName);
-
-                var json = System.Text.Json.JsonSerializer.Serialize(scene, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    WriteIndented = true,
-                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase) },
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                });
-                await File.WriteAllTextAsync(filePath, json);
-
-                return Result.Success();
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure($"Failed to save scene: {ex.Message}");
-            }
-        }
-
-        public new async Task<Result<AnimatedSceneModel>> LoadSceneAsync(string filePath)
-        {
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    return Result<AnimatedSceneModel>.Failure($"Scene file not found: {filePath}");
-                }
-
-                var json = await File.ReadAllTextAsync(filePath);
-                var scene = System.Text.Json.JsonSerializer.Deserialize<AnimatedSceneModel>(json, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase) }
-                });
-
-                if (scene == null)
-                {
-                    return Result<AnimatedSceneModel>.Failure($"Failed to deserialize scene from {filePath}");
-                }
-
-                // Validate the scene
-                var validationResult = ValidateScene(scene);
-                if (validationResult.IsFailure)
-                {
-                    return Result<AnimatedSceneModel>.Failure($"Scene validation failed: {validationResult.Error}");
-                }
-
-                return Result<AnimatedSceneModel>.Success(scene);
-            }
-            catch (System.Text.Json.JsonException ex)
-            {
-                return Result<AnimatedSceneModel>.Failure($"Invalid JSON in scene file: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                return Result<AnimatedSceneModel>.Failure($"Failed to load scene: {ex.Message}");
-            }
-        }
-
-        public new async Task<Result<IReadOnlyList<AnimatedSceneModel>>> LoadUserScenesAsync()
-        {
-            try
-            {
-                var scenes = new List<AnimatedSceneModel>();
-                var files = Directory.GetFiles(_testUserScenesPath, "*.json");
-
-                foreach (var file in files)
-                {
-                    var sceneResult = await LoadSceneAsync(file);
-                    if (sceneResult.IsSuccess && sceneResult.Value != null)
-                    {
-                        sceneResult.Value.IsBuiltIn = false;
-                        scenes.Add(sceneResult.Value);
-                    }
-                }
-
-                return Result<IReadOnlyList<AnimatedSceneModel>>.Success(scenes);
-            }
-            catch (Exception ex)
-            {
-                return Result<IReadOnlyList<AnimatedSceneModel>>.Failure($"Failed to load user scenes: {ex.Message}");
-            }
-        }
-
-        public new async Task<Result> DeleteSceneAsync(string sceneId)
-        {
-            try
-            {
-                var fileName = $"{sceneId}.json";
-                var filePath = Path.Combine(_testUserScenesPath, fileName);
-
-                if (!File.Exists(filePath))
-                {
-                    return Result.Failure($"Scene '{sceneId}' not found");
-                }
-
-                // Load the scene to check if it's built-in
-                var sceneResult = await LoadSceneAsync(filePath);
-                if (sceneResult.IsSuccess && sceneResult.Value?.IsBuiltIn == true)
-                {
-                    return Result.Failure("Cannot delete built-in scenes");
-                }
-
-                File.Delete(filePath);
-                return Result.Success();
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure($"Failed to delete scene: {ex.Message}");
-            }
-        }
     }
 }

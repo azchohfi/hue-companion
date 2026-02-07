@@ -6,6 +6,7 @@
     xmlns:local="using:HueWindows.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:interfaces="using:HueWindows.Core.Services.Interfaces"
     mc:Ignorable="d"
     Background="Transparent">
 
@@ -55,7 +56,7 @@
                       MaxHeight="200"
                       Margin="0,16,0,0">
                 <ListView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="interfaces:DiscoveredBridge">
                         <Grid Padding="12"
                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                               CornerRadius="8"
@@ -74,14 +75,14 @@
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Hue Bridge"
                                            Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                <TextBlock Text="{Binding IpAddress}"
+                                <TextBlock Text="{x:Bind IpAddress}"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Opacity="0.7"/>
                             </StackPanel>
 
                             <Button Grid.Column="2"
                                     Content="Connect"
-                                    Tag="{Binding}"
+                                    Tag="{x:Bind}"
                                     Click="ConnectBridge_Click"/>
                         </Grid>
                     </DataTemplate>

@@ -82,7 +82,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     /// <summary>
     /// Gets light colors for gradient display.
     /// </summary>
-    public List<(byte R, byte G, byte B)> LightColors
+    public IReadOnlyList<(byte R, byte G, byte B)> LightColors
     {
         get
         {

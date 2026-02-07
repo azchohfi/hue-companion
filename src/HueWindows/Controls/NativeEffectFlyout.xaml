@@ -14,21 +14,17 @@
             <ScaleTransform x:Name="RootScaleTransform" ScaleX="1" ScaleY="1"/>
         </Grid.RenderTransform>
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#FF1A1A1E" Offset="0"/>
-                <GradientStop Color="#FF252528" Offset="0.5"/>
-                <GradientStop Color="#FF1E1E22" Offset="1"/>
-            </LinearGradientBrush>
+            <SolidColorBrush Color="{ThemeResource SystemFillColorSolidNeutral}"/>
         </Grid.Background>
 
         <StackPanel Spacing="16">
             <!-- Header -->
             <StackPanel Spacing="4">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon x:Name="EffectIcon" Glyph="&#xE7B1;" FontSize="18" Foreground="White"/>
+                    <FontIcon x:Name="EffectIcon" Glyph="&#xE7B1;" FontSize="18" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                     <TextBlock x:Name="EffectNameText"
                                Style="{StaticResource SubtitleTextBlockStyle}"
-                               Foreground="White"/>
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                 </StackPanel>
                 <TextBlock x:Name="EffectDescriptionText"
                            Style="{StaticResource CaptionTextBlockStyle}"

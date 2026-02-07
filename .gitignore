@@ -86,6 +86,12 @@ tmpclaude-*
 /screenshots/
 tools/screenshot-mcp/node_modules/
 
+# Build artifacts
+*.binlog
+/nul
+/build.log
+/build2.log
+
 # UI test outputs (generated)
 test-screenshots/
 visual-diffs/

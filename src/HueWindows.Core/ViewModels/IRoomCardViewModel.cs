@@ -15,7 +15,7 @@ public interface IRoomCardViewModel : INotifyPropertyChanged
     string RoomIcon { get; }
     int LightCount { get; }
     int BrightnessPercent { get; }
-    List<(byte R, byte G, byte B)> LightColors { get; }
+    IReadOnlyList<(byte R, byte G, byte B)> LightColors { get; }
     (byte R, byte G, byte B)? BackgroundColorRgb { get; }
     bool UseBlackText { get; }
     bool SupportsColor { get; }

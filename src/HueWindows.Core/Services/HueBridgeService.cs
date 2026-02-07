@@ -17,6 +17,13 @@ public class HueBridgeService : IHueBridgeService
     private string? _lastIpAddress;
     private string? _lastAppKey;
 
+    // Short-lived cache for GetRoomAsync/GetZoneAsync to avoid refetching all rooms/zones
+    private IReadOnlyList<RoomModel>? _roomsCache;
+    private DateTime _roomsCacheTime = DateTime.MinValue;
+    private IReadOnlyList<RoomModel>? _zonesCache;
+    private DateTime _zonesCacheTime = DateTime.MinValue;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(5);
+
     /// <inheritdoc/>
     public bool IsConnected => _hueApi != null;
 
@@ -217,11 +224,17 @@ public class HueBridgeService : IHueBridgeService
     /// <inheritdoc/>
     public async Task<Result<RoomModel>> GetRoomAsync(Guid roomId)
     {
-        var roomsResult = await GetRoomsAsync();
-        if (roomsResult.IsFailure)
-            return Result<RoomModel>.Failure(roomsResult.Error!);
+        // Use cached rooms if available and fresh (< 5 seconds old)
+        if (_roomsCache == null || (DateTime.UtcNow - _roomsCacheTime) > CacheDuration)
+        {
+            var roomsResult = await GetRoomsAsync();
+            if (roomsResult.IsFailure)
+                return Result<RoomModel>.Failure(roomsResult.Error!);
+            _roomsCache = roomsResult.Value;
+            _roomsCacheTime = DateTime.UtcNow;
+        }
 
-        var room = roomsResult.Value!.FirstOrDefault(r => r.Id == roomId);
+        var room = _roomsCache?.FirstOrDefault(r => r.Id == roomId);
         if (room == null)
             return Result<RoomModel>.Failure($"Room with ID {roomId} not found.");
 
@@ -373,11 +386,17 @@ public class HueBridgeService : IHueBridgeService
     /// <inheritdoc/>
     public async Task<Result<RoomModel>> GetZoneAsync(Guid zoneId)
     {
-        var zonesResult = await GetZonesAsync();
-        if (zonesResult.IsFailure)
-            return Result<RoomModel>.Failure(zonesResult.Error!);
+        // Use cached zones if available and fresh (< 5 seconds old)
+        if (_zonesCache == null || (DateTime.UtcNow - _zonesCacheTime) > CacheDuration)
+        {
+            var zonesResult = await GetZonesAsync();
+            if (zonesResult.IsFailure)
+                return Result<RoomModel>.Failure(zonesResult.Error!);
+            _zonesCache = zonesResult.Value;
+            _zonesCacheTime = DateTime.UtcNow;
+        }
 
-        var zone = zonesResult.Value!.FirstOrDefault(z => z.Id == zoneId);
+        var zone = _zonesCache?.FirstOrDefault(z => z.Id == zoneId);
         if (zone == null)
             return Result<RoomModel>.Failure($"Zone with ID {zoneId} not found.");
 

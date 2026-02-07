@@ -11,9 +11,11 @@ namespace HueWindows.Core.Services;
 public class SceneStorageService : ISceneStorageService
 {
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly string? _basePath;
 
-    public SceneStorageService()
+    public SceneStorageService(string? basePath = null)
     {
+        _basePath = basePath;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -39,6 +41,12 @@ public class SceneStorageService : ISceneStorageService
     {
         get
         {
+            if (_basePath != null)
+            {
+                Directory.CreateDirectory(_basePath);
+                return _basePath;
+            }
+
             // User scenes go in the local app data folder
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var userScenesPath = Path.Combine(localAppData, "HueWindows", "Scenes");

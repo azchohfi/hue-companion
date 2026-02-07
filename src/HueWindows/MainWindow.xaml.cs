@@ -583,7 +583,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     /// Updates the ambient color wash behind the content area.
     /// Called by pages when room light colors change.
     /// </summary>
-    public void UpdateAmbientColor(List<(byte R, byte G, byte B)> colors)
+    public void UpdateAmbientColor(IReadOnlyList<(byte R, byte G, byte B)> colors)
     {
         var brush = BrushFactory.CreateRadialAmbientBrush(colors);
         AmbientWash.Background = brush;
