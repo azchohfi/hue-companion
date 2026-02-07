@@ -29,6 +29,7 @@ public sealed partial class RoomCard : UserControl
 
     // Current accent color
     private Color _accentColor = Colors.White;
+    private IRoomCardViewModel? _currentViewModel;
 
     public IRoomCardViewModel? ViewModel => DataContext as IRoomCardViewModel;
 
@@ -37,6 +38,7 @@ public sealed partial class RoomCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         this.SizeChanged += OnSizeChanged;
         this.ActualThemeChanged += OnActualThemeChanged;
     }
@@ -61,29 +63,7 @@ public sealed partial class RoomCard : UserControl
     }
 
     private static LinearGradientBrush CreateCardGradient(bool isDark)
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-
-        if (isDark)
-        {
-            // 90% opacity (0xE6) to let ambient wash bleed through subtly
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 26, 26, 30), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 37, 37, 40), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 30, 30, 34), Offset = 1 });
-        }
-        else
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 245, 245, 245), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 250, 250, 250), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 248, 248, 248), Offset = 1 });
-        }
-
-        return brush;
-    }
+        => CardGradientHelper.CreateCardGradient(isDark);
 
     private static LinearGradientBrush CreateHoverGradient(bool isDark)
     {
@@ -116,6 +96,15 @@ public sealed partial class RoomCard : UserControl
         UpdateActiveState();
     }
 
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            _currentViewModel = null;
+        }
+    }
+
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateBrightnessBar();
@@ -125,9 +114,16 @@ public sealed partial class RoomCard : UserControl
 
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
-        if (ViewModel != null)
+        if (_currentViewModel != null)
         {
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            _currentViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        }
+
+        _currentViewModel = ViewModel;
+
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
             if (_isLoaded)
             {
@@ -219,9 +215,9 @@ public sealed partial class RoomCard : UserControl
                 mainWindow.UpdateNavIndicatorColor(Color.FromArgb(255, r, g, b));
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-critical - silently ignore
+            System.Diagnostics.Debug.WriteLine($"[RoomCard] Non-critical error in NotifyAmbientColorChange: {ex.Message}");
         }
     }
 
@@ -280,9 +276,9 @@ public sealed partial class RoomCard : UserControl
             
             // Note: FindDescendant/ApplyTemplate no longer needed with new style
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently handle any resource errors
+            System.Diagnostics.Debug.WriteLine($"[RoomCard] Non-critical error in UpdateToggleColor: {ex.Message}");
         }
     }
 

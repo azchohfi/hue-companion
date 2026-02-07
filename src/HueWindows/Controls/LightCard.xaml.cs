@@ -26,6 +26,7 @@ public sealed partial class LightCard : UserControl
     private SolidColorBrush? _toggleBrush;
     private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
+    private LightItemViewModel? _currentViewModel;
 
     public LightItemViewModel? ViewModel => DataContext as LightItemViewModel;
 
@@ -39,6 +40,7 @@ public sealed partial class LightCard : UserControl
         this.InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         this.ActualThemeChanged += OnActualThemeChanged;
     }
 
@@ -68,28 +70,7 @@ public sealed partial class LightCard : UserControl
     }
 
     private static LinearGradientBrush CreateCardGradient(bool isDark)
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-
-        if (isDark)
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
-        }
-        else
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
-        }
-
-        return brush;
-    }
+        => CardGradientHelper.CreateCardGradient(isDark);
 
     private static LinearGradientBrush CreateHoverGradient(bool isDark)
     {
@@ -122,11 +103,27 @@ public sealed partial class LightCard : UserControl
         UpdateActiveState();
     }
 
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            _currentViewModel = null;
+        }
+    }
+
     private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
-        if (ViewModel != null)
+        if (_currentViewModel != null)
         {
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            _currentViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        }
+
+        _currentViewModel = ViewModel;
+
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
             if (_isLoaded)
             {

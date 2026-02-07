@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using HueWindows.Constants;
 using HueWindows.Core.ViewModels;
+using HueWindows.Utilities;
 using Windows.UI;
 
 namespace HueWindows.Views;
@@ -45,7 +46,6 @@ public sealed partial class LightDetailPage : Page
     public LightDetailPage()
     {
         ViewModel = App.Services.GetRequiredService<LightDetailViewModel>();
-        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
         this.ActualThemeChanged += OnActualThemeChanged;
@@ -68,28 +68,7 @@ public sealed partial class LightDetailPage : Page
     }
 
     private static LinearGradientBrush CreateCardGradient(bool isDark)
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-
-        if (isDark)
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
-        }
-        else
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
-        }
-
-        return brush;
-    }
+        => CardGradientHelper.CreateCardGradient(isDark);
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
@@ -313,6 +292,8 @@ public sealed partial class LightDetailPage : Page
     {
         base.OnNavigatedTo(e);
 
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+
         if (e.Parameter is Guid lightId)
         {
             await ViewModel.LoadLightAsync(lightId);
@@ -438,6 +419,17 @@ public sealed partial class LightDetailPage : Page
         Storyboard.SetTargetProperty(animation, "Value");
         storyboard.Completed += (s, e) => _isUpdatingSlider = false;
         storyboard.Begin();
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+
+        ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+
+        _brightnessDebounceTimer?.Stop();
+        _colorDebounceTimer?.Stop();
+        _temperatureDebounceTimer?.Stop();
     }
 
     /// <summary>

@@ -49,8 +49,6 @@ public sealed partial class RoomDetailPage : Page
     {
         ViewModel = App.Services.GetRequiredService<RoomDetailViewModel>();
         _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
-        ViewModel.LightSelected += OnLightSelected;
-        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         this.InitializeComponent();
         this.ActualThemeChanged += OnActualThemeChanged;
@@ -73,28 +71,7 @@ public sealed partial class RoomDetailPage : Page
     }
 
     private static LinearGradientBrush CreateCardGradient(bool isDark)
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-
-        if (isDark)
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
-        }
-        else
-        {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
-        }
-
-        return brush;
-    }
+        => CardGradientHelper.CreateCardGradient(isDark);
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
@@ -165,9 +142,9 @@ public sealed partial class RoomDetailPage : Page
                 mainWindow.UpdateNavIndicatorColor(_accentColor);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-critical
+            System.Diagnostics.Debug.WriteLine($"[RoomDetailPage] Non-critical error in UpdateHeaderActiveState: {ex.Message}");
         }
     }
 
@@ -408,6 +385,9 @@ public sealed partial class RoomDetailPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+        ViewModel.LightSelected += OnLightSelected;
 
         // Reset animation indices for entrance animations
         _lightEntranceIndex = 0;
@@ -754,11 +734,6 @@ public sealed partial class RoomDetailPage : Page
         ViewModel.SetRoomColorFromRgbCommand.Execute((color.R, color.G, color.B));
     }
 
-    private void ScenesRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
-    {
-        // Legacy handler retained for reference; not used now that Scenes uses GridView.
-    }
-
     private void OnSceneActivatedForPulse(object? sender, Guid sceneId)
     {
         // Must run on UI thread - event may come from async continuation on thread pool
@@ -837,9 +812,9 @@ public sealed partial class RoomDetailPage : Page
             Storyboard.SetTargetProperty(scaleYAnimation, "ScaleY");
             storyboard.Begin();
         }
-        catch
+        catch (Exception ex)
         {
-            // Animation failure is non-critical - ignore
+            System.Diagnostics.Debug.WriteLine($"[RoomDetailPage] Non-critical animation error: {ex.Message}");
         }
     }
 
@@ -949,6 +924,16 @@ public sealed partial class RoomDetailPage : Page
     private void NativeEffectsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateWrapGridItemSize(NativeEffectsGrid, 160);
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+
+        ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        ViewModel.LightSelected -= OnLightSelected;
+
+        _brightnessDebounceTimer?.Stop();
     }
 
     private void UpdateWrapGridItemSize(GridView grid, double targetWidth, double? fixedHeight = null)
