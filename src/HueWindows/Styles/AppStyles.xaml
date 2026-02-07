@@ -52,6 +52,16 @@
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#E8FFFFFF"/>
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#80FFFFFF"/>
+            <!-- Slider filled track (replaces purple accent) -->
+            <SolidColorBrush x:Key="SliderTrackValueFill" Color="#CCFFFFFF"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#E0FFFFFF"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B0FFFFFF"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="#40FFFFFF"/>
+            <!-- Slider thumb (replaces purple accent) -->
+            <SolidColorBrush x:Key="SliderThumbBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#E0FFFFFF"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="#60FFFFFF"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <!-- Card gradient colors for light theme (90% opacity for ambient wash bleed-through) -->
@@ -99,6 +109,16 @@
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#E8FFFFFF"/>
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#80FFFFFF"/>
+            <!-- Slider filled track (replaces purple accent) -->
+            <SolidColorBrush x:Key="SliderTrackValueFill" Color="#CC000000"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#E0000000"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B0000000"/>
+            <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="#40000000"/>
+            <!-- Slider thumb (replaces purple accent) -->
+            <SolidColorBrush x:Key="SliderThumbBackground" Color="#FF000000"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FF1A1A1A"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#E0000000"/>
+            <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="#60000000"/>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
