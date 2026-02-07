@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,12 +19,41 @@ public sealed partial class ScenesPage : Page
     {
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<ScenesViewModel>();
+        Unloaded += Page_Unloaded;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         await ViewModel.InitializeAsync();
         PopulateHueEffectsGrid();
+    }
+
+    private void Page_Unloaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+    }
+
+    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ScenesViewModel.SelectedRoom))
+        {
+            UpdateEffectButtonStates();
+        }
+    }
+
+    private void UpdateEffectButtonStates()
+    {
+        var isEnabled = ViewModel.SelectedRoom != null;
+        foreach (var child in HueEffectsGrid.Children)
+        {
+            if (child is Button button)
+            {
+                button.IsEnabled = isEnabled;
+                ToolTipService.SetToolTip(button,
+                    isEnabled ? (button.Tag as NativeEffectInfo)?.Description : "Select a room first");
+            }
+        }
     }
 
     private void PopulateHueEffectsGrid()
@@ -99,8 +129,11 @@ public sealed partial class ScenesPage : Page
             Tag = effect,
             Padding = new Thickness(16),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            MinHeight = 80
+            MinHeight = 80,
+            IsEnabled = ViewModel.SelectedRoom != null
         };
+        ToolTipService.SetToolTip(button,
+            ViewModel.SelectedRoom == null ? "Select a room first" : effect.Description);
         button.Click += NativeEffect_Click;
 
         return button;
@@ -128,10 +161,36 @@ public sealed partial class ScenesPage : Page
 
     private void EditScene_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.Tag is AnimatedSceneModel scene)
+        AnimatedSceneModel? scene = null;
+        if (sender is Button button)
+            scene = button.Tag as AnimatedSceneModel;
+        else if (sender is MenuFlyoutItem item)
+            scene = item.Tag as AnimatedSceneModel;
+
+        if (scene != null)
         {
             // Navigate to Scene Builder with the scene ID to edit
             Frame.Navigate(typeof(SceneBuilderPage), scene.Id);
+        }
+    }
+
+    private async void DeleteScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Scene",
+                Content = $"Are you sure you want to delete '{scene.Name}'?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await ViewModel.DeleteUserSceneCommand.ExecuteAsync(scene);
+            }
         }
     }
 
@@ -151,12 +210,6 @@ public sealed partial class ScenesPage : Page
 
     private void NativeEffect_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.SelectedRoom == null)
-        {
-            ViewModel.ErrorMessage = "Select a room first to apply an effect.";
-            return;
-        }
-
         if (sender is Button button && button.Tag is NativeEffectInfo effect)
         {
             var flyout = new Flyout

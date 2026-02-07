@@ -2,6 +2,8 @@ using Microsoft.Graphics.Canvas;
 using HueWindows.Core.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+using Windows.Foundation;
 using Windows.UI;
 
 namespace HueWindows.Views.Rendering;
@@ -23,7 +25,10 @@ public record TimelineRenderContext(
     bool IsSnapEnabled,
     KeyframeViewModel? HoveredKeyframe = null,
     bool IsPlayheadHovered = false,
-    bool IsPlayheadDragging = false
+    bool IsPlayheadDragging = false,
+    IReadOnlyList<ActivePulse>? ActivePulses = null,
+    long CurrentTick = 0,
+    (Vector2 Start, Vector2 End)? SelectionRect = null
 );
 
 /// <summary>
@@ -36,6 +41,7 @@ public class TimelineRenderer : IDisposable
     private readonly TrackLanesRenderer _trackRenderer;
     private readonly GradientTrackRenderer _gradientRenderer;
     private readonly KeyframeLayerRenderer _keyframeRenderer;
+    private readonly EventPulseRenderer _eventPulseRenderer;
     private readonly PlayheadRenderer _playheadRenderer;
 
     private bool _disposed;
@@ -50,6 +56,7 @@ public class TimelineRenderer : IDisposable
         _trackRenderer = new TrackLanesRenderer();
         _gradientRenderer = new GradientTrackRenderer();
         _keyframeRenderer = new KeyframeLayerRenderer();
+        _eventPulseRenderer = new EventPulseRenderer();
         _playheadRenderer = new PlayheadRenderer();
     }
 
@@ -124,6 +131,19 @@ public class TimelineRenderer : IDisposable
             context.TrackHeight
         );
 
+        // Layer 3.5: Event pulses (between keyframes and playhead)
+        if (context.ActivePulses != null && context.ActivePulses.Count > 0)
+        {
+            _eventPulseRenderer.Draw(
+                ds,
+                context.ActivePulses,
+                context.Tracks.Count,
+                context.TrackHeight,
+                context.CanvasWidth,
+                context.CurrentTick
+            );
+        }
+
         // Layer 4: Playhead (draws on top of everything)
         _playheadRenderer.Draw(
             ds,
@@ -132,6 +152,17 @@ public class TimelineRenderer : IDisposable
             context.IsPlayheadHovered,
             context.IsPlayheadDragging
         );
+
+        // Layer 5: Selection rectangle (topmost)
+        if (context.SelectionRect.HasValue)
+        {
+            var (start, end) = context.SelectionRect.Value;
+            var rect = new Rect(
+                Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+                Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+            ds.FillRectangle(rect, Color.FromArgb(30, 0, 120, 215));
+            ds.DrawRectangle(rect, Color.FromArgb(180, 0, 120, 215), 1f);
+        }
     }
 
     /// <summary>

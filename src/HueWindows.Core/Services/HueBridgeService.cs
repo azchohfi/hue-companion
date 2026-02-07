@@ -587,6 +587,23 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
+    public async Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness)
+    {
+        if (_hueApi == null) return;
+
+        var command = new UpdateLight
+        {
+            On = new HueApi.Models.On { IsOn = brightness > 0 },
+            Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 },
+            Color = new HueApi.Models.Color
+            {
+                Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+            }
+        };
+        await _hueApi.Light.UpdateAsync(lightId, command);
+    }
+
+    /// <inheritdoc/>
     public async Task SetLightTemperatureAsync(Guid lightId, int mirek)
     {
         if (_hueApi == null) return;

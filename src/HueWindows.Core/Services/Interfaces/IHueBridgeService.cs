@@ -137,6 +137,15 @@ public interface IHueBridgeService
     Task SetLightColorAsync(Guid lightId, HueColor color);
 
     /// <summary>
+    /// Sets the color and brightness for a light in a single atomic command.
+    /// Avoids the white flash caused by separate color and brightness calls.
+    /// </summary>
+    /// <param name="lightId">The light ID.</param>
+    /// <param name="color">The color to set.</param>
+    /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
+    Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness);
+
+    /// <summary>
     /// Sets the color temperature for a light.
     /// </summary>
     /// <param name="lightId">The light ID.</param>

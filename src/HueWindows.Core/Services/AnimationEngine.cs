@@ -1,3 +1,4 @@
+using System.Net.Http;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 
@@ -211,21 +212,32 @@ public class AnimationEngine : IDisposable
 
             try
             {
-                // Interpolate brightness
-                if (prev.Brightness.HasValue && next.Brightness.HasValue)
+                // Interpolate color and brightness together
+                if (prev.Color != null && next.Color != null &&
+                    prev.Brightness.HasValue && next.Brightness.HasValue)
+                {
+                    var color = ColorConverter.InterpolateHsv(
+                        prev.Color,
+                        next.Color,
+                        progress,
+                        prev.Brightness ?? 1.0,
+                        next.Brightness ?? 1.0);
+                    var brightness = prev.Brightness.Value + (next.Brightness.Value - prev.Brightness.Value) * progress;
+                    // Send color and brightness atomically to avoid white flash
+                    await _bridgeService.SetLightColorAndBrightnessAsync(lightId, color, brightness);
+                }
+                else if (prev.Brightness.HasValue && next.Brightness.HasValue)
                 {
                     var brightness = prev.Brightness.Value + (next.Brightness.Value - prev.Brightness.Value) * progress;
                     await _bridgeService.SetLightBrightnessAsync(lightId, brightness);
                 }
-
-                // Interpolate color using HSV to avoid muddy colors
-                if (prev.Color != null && next.Color != null)
+                else if (prev.Color != null && next.Color != null)
                 {
                     var color = ColorConverter.InterpolateHsv(
-                        prev.Color, 
-                        next.Color, 
-                        progress, 
-                        prev.Brightness ?? 1.0, 
+                        prev.Color,
+                        next.Color,
+                        progress,
+                        prev.Brightness ?? 1.0,
                         next.Brightness ?? 1.0);
                     await _bridgeService.SetLightColorAsync(lightId, color);
                 }
@@ -243,9 +255,17 @@ public class AnimationEngine : IDisposable
                     await _bridgeService.SetLightOnAsync(lightId, next.IsOn.Value);
                 }
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                // Continue with other lights if one fails
+                System.Diagnostics.Debug.WriteLine($"[AnimationEngine] HTTP error: {ex.Message}");
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected during shutdown/cancellation
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AnimationEngine] Unexpected error: {ex.Message}");
             }
         }
     }
@@ -279,9 +299,17 @@ public class AnimationEngine : IDisposable
                     await _bridgeService.SetLightTemperatureAsync(lightId, keyframe.ColorTemperature.Value);
                 }
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                // Continue with other lights if one fails
+                System.Diagnostics.Debug.WriteLine($"[AnimationEngine.ApplyKeyframe] HTTP error: {ex.Message}");
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected during shutdown/cancellation
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AnimationEngine.ApplyKeyframe] Unexpected error: {ex.Message}");
             }
         }
     }

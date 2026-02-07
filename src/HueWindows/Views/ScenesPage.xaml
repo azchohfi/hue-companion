@@ -137,9 +137,20 @@
                                             Padding="16">
                                         <Button.ContextFlyout>
                                             <MenuFlyout>
+                                                <MenuFlyoutItem Text="Edit" Click="EditScene_Click" Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE70F;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
                                                 <MenuFlyoutItem Text="Pin to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE718;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutSeparator/>
+                                                <MenuFlyoutItem Text="Delete" Click="DeleteScene_Click" Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE74D;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
                                             </MenuFlyout>
@@ -150,6 +161,9 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0" Spacing="8">
+                                                <controls:AnimatedPreviewControl Scene="{x:Bind}"
+                                                                                 Width="80" Height="40"
+                                                                                 HorizontalAlignment="Left"/>
                                                 <TextBlock Text="{x:Bind Name}"
                                                            Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                                 <TextBlock Text="{x:Bind Description}"

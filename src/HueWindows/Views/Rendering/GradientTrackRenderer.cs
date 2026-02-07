@@ -275,19 +275,14 @@ public class GradientTrackRenderer
     }
 
     /// <summary>
-    /// Linearly interpolates between two HueColors in RGB space.
+    /// Interpolates between two HueColors using HSV color space to match playback behavior.
+    /// This ensures the gradient preview matches what the lights actually produce.
     /// </summary>
     private Color InterpolateColor(HueColor startColor, HueColor endColor, double t)
     {
-        var (sr, sg, sb) = startColor.ToRgb(1.0);
-        var (er, eg, eb) = endColor.ToRgb(1.0);
-
-        // Linear RGB interpolation in byte space
-        var r = sr + (er - sr) * t;
-        var g = sg + (eg - sg) * t;
-        var b = sb + (eb - sb) * t;
-
-        return Color.FromArgb(255, (byte)r, (byte)g, (byte)b);
+        var interpolated = ColorConverter.InterpolateHsv(startColor, endColor, t);
+        var (r, g, b) = interpolated.ToRgb(1.0);
+        return Color.FromArgb(255, r, g, b);
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
+using System.Net.Http;
 using Windows.UI;
 using Windows.UI.Core;
 using Windows.Storage.Pickers;
@@ -44,13 +45,18 @@ public sealed partial class SceneBuilderPage : Page
 
     // Event track playback state
     private readonly Dictionary<string, double> _nextEventFireTimes = new();
-    private readonly Dictionary<string, Microsoft.UI.Xaml.Shapes.Ellipse> _eventPulses = new();
+    private readonly List<ActivePulse> _activePulses = new();
     private readonly Random _random = new();
 
     private string? _sceneIdToLoad;
 
     // Flag to prevent feedback loops when updating panel from keyframe selection
     private bool _isUpdatingPanel;
+
+    // Marquee selection state
+    private bool _isMarqueeSelecting;
+    private Vector2 _marqueeStart;
+    private Vector2 _marqueeEnd;
 
     public SceneBuilderPage()
     {
@@ -76,6 +82,29 @@ public sealed partial class SceneBuilderPage : Page
         if (e.Parameter is string sceneId && !string.IsNullOrEmpty(sceneId))
         {
             _sceneIdToLoad = sceneId;
+        }
+
+        // Register navigation guard for unsaved changes
+        Frame.Navigating += Frame_Navigating;
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        Frame.Navigating -= Frame_Navigating;
+    }
+
+    private async void Frame_Navigating(object sender, NavigatingCancelEventArgs e)
+    {
+        if (!ViewModel.HasUnsavedChanges) return;
+
+        e.Cancel = true;
+
+        if (await ConfirmDiscardChangesAsync())
+        {
+            ViewModel.HasUnsavedChanges = false; // Prevent re-prompt
+            Frame.Navigating -= Frame_Navigating; // Prevent re-entry
+            Frame.Navigate(e.SourcePageType, e.Parameter);
         }
     }
 
@@ -233,6 +262,10 @@ public sealed partial class SceneBuilderPage : Page
                 }
             }
 
+            // Prune expired pulses
+            var currentTick = Environment.TickCount64;
+            _activePulses.RemoveAll(p => currentTick - p.StartTick >= EventPulseRenderer.DurationMs);
+
             // Efficiently update just the playhead position (not full re-render)
             UpdatePlayheadPosition();
 
@@ -247,9 +280,17 @@ public sealed partial class SceneBuilderPage : Page
             // Check for event track triggers
             CheckEventTriggers();
         }
-        catch
+        catch (HttpRequestException ex)
         {
-            // Prevent exceptions from crashing the timer
+            System.Diagnostics.Debug.WriteLine($"[PlaybackTimer] HTTP error: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected during shutdown/cancellation
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PlaybackTimer] Unexpected error: {ex.Message}");
         }
     }
 
@@ -349,7 +390,10 @@ public sealed partial class SceneBuilderPage : Page
             IsSnapEnabled: ViewModel.IsSnapEnabled,
             HoveredKeyframe: _hoveredKeyframe,
             IsPlayheadHovered: _isPlayheadHovered,
-            IsPlayheadDragging: _isDraggingPlayhead
+            IsPlayheadDragging: _isDraggingPlayhead,
+            ActivePulses: _activePulses.Count > 0 ? _activePulses.ToList() : null,
+            CurrentTick: Environment.TickCount64,
+            SelectionRect: _isMarqueeSelecting ? (_marqueeStart, _marqueeEnd) : null
         );
     }
 
@@ -494,7 +538,7 @@ public sealed partial class SceneBuilderPage : Page
     private void TimelineCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         // Skip hover tracking during drag operations
-        if (_isDraggingKeyframe || _isDraggingPlayhead)
+        if (_isDraggingKeyframe || _isDraggingPlayhead || _isMarqueeSelecting || _isMarqueePending)
             return;
 
         // Guard against uninitialized state
@@ -681,8 +725,12 @@ public sealed partial class SceneBuilderPage : Page
         await ViewModel.UpdateLightForKeyframeAsync(keyframe);
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
+    private async void BackButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        ViewModel.HasUnsavedChanges = false; // Prevent navigation guard re-prompt
         if (Frame.CanGoBack)
         {
             Frame.GoBack();
@@ -978,14 +1026,67 @@ public sealed partial class SceneBuilderPage : Page
 
         if (hitResult.Type == HitType.Keyframe && hitResult.Keyframe != null && hitResult.Track != null)
         {
-            // Delete keyframe (if track has > 2 keyframes)
-            if (hitResult.Track.Keyframes.Count > 2)
+            // Select the keyframe first
+            SelectKeyframe(hitResult.Keyframe);
+
+            var menu = new MenuFlyout();
+
+            // Copy
+            menu.Items.Add(new MenuFlyoutItem
+            {
+                Text = "Copy",
+                Icon = new FontIcon { Glyph = "\uE8C8" },
+                Command = ViewModel.CopyKeyframesCommand
+            });
+
+            // Duplicate
+            menu.Items.Add(new MenuFlyoutItem
+            {
+                Text = "Duplicate",
+                Icon = new FontIcon { Glyph = "\uE8C9" },
+                Command = ViewModel.DuplicateKeyframeCommand,
+                CommandParameter = hitResult.Keyframe
+            });
+
+            // Transition submenu
+            var transitionSub = new MenuFlyoutSubItem
+            {
+                Text = "Transition",
+                Icon = new FontIcon { Glyph = "\uE7B1" }
+            };
+            foreach (var style in Enum.GetValues<TransitionStyle>())
+            {
+                var capturedStyle = style;
+                var transitionItem = new MenuFlyoutItem { Text = style.ToString() };
+                transitionItem.Click += (s, args) =>
+                {
+                    hitResult.Keyframe.Transition = capturedStyle;
+                    ViewModel.HasUnsavedChanges = true;
+                    RenderTimeline();
+                };
+                transitionSub.Items.Add(transitionItem);
+            }
+            menu.Items.Add(transitionSub);
+
+            menu.Items.Add(new MenuFlyoutSeparator());
+
+            // Delete (only if track has > 2 keyframes)
+            var deleteItem = new MenuFlyoutItem
+            {
+                Text = "Delete",
+                Icon = new FontIcon { Glyph = "\uE74D" },
+                IsEnabled = hitResult.Track.Keyframes.Count > 2
+            };
+            deleteItem.Click += (s, args) =>
             {
                 ViewModel.DeleteKeyframeCommand.Execute(hitResult.Keyframe);
                 SidePanel.Visibility = Visibility.Collapsed;
                 ViewModel.SelectedKeyframe = null;
                 RenderTimeline();
-            }
+            };
+            menu.Items.Add(deleteItem);
+
+            menu.ShowAt(TimelineCanvas, position);
             e.Handled = true;
         }
     }
@@ -1052,14 +1153,7 @@ public sealed partial class SceneBuilderPage : Page
     {
         if (props.IsRightButtonPressed)
         {
-            // Right-click: delete (if track has > 2 keyframes)
-            if (track.Keyframes.Count > 2)
-            {
-                ViewModel.DeleteKeyframeCommand.Execute(keyframe);
-                SidePanel.Visibility = Visibility.Collapsed;
-                ViewModel.SelectedKeyframe = null;
-                RenderTimeline();
-            }
+            // Right-click handled by TimelineCanvas_RightTapped context menu
             return;
         }
 
@@ -1123,26 +1217,100 @@ public sealed partial class SceneBuilderPage : Page
             ViewModel.SelectedEventTrack = null;
         }
 
-        // Calculate time from click position
-        var timeSeconds = (point.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
-        timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
+        // Start potential marquee selection (activates after drag threshold)
+        _marqueeStart = point;
+        _marqueeEnd = point;
+        _marqueeTrack = track;
+        _marqueeCtrlHeld = ctrlHeld;
+        _isMarqueePending = true;
 
-        // Apply snap if enabled and Ctrl not held
-        if (ViewModel.IsSnapEnabled && !ctrlHeld)
+        TimelineCanvas.CapturePointer(e.Pointer);
+        TimelineCanvas.PointerMoved += TimelineCanvas_MarqueeDrag;
+        TimelineCanvas.PointerReleased += TimelineCanvas_MarqueeEnd;
+    }
+
+    private const float MarqueeDragThreshold = 5f;
+    private bool _isMarqueePending;
+    private TrackViewModel? _marqueeTrack;
+    private bool _marqueeCtrlHeld;
+
+    private void TimelineCanvas_MarqueeDrag(object sender, PointerRoutedEventArgs e)
+    {
+        var pos = e.GetCurrentPoint(TimelineCanvas).Position;
+        _marqueeEnd = new Vector2((float)pos.X, (float)pos.Y);
+
+        if (_isMarqueePending)
         {
-            timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+            // Check if dragged past threshold
+            var dx = _marqueeEnd.X - _marqueeStart.X;
+            var dy = _marqueeEnd.Y - _marqueeStart.Y;
+            if (Math.Sqrt(dx * dx + dy * dy) >= MarqueeDragThreshold)
+            {
+                _isMarqueePending = false;
+                _isMarqueeSelecting = true;
+            }
         }
 
-        // Create new keyframe
-        ViewModel.AddKeyframe(track, timeSeconds);
-        RenderTimeline();
-
-        // Select the new keyframe
-        var newKeyframe = track.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
-        if (newKeyframe != null)
+        if (_isMarqueeSelecting)
         {
-            SelectKeyframe(newKeyframe);
+            RenderTimeline();
         }
+    }
+
+    private void TimelineCanvas_MarqueeEnd(object sender, PointerRoutedEventArgs e)
+    {
+        TimelineCanvas.ReleasePointerCapture(e.Pointer);
+        TimelineCanvas.PointerMoved -= TimelineCanvas_MarqueeDrag;
+        TimelineCanvas.PointerReleased -= TimelineCanvas_MarqueeEnd;
+
+        if (_isMarqueeSelecting)
+        {
+            // Complete marquee selection
+            _isMarqueeSelecting = false;
+
+            var pos = e.GetCurrentPoint(TimelineCanvas).Position;
+            _marqueeEnd = new Vector2((float)pos.X, (float)pos.Y);
+
+            var left = Math.Min(_marqueeStart.X, _marqueeEnd.X);
+            var right = Math.Max(_marqueeStart.X, _marqueeEnd.X);
+            var top = Math.Min(_marqueeStart.Y, _marqueeEnd.Y);
+            var bottom = Math.Max(_marqueeStart.Y, _marqueeEnd.Y);
+
+            var startTime = (left - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
+            var endTime = (right - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
+            var startTrack = (int)(top / 50f);
+            var endTrack = (int)(bottom / 50f);
+
+            ViewModel.SelectKeyframesInRect(startTime, endTime, startTrack, endTrack);
+            RenderTimeline();
+        }
+        else if (_isMarqueePending)
+        {
+            // Did not drag far enough — treat as normal click to add keyframe
+            _isMarqueePending = false;
+
+            if (_marqueeTrack != null)
+            {
+                var timeSeconds = (_marqueeStart.X - GradientTrackRenderer.LeftMargin) / ViewModel.ZoomLevel;
+                timeSeconds = Math.Max(0, Math.Min(ViewModel.DurationSeconds, timeSeconds));
+
+                if (ViewModel.IsSnapEnabled && !_marqueeCtrlHeld)
+                {
+                    timeSeconds = ViewModel.SnapToGrid(timeSeconds);
+                }
+
+                ViewModel.AddKeyframe(_marqueeTrack, timeSeconds);
+                RenderTimeline();
+
+                var newKeyframe = _marqueeTrack.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
+                if (newKeyframe != null)
+                {
+                    SelectKeyframe(newKeyframe);
+                }
+            }
+        }
+
+        _marqueeTrack = null;
     }
 
     private void CloseSidePanel_Click(object sender, RoutedEventArgs e)
@@ -1219,7 +1387,7 @@ public sealed partial class SceneBuilderPage : Page
     private void InitializeEventPlayback()
     {
         _nextEventFireTimes.Clear();
-        _eventPulses.Clear();
+        _activePulses.Clear();
 
         foreach (var eventTrack in ViewModel.EventTracks)
         {
@@ -1265,16 +1433,38 @@ public sealed partial class SceneBuilderPage : Page
         }
     }
 
-    // TODO (Plan 03): Migrate to Win2D rendering
     private void ShowLightTrackPulse(int trackIndex, double trackHeight)
     {
-        // Temporarily disabled - will be migrated to Win2D in Plan 03
+        // Determine pulse color based on what event triggered it
+        var pulseColor = Windows.UI.Color.FromArgb(255, 255, 255, 255); // Default white
+        _activePulses.Add(new ActivePulse(
+            TrackIndex: trackIndex,
+            EventTrackIndex: -1,
+            StartTick: Environment.TickCount64,
+            PulseColor: pulseColor
+        ));
     }
 
-    // TODO (Plan 03): Migrate to Win2D rendering
     private void ShowEventPulse(EventTrackViewModel eventTrack, double lightTracksHeight, double trackHeight)
     {
-        // Temporarily disabled - will be migrated to Win2D in Plan 03
+        // Color based on preset
+        var pulseColor = eventTrack.Preset switch
+        {
+            EventPreset.LightningFlash => Windows.UI.Color.FromArgb(255, 200, 220, 255), // Cool white
+            EventPreset.Sparkle => Windows.UI.Color.FromArgb(255, 255, 255, 240),         // Bright white
+            EventPreset.CandleFlicker => Windows.UI.Color.FromArgb(255, 255, 180, 80),    // Warm orange
+            _ => Windows.UI.Color.FromArgb(255, 255, 255, 255)
+        };
+
+        var eventIndex = ViewModel.EventTracks.IndexOf(eventTrack);
+        if (eventIndex < 0) return;
+
+        _activePulses.Add(new ActivePulse(
+            TrackIndex: -1,
+            EventTrackIndex: eventIndex,
+            StartTick: Environment.TickCount64,
+            PulseColor: pulseColor
+        ));
     }
 
     private void AddLightningTrack_Click(object sender, RoutedEventArgs e)

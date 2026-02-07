@@ -37,7 +37,7 @@
             </Button>
 
             <TextBlock Grid.Column="1"
-                       Text="Scene Builder"
+                       Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}"
                        Style="{StaticResource PageHeaderTextStyle}"
                        VerticalAlignment="Center"/>
 

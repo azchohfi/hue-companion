@@ -212,6 +212,20 @@ public partial class ScenesViewModel : ObservableObject
         UpdateAnimationState();
     }
 
+    [RelayCommand]
+    private async Task DeleteUserSceneAsync(AnimatedSceneModel scene)
+    {
+        var result = await _sceneStorageService.DeleteSceneAsync(scene.Id);
+        if (result.IsSuccess)
+        {
+            UserScenes = UserScenes.Where(s => s.Id != scene.Id).ToList();
+        }
+        else
+        {
+            ErrorMessage = result.Error ?? "Failed to delete scene";
+        }
+    }
+
     /// <summary>
     /// Saves a user-created scene.
     /// </summary>

@@ -4,6 +4,7 @@ using HueWindows.Core.Models;
 using HueWindows.Core.Services;
 using HueWindows.Core.Services.Interfaces;
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -69,6 +70,11 @@ public partial class SceneBuilderViewModel : ObservableObject
     private bool _hasUnsavedChanges;
 
     /// <summary>
+    /// Page title that shows an asterisk when there are unsaved changes.
+    /// </summary>
+    public string PageTitle => HasUnsavedChanges ? "Scene Builder *" : "Scene Builder";
+
+    /// <summary>
     /// Undo/redo command history.
     /// </summary>
     public TimelineCommandHistory CommandHistory { get; } = new();
@@ -80,9 +86,9 @@ public partial class SceneBuilderViewModel : ObservableObject
     private ObservableCollection<KeyframeViewModel> _selectedKeyframes = new();
 
     /// <summary>
-    /// Clipboard for copy/paste operations. Stores track index to preserve track association.
+    /// Clipboard for copy/paste operations. Stores LightId and track index to preserve track association across room changes.
     /// </summary>
-    private List<(int TrackIndex, double TimeOffset, HueColor Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
+    private List<(int TrackIndex, string LightId, double TimeOffset, HueColor Color, double Brightness, TransitionStyle Transition)>? _clipboardKeyframes;
 
     /// <summary>
     /// Whether we're editing an existing scene (vs creating new).
@@ -143,6 +149,7 @@ public partial class SceneBuilderViewModel : ObservableObject
 
     partial void OnSceneNameChanged(string value) => MarkDirty();
     partial void OnSceneDescriptionChanged(string value) => MarkDirty();
+    partial void OnHasUnsavedChangesChanged(bool value) => OnPropertyChanged(nameof(PageTitle));
 
     private async Task LoadRoomsAsync()
     {
@@ -490,15 +497,22 @@ public partial class SceneBuilderViewModel : ObservableObject
 
             var (color, brightness) = InterpolateAtTime(track, PlayheadPosition);
 
-            // Send to light
+            // Send color and brightness atomically to avoid white flash
             try
             {
-                await bridgeService.SetLightColorAsync(lightId, color);
-                await bridgeService.SetLightBrightnessAsync(lightId, brightness);
+                await bridgeService.SetLightColorAndBrightnessAsync(lightId, color, brightness);
             }
-            catch
+            catch (HttpRequestException ex)
             {
-                // Continue with other lights if one fails
+                System.Diagnostics.Debug.WriteLine($"[UpdateLightsForPlayhead] HTTP error: {ex.Message}");
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected during shutdown/cancellation
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateLightsForPlayhead] Unexpected error: {ex.Message}");
             }
         }
     }
@@ -519,8 +533,7 @@ public partial class SceneBuilderViewModel : ObservableObject
             {
                 if (Guid.TryParse(track.LightId, out var lightId))
                 {
-                    await bridgeService.SetLightColorAsync(lightId, keyframe.Color);
-                    await bridgeService.SetLightBrightnessAsync(lightId, keyframe.Brightness);
+                    await bridgeService.SetLightColorAndBrightnessAsync(lightId, keyframe.Color, keyframe.Brightness);
                 }
                 break;
             }
@@ -556,17 +569,15 @@ public partial class SceneBuilderViewModel : ObservableObject
             _ => (new HueColor(0.31, 0.32), 1.0, 0.5)
         };
 
-        // Flash the light
-        await bridgeService.SetLightColorAsync(lightId, flashColor);
-        await bridgeService.SetLightBrightnessAsync(lightId, flashBrightness);
+        // Flash the light (atomic call avoids white flash)
+        await bridgeService.SetLightColorAndBrightnessAsync(lightId, flashColor, flashBrightness);
 
         // Brief delay then return to interpolated state
         await Task.Delay(100);
 
         // Return to the current playhead state for this track
         var (currentColor, currentBrightness) = InterpolateAtTime(track, PlayheadPosition);
-        await bridgeService.SetLightColorAsync(lightId, currentColor);
-        await bridgeService.SetLightBrightnessAsync(lightId, currentBrightness);
+        await bridgeService.SetLightColorAndBrightnessAsync(lightId, currentColor, currentBrightness);
     }
 
     private (HueColor color, double brightness) InterpolateAtTime(TrackViewModel track, double timeSeconds)
@@ -1118,8 +1129,8 @@ public partial class SceneBuilderViewModel : ObservableObject
         // Find the earliest time to use as reference point
         var minTime = SelectedKeyframes.Min(k => k.TimeSeconds);
 
-        // Store keyframes with track index and relative time offsets
-        _clipboardKeyframes = new List<(int, double, HueColor, double, TransitionStyle)>();
+        // Store keyframes with track index, light ID, and relative time offsets
+        _clipboardKeyframes = new List<(int, string, double, HueColor, double, TransitionStyle)>();
 
         foreach (var keyframe in SelectedKeyframes)
         {
@@ -1130,6 +1141,7 @@ public partial class SceneBuilderViewModel : ObservableObject
                 {
                     _clipboardKeyframes.Add((
                         TrackIndex: trackIndex,
+                        LightId: Tracks[trackIndex].LightId,
                         TimeOffset: keyframe.TimeSeconds - minTime,
                         Color: keyframe.Color,
                         Brightness: keyframe.Brightness,
@@ -1156,11 +1168,13 @@ public partial class SceneBuilderViewModel : ObservableObject
 
         foreach (var clipKeyframe in _clipboardKeyframes)
         {
-            // Only paste if the track index is valid
-            if (clipKeyframe.TrackIndex < 0 || clipKeyframe.TrackIndex >= Tracks.Count)
-                continue;
+            // Find target track: prefer matching by LightId, fall back to index
+            var track = Tracks.FirstOrDefault(t => t.LightId == clipKeyframe.LightId)
+                ?? (clipKeyframe.TrackIndex >= 0 && clipKeyframe.TrackIndex < Tracks.Count
+                    ? Tracks[clipKeyframe.TrackIndex]
+                    : null);
+            if (track == null) continue;
 
-            var track = Tracks[clipKeyframe.TrackIndex];
             var newTime = pasteTime + clipKeyframe.TimeOffset;
 
             // Ensure within bounds

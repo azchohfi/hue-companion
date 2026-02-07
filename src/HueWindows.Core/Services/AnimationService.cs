@@ -237,9 +237,17 @@ public class AnimationService : IAnimationService
                 lights.AddRange(zoneResult.Value.Lights.Select(l => l.Id));
             }
         }
-        catch
+        catch (HttpRequestException ex)
         {
-            // Return empty list if we can't get lights
+            System.Diagnostics.Debug.WriteLine($"[AnimationService] HTTP error getting lights: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected during shutdown/cancellation
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[AnimationService] Unexpected error getting lights: {ex.Message}");
         }
 
         return lights;
