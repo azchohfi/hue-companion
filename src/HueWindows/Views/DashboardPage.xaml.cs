@@ -88,22 +88,11 @@ public sealed partial class DashboardPage : Page
     /// <summary>
     /// Handles staggered entrance animation for cards.
     /// </summary>
-    private async void CardsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    private void CardsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
         var element = args.Element;
         var index = _entranceAnimationIndex++;
 
-        // Start invisible
-        element.Opacity = 0;
-
-        // Staggered delay based on index
-        var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
-
-        // Use dispatcher to ensure we're on UI thread after delay
-        DispatcherQueue.TryEnqueue(async () =>
-        {
-            await Task.Delay(delay);
-            AnimationHelper.AnimateOpacity(element, 1.0);
-        });
+        AnimationHelper.AnimateEntrance(element, delayMs: index * AppConstants.Animation.EntranceStaggerDelayMs);
     }
 }

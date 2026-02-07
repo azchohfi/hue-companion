@@ -154,6 +154,21 @@ public sealed partial class RoomDetailPage : Page
         UpdateRoomIconColor(isActive, colors, instant);
         UpdateBrightnessIconColor(isActive, colors, instant);
         UpdateColorButtonColor(isActive, colors, instant);
+
+        // Notify MainWindow for ambient wash and nav indicator
+        try
+        {
+            var mainWindow = App.MainWindow;
+            if (colors.Count > 0 && isActive)
+            {
+                mainWindow.UpdateAmbientColor(colors);
+                mainWindow.UpdateNavIndicatorColor(_accentColor);
+            }
+        }
+        catch
+        {
+            // Non-critical
+        }
     }
 
     private void UpdateBorderEffect(bool isActive, List<(byte R, byte G, byte B)> colors, bool instant = false)
@@ -624,14 +639,7 @@ public sealed partial class RoomDetailPage : Page
             if (element == null) return;
 
             var index = _lightEntranceIndex++;
-            element.Opacity = 0;
-
-            var delay = TimeSpan.FromMilliseconds(index * AppConstants.Animation.EntranceStaggerDelayMs);
-            DispatcherQueue.TryEnqueue(async () =>
-            {
-                await Task.Delay(delay);
-                AnimationHelper.AnimateOpacity(element, 1.0);
-            });
+            AnimationHelper.AnimateEntrance(element, delayMs: index * AppConstants.Animation.EntranceStaggerDelayMs);
         }
     }
 

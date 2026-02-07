@@ -12,6 +12,49 @@ namespace HueWindows.Utilities;
 public static class AnimationHelper
 {
     /// <summary>
+    /// Animates an element's entrance with a combined fade-in and slide-up effect.
+    /// Uses Storyboard BeginTime for stagger delay (no Task.Delay needed).
+    /// </summary>
+    /// <param name="target">The element to animate.</param>
+    /// <param name="delayMs">Stagger delay in milliseconds before animation starts.</param>
+    /// <param name="durationMs">Optional duration. Defaults to standard duration.</param>
+    public static void AnimateEntrance(UIElement target, int delayMs = 0, int durationMs = 0)
+    {
+        var duration = durationMs > 0 ? durationMs : AppConstants.Animation.StandardDurationMs;
+        target.Opacity = 0;
+        target.RenderTransform = new TranslateTransform { Y = 20 };
+
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var beginTime = TimeSpan.FromMilliseconds(delayMs);
+        var animDuration = new Duration(TimeSpan.FromMilliseconds(duration));
+
+        var opacityAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = animDuration,
+            BeginTime = beginTime,
+            EasingFunction = easing
+        };
+
+        var translateAnim = new DoubleAnimation
+        {
+            To = 0,
+            Duration = animDuration,
+            BeginTime = beginTime,
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var sb = new Storyboard();
+        Storyboard.SetTarget(opacityAnim, target);
+        Storyboard.SetTargetProperty(opacityAnim, "Opacity");
+        Storyboard.SetTarget(translateAnim, target.RenderTransform);
+        Storyboard.SetTargetProperty(translateAnim, "Y");
+        sb.Children.Add(opacityAnim);
+        sb.Children.Add(translateAnim);
+        sb.Begin();
+    }
+
+    /// <summary>
     /// Animates the opacity of a UIElement.
     /// </summary>
     /// <param name="target">The element to animate.</param>

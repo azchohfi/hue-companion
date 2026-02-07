@@ -32,15 +32,26 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
+        <!-- Colored glow layer behind the card -->
+        <Border x:Name="GlowBorder"
+                CornerRadius="20"
+                Margin="-4"
+                Opacity="0"
+                IsHitTestVisible="False"/>
+
         <!-- Main card container -->
         <Grid x:Name="CardRoot"
               CornerRadius="16"
               MinHeight="120"
+              RenderTransformOrigin="0.5,0.5"
               ManipulationMode="TranslateY"
               ManipulationStarted="CardRoot_ManipulationStarted"
               ManipulationDelta="CardRoot_ManipulationDelta"
               ManipulationCompleted="CardRoot_ManipulationCompleted"
               Tapped="CardRoot_Tapped">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="CardScale" ScaleX="1" ScaleY="1"/>
+            </Grid.RenderTransform>
             <!-- Background set in code-behind for theme-aware gradients -->
 
             <!-- Solid Outline Border - Moved here for valid XAML structure (after properties) -->

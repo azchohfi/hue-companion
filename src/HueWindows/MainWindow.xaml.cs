@@ -7,9 +7,11 @@ using HueWindows.Constants;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Helpers;
+using HueWindows.Utilities;
 using HueWindows.Views;
 using HueWindows.Services;
 using WinRT.Interop;
+using Windows.UI;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -560,6 +562,30 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             Icon = new FontIcon { Glyph = GetIconForArchetype(group.Archetype) },
             SelectsOnInvoked = true
         };
+    }
+
+    /// <summary>
+    /// Updates the ambient color wash behind the content area.
+    /// Called by pages when room light colors change.
+    /// </summary>
+    public void UpdateAmbientColor(List<(byte R, byte G, byte B)> colors)
+    {
+        var brush = BrushFactory.CreateRadialAmbientBrush(colors);
+        AmbientWash.Background = brush;
+
+        // Fade in the wash if not already visible
+        if (AmbientWash.Opacity < 1.0)
+        {
+            AnimationHelper.AnimateOpacity(AmbientWash, 1.0, AppConstants.Animation.SlowDurationMs);
+        }
+    }
+
+    /// <summary>
+    /// Updates the NavigationView selection indicator color to match room colors.
+    /// </summary>
+    public void UpdateNavIndicatorColor(Color color)
+    {
+        NavView.Resources["NavigationViewSelectionIndicatorForeground"] = new SolidColorBrush(color);
     }
 
     private static string GetIconForArchetype(RoomArchetype archetype)

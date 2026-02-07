@@ -89,4 +89,41 @@ public static class BrushFactory
     {
         return new SolidColorBrush(color);
     }
+
+    /// <summary>
+    /// Creates a RadialGradientBrush for ambient color wash effect.
+    /// The wash is a subtle tinted halo centered in the upper-left quadrant.
+    /// </summary>
+    /// <param name="colors">Light colors to blend. Uses the first/dominant color.</param>
+    /// <param name="alpha">Opacity of the color at the center (0-255). Default ~20 for 5-8% feel.</param>
+    public static RadialGradientBrush CreateRadialAmbientBrush(IReadOnlyList<(byte r, byte g, byte b)> colors, byte alpha = 20)
+    {
+        // Use first color as dominant, or gray fallback
+        byte r = 128, g = 128, b = 128;
+        if (colors.Count > 0)
+        {
+            (r, g, b) = colors[0];
+        }
+
+        var brush = new RadialGradientBrush
+        {
+            Center = new Point(0.2, 0.3),
+            RadiusX = 0.8,
+            RadiusY = 0.8,
+            MappingMode = BrushMappingMode.RelativeToBoundingBox
+        };
+
+        brush.GradientStops.Add(new GradientStop
+        {
+            Color = Color.FromArgb(alpha, r, g, b),
+            Offset = 0
+        });
+        brush.GradientStops.Add(new GradientStop
+        {
+            Color = Color.FromArgb(0, r, g, b),
+            Offset = 1
+        });
+
+        return brush;
+    }
 }

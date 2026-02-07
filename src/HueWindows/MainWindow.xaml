@@ -52,6 +52,12 @@
                        VerticalAlignment="Center"/>
         </Grid>
 
+        <!-- Ambient color wash layer behind navigation content -->
+        <Border x:Name="AmbientWash"
+                Grid.Row="1"
+                IsHitTestVisible="False"
+                Opacity="0"/>
+
         <!-- NavigationView -->
         <NavigationView
             x:Name="NavView"

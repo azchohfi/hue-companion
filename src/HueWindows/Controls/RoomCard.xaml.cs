@@ -70,15 +70,16 @@ public sealed partial class RoomCard : UserControl
 
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 30), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 37, 37, 40), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 30, 30, 34), Offset = 1 });
+            // 90% opacity (0xE6) to let ambient wash bleed through subtly
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 26, 26, 30), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 37, 37, 40), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 30, 30, 34), Offset = 1 });
         }
         else
         {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 245, 245, 245), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 250, 250, 250), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 248, 248, 248), Offset = 1 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 245, 245, 245), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 250, 250, 250), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 248, 248, 248), Offset = 1 });
         }
 
         return brush;
@@ -94,15 +95,15 @@ public sealed partial class RoomCard : UserControl
 
         if (isDark)
         {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 34, 34, 38), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 45, 45, 48), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 38, 38, 41), Offset = 1 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 34, 34, 38), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 45, 45, 48), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 38, 38, 41), Offset = 1 });
         }
         else
         {
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 237, 237, 237), Offset = 0 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 240, 240, 240), Offset = 0.5 });
-            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 238, 238, 238), Offset = 1 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 237, 237, 237), Offset = 0 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 240, 240, 240), Offset = 0.5 });
+            brush.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(230, 238, 238, 238), Offset = 1 });
         }
 
         return brush;
@@ -195,6 +196,33 @@ public sealed partial class RoomCard : UserControl
 
         // Update brightness bar
         UpdateBrightnessBar();
+
+        // Notify MainWindow of color change for ambient wash
+        NotifyAmbientColorChange(isActive);
+    }
+
+    private void NotifyAmbientColorChange(bool isActive)
+    {
+        if (ViewModel == null) return;
+
+        // Only update ambient color if this card is active (on)
+        if (!isActive) return;
+
+        try
+        {
+            var mainWindow = App.MainWindow;
+            var colors = ViewModel.LightColors;
+            if (colors.Count > 0)
+            {
+                mainWindow.UpdateAmbientColor(colors);
+                var (r, g, b) = colors[0];
+                mainWindow.UpdateNavIndicatorColor(Color.FromArgb(255, r, g, b));
+            }
+        }
+        catch
+        {
+            // Non-critical - silently ignore
+        }
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -213,6 +241,13 @@ public sealed partial class RoomCard : UserControl
         // Animate border opacity
         var targetOpacity = isActive ? 1.0 : 0.0;
         AnimationHelper.AnimateOpacity(OutlineBorder, targetOpacity);
+
+        // Update glow effect
+        var glowColor = isActive
+            ? Color.FromArgb(25, _accentColor.R, _accentColor.G, _accentColor.B)
+            : Color.FromArgb(0, _accentColor.R, _accentColor.G, _accentColor.B);
+        GlowBorder.Background = new SolidColorBrush(glowColor);
+        AnimationHelper.AnimateOpacity(GlowBorder, isActive ? 1.0 : 0.0);
     }
 
     private void UpdateToggleColor(bool isActive)
@@ -394,6 +429,7 @@ public sealed partial class RoomCard : UserControl
         {
             _isHovering = true;
             ApplyThemeBackground();
+            AnimateScale(1.015);
             VisualStateManager.GoToState(this, "Hover", true);
         }
     }
@@ -404,8 +440,27 @@ public sealed partial class RoomCard : UserControl
         {
             _isHovering = false;
             ApplyThemeBackground();
+            AnimateScale(1.0);
             VisualStateManager.GoToState(this, "Default", true);
         }
+    }
+
+    private void AnimateScale(double target)
+    {
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var duration = new Duration(TimeSpan.FromMilliseconds(200));
+
+        var animX = new DoubleAnimation { To = target, Duration = duration, EasingFunction = easing };
+        var animY = new DoubleAnimation { To = target, Duration = duration, EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+
+        var sb = new Storyboard();
+        Storyboard.SetTarget(animX, CardScale);
+        Storyboard.SetTargetProperty(animX, "ScaleX");
+        Storyboard.SetTarget(animY, CardScale);
+        Storyboard.SetTargetProperty(animY, "ScaleY");
+        sb.Children.Add(animX);
+        sb.Children.Add(animY);
+        sb.Begin();
     }
 
 }
