@@ -207,146 +207,23 @@
                     </GridView>
                 </StackPanel>
 
-                <!-- Scenes Section -->
-                <StackPanel Visibility="{x:Bind HasScenes(ViewModel.Scenes.Count), Mode=OneWay}">
-                    <TextBlock Text="Scenes"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                    <GridView x:Name="ScenesGrid"
-                              ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
-                              SelectionMode="None"
-                              IsItemClickEnabled="False"
-                              SizeChanged="ScenesGrid_SizeChanged">
-                        <GridView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsWrapGrid Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </GridView.ItemsPanel>
-                        <GridView.ItemContainerStyle>
-                            <Style TargetType="GridViewItem">
-                                <Setter Property="Margin" Value="8"/>
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </GridView.ItemContainerStyle>
-                        <GridView.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SceneItemViewModel">
-                                <Grid HorizontalAlignment="Stretch"
-                                      RenderTransformOrigin="0.5,0.5"
-                                      Loaded="SceneContainer_Loaded"
-                                      Unloaded="SceneContainer_Unloaded">
-                                    <Grid.RenderTransform>
-                                        <ScaleTransform/>
-                                    </Grid.RenderTransform>
-                                    <Button Style="{StaticResource SceneCardButtonStyle}"
-                                            Background="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBackgroundConverter}}"
-                                            Command="{x:Bind ActivateCommand}">
-                                        <Button.ContextFlyout>
-                                            <MenuFlyout>
-                                                <MenuFlyoutItem Text="Delete"
-                                                                Click="DeleteScene_Click"
-                                                                Tag="{x:Bind}">
-                                                    <MenuFlyoutItem.Icon>
-                                                        <FontIcon Glyph="&#xE74D;"/>
-                                                    </MenuFlyoutItem.Icon>
-                                                </MenuFlyoutItem>
-                                            </MenuFlyout>
-                                        </Button.ContextFlyout>
-                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE91B;" FontSize="16"
-                                                      Foreground="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"/>
-                                            <TextBlock Text="{x:Bind Name}"
-                                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       MaxWidth="90"
-                                                       TextAlignment="Center"
-                                                       HorizontalAlignment="Center"/>
-                                            <StackPanel Orientation="Horizontal"
-                                                        HorizontalAlignment="Center"
-                                                        Spacing="4"
-                                                        Visibility="{x:Bind HasPaletteColors}">
-                                                <Ellipse Width="12" Height="12"
-                                                         Fill="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"
-                                                         Visibility="{x:Bind Color1Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="12" Height="12"
-                                                         Fill="{x:Bind Color2Hex, Converter={StaticResource HexToBrushConverter}}"
-                                                         Visibility="{x:Bind Color2Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="12" Height="12"
-                                                         Fill="{x:Bind Color3Hex, Converter={StaticResource HexToBrushConverter}}"
-                                                         Visibility="{x:Bind Color3Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                                <Ellipse Width="12" Height="12"
-                                                         Fill="{x:Bind Color4Hex, Converter={StaticResource HexToBrushConverter}}"
-                                                         Visibility="{x:Bind Color4Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Button>
-                                    <Border BorderThickness="2"
-                                            BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
-                                            CornerRadius="8"
-                                            IsHitTestVisible="False"
-                                            Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </GridView.ItemTemplate>
-                    </GridView>
-                </StackPanel>
-
-                <!-- Pinned Animations Section -->
-                <StackPanel Visibility="{x:Bind HasItems(ViewModel.PinnedAnimations.Count), Mode=OneWay}">
-                    <TextBlock Text="Pinned Animations"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                    <GridView x:Name="PinnedAnimationsGrid"
-                              ItemsSource="{x:Bind ViewModel.PinnedAnimations, Mode=OneWay}"
-                              SelectionMode="None"
-                              IsItemClickEnabled="False"
-                              SizeChanged="PinnedAnimationsGrid_SizeChanged">
-                        <GridView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsWrapGrid Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </GridView.ItemsPanel>
-                        <GridView.ItemContainerStyle>
-                            <Style TargetType="GridViewItem">
-                                <Setter Property="Margin" Value="8"/>
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </GridView.ItemContainerStyle>
-                        <GridView.ItemTemplate>
-                            <DataTemplate x:DataType="models:AnimatedSceneModel">
-                                <Grid HorizontalAlignment="Stretch">
-                                    <Button Style="{StaticResource SceneCardButtonStyle}"
-                                            Click="PinnedAnimation_Click"
-                                            Tag="{x:Bind}">
-                                        <Button.ContextFlyout>
-                                            <MenuFlyout>
-                                                <MenuFlyoutItem Text="Unpin" Click="UnpinAnimation_Click" Tag="{x:Bind}">
-                                                    <MenuFlyoutItem.Icon>
-                                                        <FontIcon Glyph="&#xE77A;"/>
-                                                    </MenuFlyoutItem.Icon>
-                                                </MenuFlyoutItem>
-                                            </MenuFlyout>
-                                        </Button.ContextFlyout>
-                                        <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE768;" FontSize="16"
-                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                            <TextBlock Text="{x:Bind Name}"
-                                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       MaxWidth="90" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </GridView.ItemTemplate>
-                    </GridView>
-                </StackPanel>
-
-                <!-- Animations Section -->
-                <StackPanel Visibility="{x:Bind HasAnimatedScenes(ViewModel.AnimatedScenes.Count), Mode=OneWay}">
-                    <TextBlock Text="Animations"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
+                <!-- Scenes Section (unified: native + animated) -->
+                <StackPanel Visibility="{x:Bind HasScenes(ViewModel.UnifiedScenes.Count), Mode=OneWay}">
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Scenes"
+                                   Style="{StaticResource SectionHeaderTextStyle}"/>
+                        <Button Grid.Column="1"
+                                Click="AddScene_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTipService.ToolTip="Add scene from library"
+                                VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                        </Button>
+                    </Grid>
 
                     <!-- Now Playing Card -->
                     <Border Visibility="{x:Bind ViewModel.IsAnimationRunning, Mode=OneWay}"
@@ -378,12 +255,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- Quick-pick Grid -->
-                    <GridView x:Name="AnimationsGrid"
-                              ItemsSource="{x:Bind ViewModel.AnimatedScenes, Mode=OneWay}"
+                    <GridView x:Name="ScenesGrid"
+                              ItemsSource="{x:Bind ViewModel.UnifiedScenes, Mode=OneWay}"
                               SelectionMode="None"
                               IsItemClickEnabled="False"
-                              SizeChanged="AnimationsGrid_SizeChanged">
+                              SizeChanged="ScenesGrid_SizeChanged">
                         <GridView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <ItemsWrapGrid Orientation="Horizontal"/>
@@ -397,21 +273,70 @@
                             </Style>
                         </GridView.ItemContainerStyle>
                         <GridView.ItemTemplate>
-                            <DataTemplate x:DataType="models:AnimatedSceneModel">
-                                <Grid HorizontalAlignment="Stretch">
+                            <DataTemplate x:DataType="vm:UnifiedSceneItemViewModel">
+                                <Grid HorizontalAlignment="Stretch"
+                                      RenderTransformOrigin="0.5,0.5"
+                                      Loaded="SceneContainer_Loaded"
+                                      Unloaded="SceneContainer_Unloaded">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform/>
+                                    </Grid.RenderTransform>
                                     <Button Style="{StaticResource SceneCardButtonStyle}"
-                                            Click="AnimatedScene_Click"
-                                            Tag="{x:Bind}">
+                                            Background="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBackgroundConverter}}"
+                                            Command="{x:Bind ActivateCommand}">
+                                        <Button.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Delete"
+                                                                Click="DeleteScene_Click"
+                                                                Tag="{x:Bind}"
+                                                                Visibility="{x:Bind IsNative}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE74D;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutItem Text="Remove from room"
+                                                                Click="RemoveScene_Click"
+                                                                Tag="{x:Bind}"
+                                                                Visibility="{x:Bind IsAnimated}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE77A;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Button.ContextFlyout>
                                         <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE768;" FontSize="16"/>
+                                            <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="16"
+                                                      Foreground="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"/>
                                             <TextBlock Text="{x:Bind Name}"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="90"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center"
+                                                        Spacing="4"
+                                                        Visibility="{x:Bind HasPaletteColors}">
+                                                <Ellipse Width="12" Height="12"
+                                                         Fill="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color1Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="12" Height="12"
+                                                         Fill="{x:Bind Color2Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color2Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="12" Height="12"
+                                                         Fill="{x:Bind Color3Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color3Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                                <Ellipse Width="12" Height="12"
+                                                         Fill="{x:Bind Color4Hex, Converter={StaticResource HexToBrushConverter}}"
+                                                         Visibility="{x:Bind Color4Hex, Converter={StaticResource HexToVisibilityConverter}}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Button>
+                                    <Border BorderThickness="2"
+                                            BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
+                                            CornerRadius="8"
+                                            IsHitTestVisible="False"
+                                            Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>

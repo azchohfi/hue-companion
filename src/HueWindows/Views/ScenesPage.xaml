@@ -82,8 +82,17 @@
                          Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                          IsClosable="True"/>
 
-                <!-- Room Selection -->
-                <StackPanel Spacing="12">
+                <!-- Room Context Banner -->
+                <InfoBar Visibility="{x:Bind ViewModel.HasRoomContext, Mode=OneWay}"
+                         IsOpen="{x:Bind ViewModel.HasRoomContext, Mode=OneWay}"
+                         IsClosable="False"
+                         Severity="Informational"
+                         Title="{x:Bind FormatRoomContextTitle(ViewModel.ContextRoomName), Mode=OneWay}"
+                         Message="Right-click a scene and choose 'Add to Room' to assign it."/>
+
+                <!-- Room Selection (hidden when room context is set) -->
+                <StackPanel Spacing="12"
+                            Visibility="{x:Bind InvertBool(ViewModel.HasRoomContext), Mode=OneWay}">
                     <TextBlock Text="Target Room"
                                Style="{StaticResource SubtitleTextBlockStyle}"/>
                     <ComboBox ItemsSource="{x:Bind ViewModel.Rooms, Mode=OneWay}"
@@ -142,7 +151,7 @@
                                                         <FontIcon Glyph="&#xE70F;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
-                                                <MenuFlyoutItem Text="Pin to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
+                                                <MenuFlyoutItem Text="Add to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE718;"/>
                                                     </MenuFlyoutItem.Icon>
@@ -234,7 +243,7 @@
                                         Padding="16">
                                     <Button.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="Pin to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
+                                            <MenuFlyoutItem Text="Add to Room" Click="PinToRoom_Click" Tag="{x:Bind}">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE718;"/>
                                                 </MenuFlyoutItem.Icon>

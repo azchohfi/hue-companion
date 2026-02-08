@@ -545,33 +545,6 @@ public sealed partial class RoomDetailPage : Page
         return count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>
-    /// Helper to check if animated scenes exist.
-    /// </summary>
-    public Visibility HasAnimatedScenes(int count)
-    {
-        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    /// <summary>
-    /// Helper to check if any items exist.
-    /// </summary>
-    public Visibility HasItems(int count)
-    {
-        return count > 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    /// <summary>
-    /// Handles click on a pinned animation card.
-    /// </summary>
-    private async void PinnedAnimation_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is AnimatedSceneModel scene)
-        {
-            await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
-        }
-    }
-
     private void LightsGrid_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
     {
         if (args.ItemContainer?.ContentTemplateRoot is Controls.LightCard lightCard)
@@ -591,24 +564,23 @@ public sealed partial class RoomDetailPage : Page
     }
 
     /// <summary>
-    /// Handles click on Unpin in animation context menu.
+    /// Navigates to ScenesPage with room context to add animated scenes.
     /// </summary>
-    private async void UnpinAnimation_Click(object sender, RoutedEventArgs e)
+    private void AddScene_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
-        {
-            await ViewModel.UnpinAnimationCommand.ExecuteAsync(scene);
-        }
+        var navParams = new ScenesNavigationParams(
+            ViewModel.GroupId, ViewModel.RoomName, ViewModel.GroupType);
+        Frame.Navigate(typeof(ScenesPage), navParams);
     }
 
     /// <summary>
-    /// Handles click on an animated scene card.
+    /// Handles click on Remove from Room in context menu for animated scenes.
     /// </summary>
-    private async void AnimatedScene_Click(object sender, RoutedEventArgs e)
+    private async void RemoveScene_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.Tag is AnimatedSceneModel scene)
+        if (sender is MenuFlyoutItem item && item.Tag is UnifiedSceneItemViewModel scene)
         {
-            await ViewModel.StartAnimatedSceneCommand.ExecuteAsync(scene);
+            await ViewModel.RemoveSceneFromRoomCommand.ExecuteAsync(scene);
         }
     }
 
@@ -646,7 +618,7 @@ public sealed partial class RoomDetailPage : Page
     /// </summary>
     private async void DeleteScene_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem item && item.Tag is SceneItemViewModel scene)
+        if (sender is MenuFlyoutItem item && item.Tag is UnifiedSceneItemViewModel scene)
         {
             var dialog = new ContentDialog
             {
@@ -725,23 +697,29 @@ public sealed partial class RoomDetailPage : Page
 
     private void SceneContainer_Loaded(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
+        if (sender is FrameworkElement element && element.DataContext is UnifiedSceneItemViewModel unified)
         {
-            _sceneElements[sceneVm.SceneId] = element;
-            sceneVm.SceneActivated -= OnSceneActivatedForPulse;
-            sceneVm.SceneActivated += OnSceneActivatedForPulse;
+            if (unified.NativeSceneId is Guid sceneId)
+            {
+                _sceneElements[sceneId] = element;
+            }
+            unified.SceneActivated -= OnSceneActivatedForPulse;
+            unified.SceneActivated += OnSceneActivatedForPulse;
         }
     }
 
     private void SceneContainer_Unloaded(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement element && element.DataContext is SceneItemViewModel sceneVm)
+        if (sender is FrameworkElement element && element.DataContext is UnifiedSceneItemViewModel unified)
         {
-            if (_sceneElements.TryGetValue(sceneVm.SceneId, out var tracked) && ReferenceEquals(tracked, element))
+            if (unified.NativeSceneId is Guid sceneId)
             {
-                _sceneElements.Remove(sceneVm.SceneId);
+                if (_sceneElements.TryGetValue(sceneId, out var tracked) && ReferenceEquals(tracked, element))
+                {
+                    _sceneElements.Remove(sceneId);
+                }
             }
-            sceneVm.SceneActivated -= OnSceneActivatedForPulse;
+            unified.SceneActivated -= OnSceneActivatedForPulse;
         }
     }
 
@@ -860,16 +838,6 @@ public sealed partial class RoomDetailPage : Page
     private void ScenesGrid_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateWrapGridItemSize(ScenesGrid, 180);
-    }
-
-    private void PinnedAnimationsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        UpdateWrapGridItemSize(PinnedAnimationsGrid, 160);
-    }
-
-    private void AnimationsGrid_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        UpdateWrapGridItemSize(AnimationsGrid, 160);
     }
 
     private void NativeEffectsGrid_SizeChanged(object sender, SizeChangedEventArgs e)

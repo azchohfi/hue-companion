@@ -43,13 +43,7 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     private ObservableCollection<LightItemViewModel> _lights = new();
 
     [ObservableProperty]
-    private ObservableCollection<SceneItemViewModel> _scenes = new();
-
-    [ObservableProperty]
-    private ObservableCollection<AnimatedSceneModel> _animatedScenes = new();
-
-    [ObservableProperty]
-    private ObservableCollection<AnimatedSceneModel> _pinnedAnimations = new();
+    private ObservableCollection<UnifiedSceneItemViewModel> _unifiedScenes = new();
 
     [ObservableProperty]
     private bool _isLoading;
@@ -185,35 +179,8 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
             Lights.Add(lightVm);
         }
 
-        // Load scenes (from room or zone)
-        var scenesResult = groupType == LightGroupType.Room
-            ? await _bridgeService.GetScenesForRoomAsync(groupId)
-            : await _bridgeService.GetScenesForZoneAsync(groupId);
-
-        Scenes.Clear();
-        if (scenesResult.IsSuccess)
-        {
-            foreach (var scene in scenesResult.Value!)
-            {
-                var sceneVm = new SceneItemViewModel(scene, _bridgeService);
-                sceneVm.SceneActivated += OnSceneActivated;
-                Scenes.Add(sceneVm);
-            }
-        }
-
-        // Load animated scenes
-        AnimatedScenes.Clear();
-        var animatedResult = await _animationService.GetAllScenesAsync();
-        if (animatedResult.IsSuccess && animatedResult.Value != null)
-        {
-            foreach (var scene in animatedResult.Value.Take(6)) // Show first 6 for quick-pick
-            {
-                AnimatedScenes.Add(scene);
-            }
-        }
-
-        // Load pinned animations for this room
-        await LoadPinnedAnimationsAsync();
+        // Load unified scenes (native + assigned animated)
+        await LoadUnifiedScenesAsync(groupId, groupType);
 
         // Update animation state for this room
         IsAnimationRunning = _animationService.IsAnimationRunning(groupId);
@@ -226,67 +193,67 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Reloads just the scenes list without reloading lights.
+    /// Loads all scenes (native + assigned animated) into the unified collection.
     /// </summary>
-    private async Task LoadScenesAsync()
+    private async Task LoadUnifiedScenesAsync(Guid groupId, LightGroupType groupType)
     {
+        UnifiedScenes.Clear();
+
         if (_bridgeService == null) return;
 
-        var scenesResult = _groupType == LightGroupType.Room
-            ? await _bridgeService.GetScenesForRoomAsync(_groupId)
-            : await _bridgeService.GetScenesForZoneAsync(_groupId);
+        // 1. Load native Hue scenes
+        var scenesResult = groupType == LightGroupType.Room
+            ? await _bridgeService.GetScenesForRoomAsync(groupId)
+            : await _bridgeService.GetScenesForZoneAsync(groupId);
 
-        Scenes.Clear();
         if (scenesResult.IsSuccess)
         {
             foreach (var scene in scenesResult.Value!)
             {
                 var sceneVm = new SceneItemViewModel(scene, _bridgeService);
                 sceneVm.SceneActivated += OnSceneActivated;
-                Scenes.Add(sceneVm);
+                var unified = new UnifiedSceneItemViewModel(sceneVm);
+                UnifiedScenes.Add(unified);
             }
         }
-    }
 
-    /// <summary>
-    /// Loads pinned animations for the current room.
-    /// </summary>
-    private async Task LoadPinnedAnimationsAsync()
-    {
-        var assignedIds = await _assignmentService.GetAssignedScenesAsync(_groupId);
+        // 2. Load assigned animated scenes for this room
+        var assignedIds = await _assignmentService.GetAssignedScenesAsync(groupId);
 
-        // Load all available scenes (both built-in and user)
-        var allScenes = new List<AnimatedSceneModel>();
+        var allAnimatedScenes = new List<AnimatedSceneModel>();
         var builtInResult = await _sceneStorageService.LoadBuiltInScenesAsync();
         if (builtInResult.IsSuccess && builtInResult.Value != null)
-        {
-            allScenes.AddRange(builtInResult.Value);
-        }
+            allAnimatedScenes.AddRange(builtInResult.Value);
         var userResult = await _sceneStorageService.LoadUserScenesAsync();
         if (userResult.IsSuccess && userResult.Value != null)
-        {
-            allScenes.AddRange(userResult.Value);
-        }
+            allAnimatedScenes.AddRange(userResult.Value);
 
-        PinnedAnimations.Clear();
         foreach (var id in assignedIds)
         {
-            var scene = allScenes.FirstOrDefault(s => s.Id == id);
-            if (scene != null)
+            var animScene = allAnimatedScenes.FirstOrDefault(s => s.Id == id);
+            if (animScene != null)
             {
-                PinnedAnimations.Add(scene);
+                var unified = new UnifiedSceneItemViewModel(animScene);
+                unified.AnimatedSceneRequested += OnAnimatedSceneRequested;
+                UnifiedScenes.Add(unified);
             }
         }
     }
 
+    private async void OnAnimatedSceneRequested(object? sender, AnimatedSceneModel scene)
+    {
+        await _animationService.StartSceneAsync(scene.Id, _groupId);
+    }
+
     /// <summary>
-    /// Unpins an animation from this room.
+    /// Removes an animated scene from this room.
     /// </summary>
     [RelayCommand]
-    private async Task UnpinAnimationAsync(AnimatedSceneModel scene)
+    private async Task RemoveSceneFromRoomAsync(UnifiedSceneItemViewModel scene)
     {
-        await _assignmentService.RemoveSceneFromRoomAsync(_groupId, scene.Id);
-        PinnedAnimations.Remove(scene);
+        if (scene.AnimatedScene == null) return;
+        await _assignmentService.RemoveSceneFromRoomAsync(_groupId, scene.AnimatedScene.Id);
+        UnifiedScenes.Remove(scene);
     }
 
     partial void OnIsOnChanged(bool value)
@@ -360,8 +327,8 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
 
         if (result.IsSuccess)
         {
-            // Refresh scenes list
-            await LoadScenesAsync();
+            // Refresh unified scenes list
+            await LoadUnifiedScenesAsync(_groupId, _groupType);
         }
         else
         {
@@ -370,14 +337,14 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private async Task DeleteSceneAsync(SceneItemViewModel scene)
+    private async Task DeleteSceneAsync(UnifiedSceneItemViewModel scene)
     {
-        if (_bridgeService == null) return;
+        if (_bridgeService == null || !scene.IsNative || scene.NativeSceneId == null) return;
 
-        var result = await _bridgeService.DeleteSceneAsync(scene.SceneId);
+        var result = await _bridgeService.DeleteSceneAsync(scene.NativeSceneId.Value);
         if (result.IsSuccess)
         {
-            Scenes.Remove(scene);
+            UnifiedScenes.Remove(scene);
         }
         else
         {
@@ -389,10 +356,13 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     {
         try
         {
-            // Update active scene visual state
-            foreach (var scene in Scenes)
+            // Update active scene visual state across all unified scenes
+            foreach (var unified in UnifiedScenes)
             {
-                scene.IsActive = scene.SceneId == sceneId;
+                if (unified.IsNative)
+                {
+                    unified.IsActive = unified.NativeSceneId == sceneId;
+                }
             }
 
             if (sender is SceneItemViewModel activeScene)
@@ -470,6 +440,11 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     /// Gets the current group ID.
     /// </summary>
     public Guid GroupId => _groupId;
+
+    /// <summary>
+    /// Gets the current group type (Room or Zone).
+    /// </summary>
+    public LightGroupType GroupType => _groupType;
 
     [RelayCommand]
     private async Task SetCustomIconAsync(string glyph)

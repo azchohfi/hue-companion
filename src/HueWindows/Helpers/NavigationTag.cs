@@ -16,3 +16,9 @@ public record RoomNavigationParams(
     Guid Id,
     bool IsOn,
     List<(byte R, byte G, byte B)> InitialColors);
+
+/// <summary>
+/// Navigation parameter for navigating to ScenesPage with room context.
+/// When provided, ScenesPage pre-selects the room and shows "Add to Room" flow.
+/// </summary>
+public record ScenesNavigationParams(Guid RoomId, string RoomName, LightGroupType GroupType);

@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Controls;
 using HueWindows.Core.Models;
 using HueWindows.Core.ViewModels;
+using HueWindows.Helpers;
 using HueWindows.Utilities;
 
 namespace HueWindows.Views;
@@ -21,6 +23,16 @@ public sealed partial class ScenesPage : Page
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<ScenesViewModel>();
         Unloaded += Page_Unloaded;
+    }
+
+    protected override void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        if (e.Parameter is ScenesNavigationParams navParams)
+        {
+            ViewModel.SetRoomContext(navParams.RoomId, navParams.RoomName);
+        }
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -200,13 +212,13 @@ public sealed partial class ScenesPage : Page
     {
         if (sender is MenuFlyoutItem item && item.Tag is AnimatedSceneModel scene)
         {
-            if (ViewModel.SelectedRoom == null)
+            if (ViewModel.ContextRoomId == null && ViewModel.SelectedRoom == null)
             {
                 ViewModel.ErrorMessage = "Please select a room first";
                 return;
             }
 
-            await ViewModel.PinToRoomCommand.ExecuteAsync(scene);
+            await ViewModel.AddToRoomCommand.ExecuteAsync(scene);
         }
     }
 
@@ -278,4 +290,7 @@ public sealed partial class ScenesPage : Page
     public Visibility InvertBool(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     public bool HasError(string? error) => !string.IsNullOrWhiteSpace(error);
+
+    public string FormatRoomContextTitle(string? roomName) =>
+        string.IsNullOrEmpty(roomName) ? "Adding scenes" : $"Adding scenes to {roomName}";
 }

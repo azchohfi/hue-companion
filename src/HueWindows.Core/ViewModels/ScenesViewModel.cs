@@ -28,6 +28,16 @@ public partial class ScenesViewModel : ObservableObject, IDisposable
     private RoomModel? _selectedRoom;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRoomContext))]
+    private Guid? _contextRoomId;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRoomContext))]
+    private string? _contextRoomName;
+
+    public bool HasRoomContext => ContextRoomId != null;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUserScenes))]
     private List<AnimatedSceneModel> _userScenes = new();
 
@@ -61,9 +71,25 @@ public partial class ScenesViewModel : ObservableObject, IDisposable
         _animationService.RoomAnimationChanged += OnRoomAnimationChanged;
     }
 
+    /// <summary>
+    /// Sets the room context when navigating from a room detail page.
+    /// Pre-selects the room and enables the "Add to Room" flow.
+    /// </summary>
+    public void SetRoomContext(Guid roomId, string roomName)
+    {
+        ContextRoomId = roomId;
+        ContextRoomName = roomName;
+    }
+
     public async Task InitializeAsync()
     {
         await LoadDataAsync();
+
+        // Pre-select the context room if set
+        if (ContextRoomId != null && Rooms.Count > 0)
+        {
+            SelectedRoom = Rooms.FirstOrDefault(r => r.Id == ContextRoomId.Value) ?? Rooms.FirstOrDefault();
+        }
     }
 
     [RelayCommand]
@@ -131,18 +157,24 @@ public partial class ScenesViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Pins an animated scene to the selected room.
+    /// Adds an animated scene to the selected (or context) room.
     /// </summary>
     [RelayCommand]
-    private async Task PinToRoomAsync(AnimatedSceneModel scene)
+    private async Task AddToRoomAsync(AnimatedSceneModel scene)
     {
-        if (SelectedRoom == null)
+        var roomId = ContextRoomId ?? SelectedRoom?.Id;
+        if (roomId == null)
         {
             ErrorMessage = "Please select a room first";
             return;
         }
 
-        await _assignmentService.AssignSceneToRoomAsync(SelectedRoom.Id, scene.Id);
+        await _assignmentService.AssignSceneToRoomAsync(roomId.Value, scene.Id);
+
+        if (HasRoomContext)
+        {
+            ErrorMessage = string.Empty;
+        }
     }
 
     /// <summary>
