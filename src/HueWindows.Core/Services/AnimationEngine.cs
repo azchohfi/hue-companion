@@ -172,7 +172,7 @@ public class AnimationEngine : IDisposable
         }
     }
 
-    private (AnimationKeyframe? prev, AnimationKeyframe? next) FindSurroundingKeyframes(
+    internal (AnimationKeyframe? prev, AnimationKeyframe? next) FindSurroundingKeyframes(
         List<AnimationKeyframe> keyframes,
         double currentTime)
     {
