@@ -1,28 +1,48 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Layers, Zap, Monitor, Palette } from "lucide-react";
+import { Layers, Zap, Monitor, Palette, Flame, Grid3X3, Keyboard, MonitorDown } from "lucide-react";
 
 const features = [
     {
         icon: <Monitor className="w-6 h-6" />,
         title: "Native Performance",
-        description: "Built with Windows App SDK for blazing fast localized control. No Electron lag, just pure performance.",
+        description: "Built with WinUI 3 for fast startup and low memory usage.",
     },
     {
         icon: <Layers className="w-6 h-6" />,
-        title: "Zone & Room Management",
-        description: "Control individual lights, entire rooms, or custom zones with ease. Sync your entire house in one click.",
+        title: "Rooms, Zones & Lights",
+        description: "Control individual lights, entire rooms, or custom zones. Brightness, color, and on/off for everything.",
     },
     {
-        icon: <Zap className="w-6 h-6" />,
-        title: "Live Preview",
-        description: "Hover over scenes or colors to instantly preview them on your lights before applying.",
+        icon: <Flame className="w-6 h-6" />,
+        title: "Native Hue Effects",
+        description: "Fire, candle, sparkle, prism, underwater, cosmos — all built-in Hue effects with adjustable speed and brightness.",
     },
     {
         icon: <Palette className="w-6 h-6" />,
-        title: "Dynamic Scenes",
-        description: "Create and save complex gradient scenes. Import from Hue gallery or design your own.",
+        title: "Scene Builder",
+        description: "DAW-style timeline editor for creating complex, multi-track animated lighting scenes with keyframes and events.",
+    },
+    {
+        icon: <Grid3X3 className="w-6 h-6" />,
+        title: "Custom Dashboard",
+        description: "Pin your favorite rooms, zones, and individual lights to a custom dashboard for quick one-tap access.",
+    },
+    {
+        icon: <Keyboard className="w-6 h-6" />,
+        title: "Global Hotkeys",
+        description: "Control your lights from anywhere with system-wide keyboard shortcuts, even when the app is minimized.",
+    },
+    {
+        icon: <MonitorDown className="w-6 h-6" />,
+        title: "System Tray",
+        description: "Minimize to the system tray and launch at startup. Always one click away without cluttering your taskbar.",
+    },
+    {
+        icon: <Zap className="w-6 h-6" />,
+        title: "Multi-Bridge",
+        description: "Connect multiple Hue Bridges simultaneously. All your rooms and zones from every bridge in one app.",
     },
 ];
 
@@ -31,9 +51,9 @@ export function Features() {
         <section className="py-24 bg-zinc-950 relative overflow-hidden">
             <div className="container px-4 md:px-6 relative z-10">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-bold mb-4">Everything you need.</h2>
+                    <h2 className="text-3xl md:text-5xl font-bold mb-4">Features</h2>
                     <p className="text-zinc-400 max-w-2xl mx-auto">
-                        Designed for power users who want more control over their lighting setup.
+                        What you can do with Hue Companion.
                     </p>
                 </div>
 

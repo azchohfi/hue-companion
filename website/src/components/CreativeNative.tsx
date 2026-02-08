@@ -6,9 +6,9 @@ export function CreativeNative() {
     return (
         <section className="py-32 relative overflow-hidden flex flex-col items-center">
             <div className="container px-4 md:px-6 relative z-10 text-center mb-16">
-                <h2 className="text-4xl md:text-6xl font-bold mb-4">Unapologetically Native.</h2>
+                <h2 className="text-4xl md:text-6xl font-bold mb-4">Native to Windows.</h2>
                 <p className="text-zinc-400 max-w-2xl mx-auto">
-                    It doesn't just look like a Windows app. It feels like one.
+                    Built with WinUI 3 — the same framework as Windows 11 system apps.
                 </p>
             </div>
 

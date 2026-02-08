@@ -24,9 +24,12 @@ export default function AboutPage() {
         "featureList": [
             "Native WinUI 3 Performance",
             "Global Keyboard Shortcuts",
-            "Zone Control",
-            "Live Light Preview",
-            "Animated Scene Builder"
+            "Multi-Bridge Support",
+            "Zone & Room Control",
+            "Native Hue Effects",
+            "Animated Scene Builder",
+            "Custom Dashboard",
+            "System Tray Support"
         ],
         "author": {
             "@type": "Person",
@@ -46,7 +49,7 @@ export default function AboutPage() {
                 <header className="mb-20 border-b border-zinc-800 pb-10">
                     <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">About Hue Companion</h1>
                     <p className="text-xl text-zinc-400 leading-relaxed">
-                        The definitive technical overview and documentation for the native Windows client for Philips Hue.
+                        Technical details and FAQ for the native Windows client for Philips Hue.
                     </p>
                 </header>
 
@@ -73,12 +76,20 @@ export default function AboutPage() {
                                 <dd className="text-zinc-400 text-sm">System-level keyboard hooks allow for lighting control even when the app is in the background or minimized.</dd>
                             </div>
                             <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
-                                <dt className="text-white font-bold mb-2">Zone & Room Parity</dt>
-                                <dd className="text-zinc-400 text-sm">Full support for Hue "Zones", allowing control of sub-sections of rooms (e.g., "Desk" vs "Ceiling").</dd>
+                                <dt className="text-white font-bold mb-2">Multi-Bridge Support</dt>
+                                <dd className="text-zinc-400 text-sm">Connect and manage multiple Hue Bridges simultaneously. All rooms and zones from every bridge appear in one unified interface.</dd>
                             </div>
                             <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
-                                <dt className="text-white font-bold mb-2">Animated Scenes</dt>
-                                <dd className="text-zinc-400 text-sm">Complex, timeline-based animation builder for creating dynamic lighting effects.</dd>
+                                <dt className="text-white font-bold mb-2">Scene Builder</dt>
+                                <dd className="text-zinc-400 text-sm">DAW-style timeline editor for creating complex, multi-track animated lighting scenes with keyframes and event triggers.</dd>
+                            </div>
+                            <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
+                                <dt className="text-white font-bold mb-2">Native Hue Effects</dt>
+                                <dd className="text-zinc-400 text-sm">10 built-in effects (fire, candle, sparkle, prism, cosmos, and more) with adjustable speed and brightness controls.</dd>
+                            </div>
+                            <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
+                                <dt className="text-white font-bold mb-2">Custom Dashboard</dt>
+                                <dd className="text-zinc-400 text-sm">Pin favorite rooms, zones, and individual lights to a personalized dashboard for instant one-tap access.</dd>
                             </div>
                         </dl>
                     </section>
@@ -88,7 +99,7 @@ export default function AboutPage() {
                         <div className="space-y-8">
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-2">Is Hue Companion free?</h3>
-                                <p className="text-zinc-400">Yes, the core application is free to download. Some advanced features like the Scene Builder may be part of a Pro tier.</p>
+                                <p className="text-zinc-400">Yes, Hue Companion is completely free. All features including the Scene Builder, native effects, multi-bridge support, and custom dashboard are included.</p>
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-2">Does it work with Windows 10?</h3>
@@ -96,7 +107,11 @@ export default function AboutPage() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-white mb-2">Is a Hue Bridge required?</h3>
-                                <p className="text-zinc-400">Yes, a Philips Hue Bridge (v2) is required. Bluetooth-only bulbs are not currently supported by the Windows API.</p>
+                                <p className="text-zinc-400">Yes, a Philips Hue Bridge (v2) is required. Bluetooth-only bulbs are not currently supported.</p>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white mb-2">Can I use multiple Hue Bridges?</h3>
+                                <p className="text-zinc-400">Yes, Hue Companion supports connecting to multiple Hue Bridges at the same time. All rooms and zones from every bridge appear in one unified interface.</p>
                             </div>
                         </div>
                     </section>

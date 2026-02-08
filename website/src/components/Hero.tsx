@@ -63,7 +63,7 @@ export function Hero() {
                     transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
                     className="text-lg md:text-xl text-zinc-400 max-w-2xl mb-10 leading-relaxed"
                 >
-                    The most advanced Philips Hue client for Windows. built with a modern design, native performance, and features power users love.
+                    A Philips Hue client for Windows, built with WinUI 3 for a fast, native experience.
                 </motion.p>
 
                 <motion.div

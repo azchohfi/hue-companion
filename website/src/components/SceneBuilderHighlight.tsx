@@ -66,16 +66,16 @@ export function SceneBuilderHighlight() {
                     <div className="order-1 lg:order-2">
                         <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm text-primary mb-6">
                             <Sliders className="w-4 h-4 mr-2" />
-                            Pro Feature
+                            Scene Builder
                         </div>
 
                         <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                            Pro-Grade <br />
+                            Built-in <br />
                             <span className="text-gradient">Animation Studio.</span>
                         </h2>
 
                         <p className="text-lg text-zinc-400 leading-relaxed mb-6">
-                            Don't settle for static lighting. Our built-in Scene Builder lets you craft complex, timeline-based animations for your lights.
+                            Create timeline-based lighting animations with keyframes, multiple tracks, and event triggers.
                         </p>
 
                         <ul className="space-y-4 mb-8">

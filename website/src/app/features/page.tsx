@@ -1,9 +1,8 @@
-import { CompetitorComparison } from "@/components/CompetitorComparison";
 import { Footer } from "@/components/Footer";
 import { SceneBuilderHighlight } from "@/components/SceneBuilderHighlight";
 import { CreativeHotkeys } from "@/components/CreativeHotkeys";
 import { CreativeNative } from "@/components/CreativeNative";
-import { LuminaAI } from "@/components/LuminaAI";
+import { NativeEffects } from "@/components/NativeEffects";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { CallToAction } from "@/components/CallToAction";
 import { Metadata } from "next";
@@ -24,20 +23,18 @@ export default function FeaturesPage() {
                         Features
                     </h1>
                     <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-                        A deep dive into what makes this the best Hue experience on Windows.
+                        A closer look at what Hue Companion can do.
                     </p>
                 </div>
             </div>
-
-            <CompetitorComparison />
 
             <CreativeNative />
 
             <SceneBuilderHighlight />
 
-            <CreativeHotkeys />
+            <NativeEffects />
 
-            <LuminaAI />
+            <CreativeHotkeys />
 
             <CallToAction />
 

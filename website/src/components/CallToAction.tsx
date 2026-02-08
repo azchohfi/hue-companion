@@ -15,7 +15,7 @@ export function CallToAction() {
                     viewport={{ once: true }}
                     className="text-4xl md:text-6xl font-bold mb-8"
                 >
-                    Ready to take control?
+                    Try it out
                 </motion.h2>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -24,7 +24,7 @@ export function CallToAction() {
                     transition={{ delay: 0.1 }}
                     className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10"
                 >
-                    Join thousands of users who have upgraded their lighting experience.
+                    A better way to control your Philips Hue lights on Windows.
                 </motion.p>
 
                 <motion.div
