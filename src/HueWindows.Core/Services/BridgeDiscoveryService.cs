@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using HueApi.BridgeLocator;
 using HueWindows.Core.Services.Interfaces;
 
@@ -18,6 +19,8 @@ public class BridgeDiscoveryService : IBridgeDiscoveryService
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Use HTTP-based discovery (discovery.meethue.com)
             var httpLocator = new HttpBridgeLocator();
             var httpBridges = await httpLocator.LocateBridgesAsync(timeout);
@@ -30,13 +33,16 @@ public class BridgeDiscoveryService : IBridgeDiscoveryService
                 }
             }
         }
-        catch
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
-            // HTTP discovery failed, continue with other methods
+            Debug.WriteLine($"[BridgeDiscovery] HTTP discovery failed: {ex.Message}");
         }
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Also try mDNS discovery for local-only networks
             var mdnsLocator = new MdnsBridgeLocator();
             var mdnsBridges = await mdnsLocator.LocateBridgesAsync(timeout);
@@ -49,9 +55,10 @@ public class BridgeDiscoveryService : IBridgeDiscoveryService
                 }
             }
         }
-        catch
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
-            // mDNS discovery failed
+            Debug.WriteLine($"[BridgeDiscovery] mDNS discovery failed: {ex.Message}");
         }
 
         return results;

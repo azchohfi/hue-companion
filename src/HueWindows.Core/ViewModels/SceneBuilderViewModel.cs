@@ -103,9 +103,6 @@ public partial class SceneBuilderViewModel : ObservableObject
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private DateTime _lastPlayheadUpdate = DateTime.MinValue;
-    private const int PlayheadUpdateThrottleMs = 100; // Minimum time between updates
-
     /// <summary>
     /// Maximum number of colors to include in the scene palette preview.
     /// </summary>

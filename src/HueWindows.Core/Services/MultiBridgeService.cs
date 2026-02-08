@@ -12,7 +12,6 @@ public class MultiBridgeService : IMultiBridgeService, IDisposable
     private readonly ISettingsService _settingsService;
     private readonly ConcurrentDictionary<string, IHueBridgeService> _bridgeServices = new();
     private readonly ConcurrentDictionary<string, bool> _connectionStatus = new();
-    private readonly object _connectionLock = new();
     private bool _disposed;
 
     public IReadOnlyList<BridgeModel> ConfiguredBridges =>
