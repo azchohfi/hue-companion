@@ -29,19 +29,24 @@ public sealed partial class LightDetailPage : Page
     private SolidColorBrush? _brightnessIconBrush;
     private SolidColorBrush? _colorIconBrush;
     private SolidColorBrush? _temperatureIconBrush;
+    private SolidColorBrush? _powerOnIconBrush;
     private SolidColorBrush? _toggleBrush;
     private Color _currentLightIconColor = Colors.Gray;
     private Color _currentBrightnessIconColor = Colors.Gray;
     private Color _currentColorIconColor = Colors.Gray;
     private Color _currentTemperatureIconColor = Colors.Gray;
+    private Color _currentPowerOnIconColor = Colors.Gray;
     private Color _currentToggleColor = Colors.Transparent;
     private bool _useFirstBorder = true;
     private DispatcherTimer? _brightnessDebounceTimer;
     private DispatcherTimer? _temperatureDebounceTimer;
     private DispatcherTimer? _colorDebounceTimer;
+    private DispatcherTimer? _powerOnBrightnessDebounceTimer;
     private double _pendingBrightness;
     private int _pendingTemperature;
     private (byte R, byte G, byte B) _pendingColor;
+    private double _pendingPowerOnBrightness;
+    private bool _isUpdatingPowerOnPreset;
 
     public LightDetailPage()
     {
@@ -128,6 +133,7 @@ public sealed partial class LightDetailPage : Page
         UpdateBrightnessIconColor(isActive);
         UpdateColorIconColor(isActive);
         UpdateTemperatureIconColor(isActive);
+        UpdatePowerOnIconColor(isActive);
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -254,6 +260,27 @@ public sealed partial class LightDetailPage : Page
         _currentTemperatureIconColor = targetColor;
     }
 
+    private void UpdatePowerOnIconColor(bool isActive)
+    {
+        if (PowerOnIcon == null) return;
+
+        var isDark = ActualTheme == ElementTheme.Dark;
+        var inactiveColor = isDark
+            ? Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 255, 255, 255)
+            : Color.FromArgb(AppConstants.Colors.InactiveIconAlpha, 0, 0, 0);
+
+        var targetColor = isActive ? _accentColor : inactiveColor;
+
+        if (_powerOnIconBrush == null)
+        {
+            _powerOnIconBrush = new SolidColorBrush(_currentPowerOnIconColor);
+            PowerOnIcon.Foreground = _powerOnIconBrush;
+        }
+
+        AnimationHelper.AnimateColor(_powerOnIconBrush, _currentPowerOnIconColor, targetColor);
+        _currentPowerOnIconColor = targetColor;
+    }
+
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -279,6 +306,12 @@ public sealed partial class LightDetailPage : Page
                 _isUpdatingSlider = true;
                 BrightnessSlider.Value = ViewModel.BrightnessPercent;
                 _isUpdatingSlider = false;
+            }
+
+            // Set initial power-on preset
+            if (ViewModel.HasPowerOnConfig)
+            {
+                InitializePowerOnControls();
             }
         }
 
@@ -396,6 +429,7 @@ public sealed partial class LightDetailPage : Page
         _brightnessDebounceTimer?.Stop();
         _colorDebounceTimer?.Stop();
         _temperatureDebounceTimer?.Stop();
+        _powerOnBrightnessDebounceTimer?.Stop();
     }
 
     /// <summary>
@@ -437,4 +471,125 @@ public sealed partial class LightDetailPage : Page
     /// Helper to check if error message exists.
     /// </summary>
     public bool HasErrorMessage(string? message) => !string.IsNullOrEmpty(message);
+
+    /// <summary>
+    /// Helper to check if device info is available.
+    /// </summary>
+    public Visibility HasDeviceInfo(string? productName)
+    {
+        return !string.IsNullOrEmpty(productName) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void RenameLight_Click(object sender, RoutedEventArgs e)
+    {
+        var nameBox = new TextBox
+        {
+            Text = ViewModel.LightName,
+            PlaceholderText = "Light name",
+            SelectionStart = ViewModel.LightName.Length
+        };
+
+        var dialog = new ContentDialog
+        {
+            Title = "Rename Light",
+            Content = nameBox,
+            PrimaryButtonText = "Rename",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameBox.Text))
+        {
+            await ViewModel.RenameAsync(nameBox.Text.Trim());
+        }
+    }
+
+    private async void IdentifyLight_Click(object sender, RoutedEventArgs e)
+    {
+        await ViewModel.IdentifyAsync();
+    }
+
+    /// <summary>
+    /// Formats a 0.0-1.0 value as a percentage string.
+    /// </summary>
+    public string FormatPercent(double value) => $"{(int)(value * 100)}%";
+
+    private void InitializePowerOnControls()
+    {
+        _isUpdatingPowerOnPreset = true;
+
+        var index = ViewModel.PowerOnPreset switch
+        {
+            HueWindows.Core.Models.PowerOnPreset.LastOnState => 0,
+            HueWindows.Core.Models.PowerOnPreset.Safety => 1,
+            HueWindows.Core.Models.PowerOnPreset.PowerFail => 2,
+            HueWindows.Core.Models.PowerOnPreset.Custom => 3,
+            _ => 0
+        };
+
+        PowerOnPresetRadio.SelectedIndex = index;
+        CustomPowerOnPanel.Visibility = ViewModel.PowerOnPreset == HueWindows.Core.Models.PowerOnPreset.Custom
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        if (PowerOnBrightnessSlider != null)
+        {
+            PowerOnBrightnessSlider.Value = ViewModel.PowerOnBrightness * 100;
+        }
+
+        _isUpdatingPowerOnPreset = false;
+    }
+
+    private void PowerOnPreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingPowerOnPreset) return;
+        if (PowerOnPresetRadio.SelectedItem is not RadioButton selected) return;
+
+        var tag = selected.Tag as string;
+        var preset = tag switch
+        {
+            "LastOnState" => HueWindows.Core.Models.PowerOnPreset.LastOnState,
+            "Safety" => HueWindows.Core.Models.PowerOnPreset.Safety,
+            "PowerFail" => HueWindows.Core.Models.PowerOnPreset.PowerFail,
+            "Custom" => HueWindows.Core.Models.PowerOnPreset.Custom,
+            _ => HueWindows.Core.Models.PowerOnPreset.LastOnState
+        };
+
+        CustomPowerOnPanel.Visibility = preset == HueWindows.Core.Models.PowerOnPreset.Custom
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        ViewModel.SetPowerOnPresetCommand.Execute(preset);
+    }
+
+    private void PowerOnBrightness_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (_isUpdatingPowerOnPreset) return;
+
+        _pendingPowerOnBrightness = e.NewValue / 100.0;
+        ViewModel.PowerOnBrightness = _pendingPowerOnBrightness;
+
+        if (_powerOnBrightnessDebounceTimer == null)
+        {
+            _powerOnBrightnessDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _powerOnBrightnessDebounceTimer.Tick += (s, args) =>
+            {
+                _powerOnBrightnessDebounceTimer.Stop();
+                ViewModel.SetPowerOnCustomCommand.Execute(null);
+            };
+        }
+
+        _powerOnBrightnessDebounceTimer.Stop();
+        _powerOnBrightnessDebounceTimer.Start();
+    }
+
+    private void UseCurrentColorForPowerOn_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.PowerOnColor = ViewModel.CurrentColor;
+        ViewModel.SetPowerOnCustomCommand.Execute(null);
+    }
 }

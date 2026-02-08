@@ -154,6 +154,26 @@ public interface IHueBridgeService
     Task<Result<LightModel>> GetLightAsync(Guid lightId);
 
     /// <summary>
+    /// Renames a light by updating its owner device metadata.
+    /// </summary>
+    Task<Result> RenameLightAsync(Guid lightId, Guid deviceId, string newName);
+
+    /// <summary>
+    /// Triggers the identify action on a light (blinks it briefly).
+    /// </summary>
+    Task<Result> IdentifyLightAsync(Guid lightId);
+
+    /// <summary>
+    /// Sets the power-on behavior preset for a light.
+    /// </summary>
+    Task<Result> SetPowerOnPresetAsync(Guid lightId, PowerOnPreset preset);
+
+    /// <summary>
+    /// Sets custom power-on behavior with brightness and optional color.
+    /// </summary>
+    Task<Result> SetPowerOnCustomAsync(Guid lightId, double brightness, HueColor? color);
+
+    /// <summary>
     /// Sets the on/off state for a light.
     /// </summary>
     Task SetLightOnAsync(Guid lightId, bool isOn);

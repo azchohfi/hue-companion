@@ -54,6 +54,52 @@ public class LightModel
     /// Whether this light is currently reachable.
     /// </summary>
     public bool IsReachable { get; set; } = true;
+
+    /// <summary>
+    /// The owner device ID (for rename operations via Device API).
+    /// </summary>
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>
+    /// The product name of the light (e.g., "Hue color lamp").
+    /// </summary>
+    public string? ProductName { get; set; }
+
+    /// <summary>
+    /// The firmware version of the light's device.
+    /// </summary>
+    public string? FirmwareVersion { get; set; }
+
+    /// <summary>
+    /// The model ID of the light.
+    /// </summary>
+    public string? ModelId { get; set; }
+
+    /// <summary>
+    /// The power-on behavior preset for this light.
+    /// </summary>
+    public PowerOnPreset? PowerOnPreset { get; set; }
+
+    /// <summary>
+    /// The custom power-on brightness (0.0 to 1.0), if preset is Custom.
+    /// </summary>
+    public double? PowerOnBrightness { get; set; }
+
+    /// <summary>
+    /// The custom power-on color, if preset is Custom.
+    /// </summary>
+    public HueColor? PowerOnColor { get; set; }
+}
+
+/// <summary>
+/// Power-on behavior preset for a light.
+/// </summary>
+public enum PowerOnPreset
+{
+    LastOnState,
+    Safety,
+    PowerFail,
+    Custom
 }
 
 /// <summary>

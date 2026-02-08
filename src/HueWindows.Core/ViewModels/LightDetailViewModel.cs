@@ -46,6 +46,34 @@ public partial class LightDetailViewModel : ObservableObject
     [ObservableProperty]
     private string? _errorMessage;
 
+    [ObservableProperty]
+    private string? _productName;
+
+    [ObservableProperty]
+    private string? _firmwareVersion;
+
+    [ObservableProperty]
+    private string? _modelId;
+
+    [ObservableProperty]
+    private LightArchetype _archetype;
+
+    [ObservableProperty]
+    private PowerOnPreset _powerOnPreset;
+
+    [ObservableProperty]
+    private double _powerOnBrightness = 1.0;
+
+    [ObservableProperty]
+    private HueColor? _powerOnColor;
+
+    [ObservableProperty]
+    private bool _hasPowerOnConfig;
+
+    private Guid? _deviceId;
+
+    public Guid LightId => _lightId;
+
     public int BrightnessPercent => (int)(Brightness * 100);
 
     /// <summary>
@@ -111,10 +139,26 @@ public partial class LightDetailViewModel : ObservableObject
         SupportsColor = light.SupportsColor;
         SupportsColorTemperature = light.SupportsColorTemperature;
         CurrentColor = light.CurrentColor;
+        Archetype = light.Archetype;
+        _deviceId = light.DeviceId;
+        ProductName = light.ProductName;
+        FirmwareVersion = light.FirmwareVersion;
+        ModelId = light.ModelId;
 
         if (light.ColorTemperature.HasValue)
         {
             ColorTemperature = light.ColorTemperature.Value;
+        }
+
+        // Load power-on behavior
+        if (light.PowerOnPreset.HasValue)
+        {
+            PowerOnPreset = light.PowerOnPreset.Value;
+            HasPowerOnConfig = true;
+            if (light.PowerOnBrightness.HasValue)
+                PowerOnBrightness = light.PowerOnBrightness.Value;
+            if (light.PowerOnColor != null)
+                PowerOnColor = light.PowerOnColor;
         }
 
         // Default to color mode if supported, otherwise temperature
@@ -192,5 +236,60 @@ public partial class LightDetailViewModel : ObservableObject
     private void SwitchToTemperatureMode()
     {
         IsColorMode = false;
+    }
+
+    public async Task<Result> RenameAsync(string newName)
+    {
+        if (_bridgeService == null || _deviceId == null)
+            return Result.Failure("Not connected.");
+
+        var result = await _bridgeService.RenameLightAsync(_lightId, _deviceId.Value, newName);
+        if (result.IsSuccess)
+            LightName = newName;
+        else
+            ErrorMessage = result.Error;
+
+        return result;
+    }
+
+    public async Task<Result> IdentifyAsync()
+    {
+        if (_bridgeService == null)
+            return Result.Failure("Not connected.");
+
+        return await _bridgeService.IdentifyLightAsync(_lightId);
+    }
+
+    [RelayCommand]
+    private async Task SetPowerOnPresetAsync(PowerOnPreset preset)
+    {
+        if (_bridgeService == null) return;
+
+        Result result;
+        if (preset == PowerOnPreset.Custom)
+        {
+            result = await _bridgeService.SetPowerOnCustomAsync(_lightId, PowerOnBrightness, PowerOnColor);
+        }
+        else
+        {
+            result = await _bridgeService.SetPowerOnPresetAsync(_lightId, preset);
+        }
+
+        if (result.IsSuccess)
+            PowerOnPreset = preset;
+        else
+            ErrorMessage = result.Error;
+    }
+
+    [RelayCommand]
+    private async Task SetPowerOnCustomAsync()
+    {
+        if (_bridgeService == null) return;
+
+        var result = await _bridgeService.SetPowerOnCustomAsync(_lightId, PowerOnBrightness, PowerOnColor);
+        if (result.IsSuccess)
+            PowerOnPreset = PowerOnPreset.Custom;
+        else
+            ErrorMessage = result.Error;
     }
 }

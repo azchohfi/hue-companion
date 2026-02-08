@@ -34,11 +34,12 @@
                 <!-- All controls in a single StackPanel -->
                 <StackPanel Canvas.ZIndex="1" Margin="24,20" Spacing="24">
 
-                    <!-- Header: Icon, Name, Toggle -->
+                    <!-- Header: Icon, Name, More, Toggle -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
@@ -56,8 +57,31 @@
                                        Style="{StaticResource PageHeaderTextStyle}"/>
                         </StackPanel>
 
+                        <!-- More menu -->
+                        <Button Grid.Column="2"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTipService.ToolTip="More options"
+                                VerticalAlignment="Center"
+                                Margin="0,0,8,0">
+                            <FontIcon Glyph="&#xE712;" FontSize="16"/>
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Rename" Click="RenameLight_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE8AC;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="Identify" Click="IdentifyLight_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE781;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+
                         <ToggleSwitch x:Name="LightToggle"
-                                      Grid.Column="2"
+                                      Grid.Column="3"
                                       Style="{StaticResource GradientToggleSwitchStyle}"
                                       VerticalAlignment="Center"
                                       IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"
@@ -164,6 +188,103 @@
                         <Grid>
                             <TextBlock Text="Warm" HorizontalAlignment="Left" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7"/>
                             <TextBlock Text="Cool" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Power-on Behavior Section -->
+                    <StackPanel Spacing="12"
+                                Visibility="{x:Bind ViewModel.HasPowerOnConfig, Mode=OneWay}">
+                        <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,0,12"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon x:Name="PowerOnIcon" Glyph="&#xE945;" FontSize="18"
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
+                            <TextBlock Text="Power-on Behavior" Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock Text="What this light does when power is restored"
+                                   Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.6"/>
+
+                        <RadioButtons x:Name="PowerOnPresetRadio"
+                                      SelectionChanged="PowerOnPreset_SelectionChanged">
+                            <RadioButton Content="Last state" Tag="LastOnState"/>
+                            <RadioButton Content="Full brightness" Tag="Safety"/>
+                            <RadioButton Content="Stay off" Tag="PowerFail"/>
+                            <RadioButton Content="Custom" Tag="Custom"/>
+                        </RadioButtons>
+
+                        <!-- Custom options (visible when Custom is selected) -->
+                        <StackPanel x:Name="CustomPowerOnPanel" Spacing="12"
+                                    Visibility="Collapsed">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Slider x:Name="PowerOnBrightnessSlider"
+                                        Grid.Column="0"
+                                        Minimum="1"
+                                        Maximum="100"
+                                        ValueChanged="PowerOnBrightness_ValueChanged"
+                                        VerticalAlignment="Center"/>
+
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Margin="16,0,0,0"
+                                           MinWidth="40"
+                                           TextAlignment="Right"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           Text="{x:Bind FormatPercent(ViewModel.PowerOnBrightness), Mode=OneWay}"/>
+                            </Grid>
+
+                            <Button Content="Use current light color"
+                                    Click="UseCurrentColorForPowerOn_Click"
+                                    Visibility="{x:Bind ViewModel.SupportsColor, Mode=OneWay}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- About Section -->
+                    <StackPanel Spacing="8"
+                                Visibility="{x:Bind HasDeviceInfo(ViewModel.ProductName), Mode=OneWay}">
+                        <Border Height="1" Background="{ThemeResource CardIconBackgroundBrush}" Margin="0,0,0,12"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE946;" FontSize="18"
+                                      Foreground="{ThemeResource CardIconForegroundBrush}"/>
+                            <TextBlock Text="About" Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Grid RowSpacing="4" ColumnSpacing="12" Padding="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Product"
+                                       Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{x:Bind ViewModel.ProductName, Mode=OneWay}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Model"
+                                       Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                       Text="{x:Bind ViewModel.ModelId, Mode=OneWay}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Firmware"
+                                       Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       Text="{x:Bind ViewModel.FirmwareVersion, Mode=OneWay}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"/>
                         </Grid>
                     </StackPanel>
 

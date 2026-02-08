@@ -226,7 +226,8 @@ public class HueBridgeService : IHueBridgeService
             SupportsColorTemperature = lightData.ColorTemperature != null,
             CurrentColor = currentColor,
             ColorTemperature = (int?)(lightData.ColorTemperature?.Mirek),
-            Archetype = MapLightArchetype(lightData.Metadata?.Archetype)
+            Archetype = MapLightArchetype(lightData.Metadata?.Archetype),
+            DeviceId = lightData.Owner?.Rid
         };
     }
 
@@ -609,7 +610,49 @@ public class HueBridgeService : IHueBridgeService
             if (light?.Data == null || light.Data.Count == 0)
                 return Result<LightModel>.Failure($"Light with ID {lightId} not found.");
 
-            return Result<LightModel>.Success(MapLightData(light.Data[0]));
+            var model = MapLightData(light.Data[0]);
+
+            // Enrich with device info if owner device is available
+            if (model.DeviceId.HasValue)
+            {
+                try
+                {
+                    var device = await _hueApi.Device.GetByIdAsync(model.DeviceId.Value);
+                    if (device?.Data?.Count > 0)
+                    {
+                        var deviceData = device.Data[0];
+                        model.ProductName = deviceData.ProductData?.ProductName;
+                        model.ModelId = deviceData.ProductData?.ModelId;
+                        model.FirmwareVersion = deviceData.ProductData?.SoftwareVersion;
+                    }
+                }
+                catch
+                {
+                    // Device info is optional, don't fail the whole operation
+                }
+            }
+
+            // Map power-on behavior
+            var lightData = light.Data[0];
+            if (lightData.PowerUp != null)
+            {
+                model.PowerOnPreset = lightData.PowerUp.Preset switch
+                {
+                    HueApi.Models.PowerUpPreset.safety => Models.PowerOnPreset.Safety,
+                    HueApi.Models.PowerUpPreset.powerfail => Models.PowerOnPreset.PowerFail,
+                    HueApi.Models.PowerUpPreset.last_on_state => Models.PowerOnPreset.LastOnState,
+                    HueApi.Models.PowerUpPreset.custom => Models.PowerOnPreset.Custom,
+                    _ => Models.PowerOnPreset.LastOnState
+                };
+
+                if (lightData.PowerUp.Dimming?.Brightness != null)
+                    model.PowerOnBrightness = lightData.PowerUp.Dimming.Brightness / 100.0;
+
+                if (lightData.PowerUp.Color?.Xy != null)
+                    model.PowerOnColor = new HueColor(lightData.PowerUp.Color.Xy.X, lightData.PowerUp.Color.Xy.Y);
+            }
+
+            return Result<LightModel>.Success(model);
         }
         catch (Exception ex)
         {
@@ -1053,6 +1096,125 @@ public class HueBridgeService : IHueBridgeService
         catch (Exception ex)
         {
             return Result.Failure($"Failed to delete zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> RenameLightAsync(Guid lightId, Guid deviceId, string newName)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            await _hueApi.Device.UpdateAsync(deviceId, new HueApi.Models.Requests.UpdateDevice
+            {
+                Metadata = new HueApi.Models.Metadata { Name = newName }
+            });
+
+            // Invalidate caches since light names are cached in rooms/zones
+            _roomsCache = null;
+            _zonesCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to rename light: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> IdentifyLightAsync(Guid lightId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            await _hueApi.Light.UpdateAsync(lightId, new HueApi.Models.Requests.UpdateLight
+            {
+                Identify = new HueApi.Models.Requests.Identify()
+            });
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to identify light: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> SetPowerOnPresetAsync(Guid lightId, Models.PowerOnPreset preset)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var powerUp = new HueApi.Models.PowerUp
+            {
+                Preset = preset switch
+                {
+                    Models.PowerOnPreset.Safety => HueApi.Models.PowerUpPreset.safety,
+                    Models.PowerOnPreset.PowerFail => HueApi.Models.PowerUpPreset.powerfail,
+                    Models.PowerOnPreset.LastOnState => HueApi.Models.PowerUpPreset.last_on_state,
+                    Models.PowerOnPreset.Custom => HueApi.Models.PowerUpPreset.custom,
+                    _ => HueApi.Models.PowerUpPreset.last_on_state
+                }
+            };
+
+            await _hueApi.Light.UpdateAsync(lightId, new HueApi.Models.Requests.UpdateLight
+            {
+                PowerUp = powerUp
+            });
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to set power-on preset: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> SetPowerOnCustomAsync(Guid lightId, double brightness, HueColor? color)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var powerUp = new HueApi.Models.PowerUp
+            {
+                Preset = HueApi.Models.PowerUpPreset.custom,
+                On = new HueApi.Models.PowerUpOn
+                {
+                    Mode = HueApi.Models.PowerUpOnMode.on,
+                    On = new HueApi.Models.On { IsOn = true }
+                },
+                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100.0 }
+            };
+
+            if (color != null)
+            {
+                powerUp.Color = new HueApi.Models.Color
+                {
+                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                };
+            }
+
+            await _hueApi.Light.UpdateAsync(lightId, new HueApi.Models.Requests.UpdateLight
+            {
+                PowerUp = powerUp
+            });
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to set custom power-on: {ex.Message}");
         }
     }
 
