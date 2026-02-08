@@ -929,6 +929,8 @@ public sealed partial class RoomDetailPage : Page
         ViewModel.CustomIconChanged -= OnCustomIconChanged;
 
         _brightnessDebounceTimer?.Stop();
+
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private void UpdateWrapGridItemSize(GridView grid, double targetWidth, double? fixedHeight = null)

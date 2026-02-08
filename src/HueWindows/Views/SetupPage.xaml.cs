@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace HueWindows.Views;
 
@@ -20,6 +21,12 @@ public sealed partial class SetupPage : Page
         ViewModel.SetupCompleted += OnSetupCompleted;
 
         this.InitializeComponent();
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        ViewModel.SetupCompleted -= OnSetupCompleted;
     }
 
     private void OnSetupCompleted(object? sender, EventArgs e)

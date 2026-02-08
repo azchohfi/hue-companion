@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using HueWindows.Core.ViewModels;
 using HueWindows.Core.Models;
@@ -18,6 +19,12 @@ public sealed partial class SceneLibraryPage : Page
     {
         this.InitializeComponent();
         ViewModel = App.Services.GetRequiredService<SceneLibraryViewModel>();
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)

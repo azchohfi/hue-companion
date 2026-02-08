@@ -41,6 +41,7 @@ public sealed partial class SettingsPage : Page
         ViewModel.RepairBridgeRequested -= OnRepairBridgeRequested;
         ViewModel.BridgeSetupRequested -= OnBridgeSetupRequested;
         ViewModel.HotkeySettingsChanged -= OnHotkeySettingsChanged;
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private void Page_Loaded(object sender, RoutedEventArgs e)

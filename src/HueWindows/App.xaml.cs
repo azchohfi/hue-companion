@@ -104,31 +104,39 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Parse command-line arguments
-        CommandLineArgs = CommandLineParser.Parse(Environment.GetCommandLineArgs());
-
-        if (!CommandLineArgs.IsValid)
+        try
         {
-            System.Diagnostics.Debug.WriteLine($"[App] Invalid command-line args: {CommandLineArgs.ErrorMessage}");
+            // Parse command-line arguments
+            CommandLineArgs = CommandLineParser.Parse(Environment.GetCommandLineArgs());
+
+            if (!CommandLineArgs.IsValid)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Invalid command-line args: {CommandLineArgs.ErrorMessage}");
+            }
+
+            // Load settings
+            var settingsService = Services.GetRequiredService<ISettingsService>();
+            await settingsService.LoadAsync();
+
+            // Create and activate main window
+            MainWindow = new MainWindow();
+
+            // Check if we should start minimized
+            var startMinimized = settingsService.Settings.StartMinimized && settingsService.Settings.MinimizeToTray;
+
+            if (!startMinimized)
+            {
+                MainWindow.Activate();
+            }
+
+            // Initialize dispatcher helper for UI thread marshaling
+            DispatcherHelper.Initialize(MainWindow.DispatcherQueue);
         }
-
-        // Load settings
-        var settingsService = Services.GetRequiredService<ISettingsService>();
-        await settingsService.LoadAsync();
-
-        // Create and activate main window
-        MainWindow = new MainWindow();
-
-        // Check if we should start minimized
-        var startMinimized = settingsService.Settings.StartMinimized && settingsService.Settings.MinimizeToTray;
-
-        if (!startMinimized)
+        catch (Exception ex)
         {
-            MainWindow.Activate();
+            LogCrash("OnLaunched", ex);
+            throw;
         }
-
-        // Initialize dispatcher helper for UI thread marshaling
-        DispatcherHelper.Initialize(MainWindow.DispatcherQueue);
     }
 
     /// <summary>

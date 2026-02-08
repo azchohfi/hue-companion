@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 
 namespace HueWindows.Core.ViewModels;
 
@@ -125,7 +126,7 @@ public partial class LightDetailViewModel : ObservableObject
     partial void OnIsOnChanged(bool value)
     {
         if (_bridgeService == null) return;
-        _ = _bridgeService.SetLightOnAsync(_lightId, value);
+        _bridgeService.SetLightOnAsync(_lightId, value).FireAndForget();
     }
 
     [RelayCommand]

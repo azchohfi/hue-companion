@@ -205,6 +205,7 @@ public class TimelineRenderer : IDisposable
         if (!_disposed)
         {
             _cache.Dispose();
+            _rulerRenderer.Dispose();
             _playheadRenderer.Dispose();
             _disposed = true;
         }

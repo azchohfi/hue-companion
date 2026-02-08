@@ -8,7 +8,7 @@ namespace HueWindows.Core.ViewModels;
 /// <summary>
 /// ViewModel for the Scene Library page showing animated scenes by category.
 /// </summary>
-public partial class SceneLibraryViewModel : ObservableObject
+public partial class SceneLibraryViewModel : ObservableObject, IDisposable
 {
     private readonly IAnimationService _animationService;
     private readonly IMultiBridgeService _multiBridgeService;
@@ -180,5 +180,10 @@ public partial class SceneLibraryViewModel : ObservableObject
     partial void OnSelectedRoomChanged(RoomModel? value)
     {
         UpdateAnimationState();
+    }
+
+    public void Dispose()
+    {
+        _animationService.RoomAnimationChanged -= OnRoomAnimationChanged;
     }
 }

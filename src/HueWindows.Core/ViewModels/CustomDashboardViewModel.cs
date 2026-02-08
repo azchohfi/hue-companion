@@ -10,7 +10,7 @@ namespace HueWindows.Core.ViewModels;
 /// <summary>
 /// ViewModel for the custom dashboard page showing pinned items.
 /// </summary>
-public partial class CustomDashboardViewModel : ObservableObject
+public partial class CustomDashboardViewModel : ObservableObject, IDisposable
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IPinnedItemsService _pinnedItemsService;
@@ -164,7 +164,19 @@ public partial class CustomDashboardViewModel : ObservableObject
 
     private async void OnPinnedItemsChanged(object? sender, EventArgs e)
     {
-        // Reload when pinned items change
-        await LoadPinnedItemsAsync();
+        try
+        {
+            await LoadPinnedItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CustomDashboardViewModel] OnPinnedItemsChanged failed: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        _multiBridgeService.LightStateChanged -= OnLightStateChanged;
+        _pinnedItemsService.PinnedItemsChanged -= OnPinnedItemsChanged;
     }
 }

@@ -33,6 +33,7 @@ public sealed partial class ScenesPage : Page
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
         ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)

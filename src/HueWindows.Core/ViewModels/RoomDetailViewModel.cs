@@ -11,7 +11,7 @@ namespace HueWindows.Core.ViewModels;
 /// ViewModel for the room detail page showing lights and scenes.
 /// Works for both rooms and zones.
 /// </summary>
-public partial class RoomDetailViewModel : ObservableObject
+public partial class RoomDetailViewModel : ObservableObject, IDisposable
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IAnimationService _animationService;
@@ -302,9 +302,9 @@ public partial class RoomDetailViewModel : ObservableObject
         if (_bridgeService == null) return;
 
         if (_groupType == LightGroupType.Room)
-            _ = _bridgeService.SetRoomOnAsync(_groupId, value);
+            _bridgeService.SetRoomOnAsync(_groupId, value).FireAndForget();
         else
-            _ = _bridgeService.SetZoneOnAsync(_groupId, value);
+            _bridgeService.SetZoneOnAsync(_groupId, value).FireAndForget();
     }
 
     partial void OnBrightnessChanged(double value)
@@ -387,20 +387,27 @@ public partial class RoomDetailViewModel : ObservableObject
 
     private async void OnSceneActivated(object? sender, Guid sceneId)
     {
-        // Update active scene visual state
-        foreach (var scene in Scenes)
+        try
         {
-            scene.IsActive = scene.SceneId == sceneId;
-        }
+            // Update active scene visual state
+            foreach (var scene in Scenes)
+            {
+                scene.IsActive = scene.SceneId == sceneId;
+            }
 
-        if (sender is SceneItemViewModel activeScene)
+            if (sender is SceneItemViewModel activeScene)
+            {
+                ActiveScene = activeScene;
+            }
+
+            // Refresh light colors after scene activation (brief delay for bridge to update)
+            await Task.Delay(500);
+            await RefreshLightColorsAsync();
+        }
+        catch (Exception ex)
         {
-            ActiveScene = activeScene;
+            System.Diagnostics.Debug.WriteLine($"[RoomDetailViewModel] OnSceneActivated failed: {ex.Message}");
         }
-
-        // Refresh light colors after scene activation (brief delay for bridge to update)
-        await Task.Delay(500);
-        await RefreshLightColorsAsync();
     }
 
     /// <summary>
@@ -503,6 +510,11 @@ public partial class RoomDetailViewModel : ObservableObject
             ErrorMessage = result.Error ?? "Failed to save scene";
         }
     }
+
+    public void Dispose()
+    {
+        _animationService.RoomAnimationChanged -= OnRoomAnimationChanged;
+    }
 }
 
 /// <summary>
@@ -571,7 +583,7 @@ public partial class LightItemViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IconOpacity));
         OnPropertyChanged(nameof(CurrentColorRgb));
-        _ = _bridgeService.SetLightOnAsync(LightId, value);
+        _bridgeService.SetLightOnAsync(LightId, value).FireAndForget();
     }
 
     partial void OnCurrentColorChanged(HueColor? value)

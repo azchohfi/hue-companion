@@ -7,6 +7,7 @@ using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
 using HueWindows.Utilities;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace HueWindows.Views;
 
@@ -32,6 +33,13 @@ public sealed partial class DashboardPage : Page
     {
         _entranceAnimationIndex = 0; // Reset stagger index on page load
         await ViewModel.LoadRoomsAsync();
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        ViewModel.RoomSelected -= OnRoomSelected;
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private void OnRoomSelected(object? sender, (Guid Id, LightGroupType Type, bool IsOn, List<(byte R, byte G, byte B)> Colors) args)

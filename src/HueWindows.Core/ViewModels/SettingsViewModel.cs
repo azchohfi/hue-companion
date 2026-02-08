@@ -2,13 +2,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 
 namespace HueWindows.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for the settings page.
 /// </summary>
-public partial class SettingsViewModel : ObservableObject
+public partial class SettingsViewModel : ObservableObject, IDisposable
 {
     private readonly ISettingsService _settingsService;
     private readonly IMultiBridgeService _multiBridgeService;
@@ -196,7 +197,7 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnSelectedThemeChanged(AppTheme value)
     {
         _settingsService.Settings.Theme = value;
-        _ = _settingsService.SaveAsync();
+        _settingsService.SaveAsync().FireAndForget();
     }
 
     partial void OnIsHotkeyEnabledChanged(bool value)
@@ -237,13 +238,13 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnMinimizeToTrayChanged(bool value)
     {
         _settingsService.Settings.MinimizeToTray = value;
-        _ = _settingsService.SaveAsync();
+        _settingsService.SaveAsync().FireAndForget();
     }
 
     partial void OnStartMinimizedChanged(bool value)
     {
         _settingsService.Settings.StartMinimized = value;
-        _ = _settingsService.SaveAsync();
+        _settingsService.SaveAsync().FireAndForget();
     }
 
     private void SaveAndApplyHotkeySettings()
@@ -258,7 +259,7 @@ public partial class SettingsViewModel : ObservableObject
 
         var settings = BuildCurrentHotkeySettings();
         _settingsService.Settings.Hotkey = settings;
-        _ = _settingsService.SaveAsync();
+        _settingsService.SaveAsync().FireAndForget();
 
         HotkeySettingsChanged?.Invoke(this, settings);
         UpdateHotkeyStatus();
@@ -334,5 +335,11 @@ public partial class SettingsViewModel : ObservableObject
     private void OnBridgeConnectionChanged(object? sender, BridgeConnectionEventArgs e)
     {
         UpdateBridgeCounts();
+    }
+
+    public void Dispose()
+    {
+        _multiBridgeService.BridgeConnectionChanged -= OnBridgeConnectionChanged;
+        (BridgeManagement as IDisposable)?.Dispose();
     }
 }

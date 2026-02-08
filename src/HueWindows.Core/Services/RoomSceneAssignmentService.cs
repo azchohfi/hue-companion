@@ -9,41 +9,59 @@ namespace HueWindows.Core.Services;
 public class RoomSceneAssignmentService : IRoomSceneAssignmentService
 {
     private readonly string _filePath;
+    private readonly SemaphoreSlim _lock = new(1, 1);
     private Dictionary<Guid, List<string>> _assignments = new();
     private bool _loaded;
 
-    public RoomSceneAssignmentService()
+    public RoomSceneAssignmentService(string? filePath = null)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var folder = Path.Combine(appData, "HueWindows");
-        Directory.CreateDirectory(folder);
-        _filePath = Path.Combine(folder, "room-scene-assignments.json");
+        if (filePath != null)
+        {
+            _filePath = filePath;
+        }
+        else
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var folder = Path.Combine(appData, "HueWindows");
+            Directory.CreateDirectory(folder);
+            _filePath = Path.Combine(folder, "room-scene-assignments.json");
+        }
     }
 
     private async Task EnsureLoadedAsync()
     {
         if (_loaded) return;
 
-        if (File.Exists(_filePath))
+        await _lock.WaitAsync();
+        try
         {
-            try
+            if (_loaded) return; // Double-check after acquiring lock
+
+            if (File.Exists(_filePath))
             {
-                var json = await File.ReadAllTextAsync(_filePath);
-                var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
-                if (data != null)
+                try
                 {
-                    _assignments = data.ToDictionary(
-                        kvp => Guid.Parse(kvp.Key),
-                        kvp => kvp.Value
-                    );
+                    var json = await File.ReadAllTextAsync(_filePath);
+                    var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
+                    if (data != null)
+                    {
+                        _assignments = data.ToDictionary(
+                            kvp => Guid.Parse(kvp.Key),
+                            kvp => kvp.Value
+                        );
+                    }
+                }
+                catch
+                {
+                    _assignments = new();
                 }
             }
-            catch
-            {
-                _assignments = new();
-            }
+            _loaded = true;
         }
-        _loaded = true;
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     private async Task SaveAsync()
@@ -60,24 +78,39 @@ public class RoomSceneAssignmentService : IRoomSceneAssignmentService
     public async Task<IReadOnlyList<string>> GetAssignedScenesAsync(Guid roomId)
     {
         await EnsureLoadedAsync();
-        return _assignments.TryGetValue(roomId, out var scenes) ? scenes : Array.Empty<string>();
+        await _lock.WaitAsync();
+        try
+        {
+            return _assignments.TryGetValue(roomId, out var scenes) ? scenes.ToList() : Array.Empty<string>();
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     /// <inheritdoc/>
     public async Task AssignSceneToRoomAsync(Guid roomId, string sceneId)
     {
         await EnsureLoadedAsync();
-
-        if (!_assignments.TryGetValue(roomId, out var scenes))
+        await _lock.WaitAsync();
+        try
         {
-            scenes = new List<string>();
-            _assignments[roomId] = scenes;
+            if (!_assignments.TryGetValue(roomId, out var scenes))
+            {
+                scenes = new List<string>();
+                _assignments[roomId] = scenes;
+            }
+
+            if (!scenes.Contains(sceneId))
+            {
+                scenes.Add(sceneId);
+                await SaveAsync();
+            }
         }
-
-        if (!scenes.Contains(sceneId))
+        finally
         {
-            scenes.Add(sceneId);
-            await SaveAsync();
+            _lock.Release();
         }
     }
 
@@ -85,11 +118,18 @@ public class RoomSceneAssignmentService : IRoomSceneAssignmentService
     public async Task RemoveSceneFromRoomAsync(Guid roomId, string sceneId)
     {
         await EnsureLoadedAsync();
-
-        if (_assignments.TryGetValue(roomId, out var scenes))
+        await _lock.WaitAsync();
+        try
         {
-            scenes.Remove(sceneId);
-            await SaveAsync();
+            if (_assignments.TryGetValue(roomId, out var scenes))
+            {
+                scenes.Remove(sceneId);
+                await SaveAsync();
+            }
+        }
+        finally
+        {
+            _lock.Release();
         }
     }
 
@@ -97,6 +137,14 @@ public class RoomSceneAssignmentService : IRoomSceneAssignmentService
     public async Task<IReadOnlyDictionary<Guid, List<string>>> GetAllAssignmentsAsync()
     {
         await EnsureLoadedAsync();
-        return _assignments;
+        await _lock.WaitAsync();
+        try
+        {
+            return _assignments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 }

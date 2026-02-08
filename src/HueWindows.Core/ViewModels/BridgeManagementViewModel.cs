@@ -9,7 +9,7 @@ namespace HueWindows.Core.ViewModels;
 /// <summary>
 /// ViewModel for managing multiple Hue bridges.
 /// </summary>
-public partial class BridgeManagementViewModel : ObservableObject
+public partial class BridgeManagementViewModel : ObservableObject, IDisposable
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IBridgeDiscoveryService _discoveryService;
@@ -128,7 +128,14 @@ public partial class BridgeManagementViewModel : ObservableObject
 
     private async void OnDiscoveredBridgeRegisterRequested(object? sender, DiscoveredBridgeViewModel vm)
     {
-        await RegisterBridgeAsync(vm);
+        try
+        {
+            await RegisterBridgeAsync(vm);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BridgeManagementViewModel] OnDiscoveredBridgeRegisterRequested failed: {ex.Message}");
+        }
     }
 
     public async Task<Result> RegisterBridgeAsync(DiscoveredBridgeViewModel vm)
@@ -189,27 +196,48 @@ public partial class BridgeManagementViewModel : ObservableObject
 
     private async void OnBridgeRemoveRequested(object? sender, string bridgeId)
     {
-        await _multiBridgeService.RemoveBridgeAsync(bridgeId);
-        LoadBridges();
-        StatusMessage = "Bridge removed.";
+        try
+        {
+            await _multiBridgeService.RemoveBridgeAsync(bridgeId);
+            LoadBridges();
+            StatusMessage = "Bridge removed.";
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BridgeManagementViewModel] OnBridgeRemoveRequested failed: {ex.Message}");
+        }
     }
 
     private async void OnBridgeRenameRequested(object? sender, (string BridgeId, string NewName) args)
     {
-        await _multiBridgeService.UpdateBridgeNameAsync(args.BridgeId, args.NewName);
-        LoadBridges();
+        try
+        {
+            await _multiBridgeService.UpdateBridgeNameAsync(args.BridgeId, args.NewName);
+            LoadBridges();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BridgeManagementViewModel] OnBridgeRenameRequested failed: {ex.Message}");
+        }
     }
 
     private async void OnBridgeReconnectRequested(object? sender, string bridgeId)
     {
-        var bridge = Bridges.FirstOrDefault(b => b.BridgeId == bridgeId);
-        if (bridge != null)
+        try
         {
-            bridge.IsConnecting = true;
-            bridge.StatusMessage = "Reconnecting...";
-        }
+            var bridge = Bridges.FirstOrDefault(b => b.BridgeId == bridgeId);
+            if (bridge != null)
+            {
+                bridge.IsConnecting = true;
+                bridge.StatusMessage = "Reconnecting...";
+            }
 
-        await _multiBridgeService.ConnectBridgeAsync(bridgeId);
+            await _multiBridgeService.ConnectBridgeAsync(bridgeId);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BridgeManagementViewModel] OnBridgeReconnectRequested failed: {ex.Message}");
+        }
     }
 
     private void OnBridgeConnectionChanged(object? sender, BridgeConnectionEventArgs e)
@@ -229,6 +257,11 @@ public partial class BridgeManagementViewModel : ObservableObject
                 bridge.StatusMessage = e.ErrorMessage ?? "Disconnected";
             }
         }
+    }
+
+    public void Dispose()
+    {
+        _multiBridgeService.BridgeConnectionChanged -= OnBridgeConnectionChanged;
     }
 }
 

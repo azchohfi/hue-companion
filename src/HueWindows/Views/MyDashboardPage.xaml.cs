@@ -5,6 +5,7 @@ using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace HueWindows.Views;
 
@@ -21,6 +22,13 @@ public sealed partial class MyDashboardPage : Page
         ViewModel.CardSelected += OnCardSelected;
 
         this.InitializeComponent();
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        ViewModel.CardSelected -= OnCardSelected;
+        (ViewModel as IDisposable)?.Dispose();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)

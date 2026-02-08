@@ -84,10 +84,13 @@ public static class ColorConverter
     /// <summary>
     /// Converts XY color to RGB.
     /// </summary>
-    private static (double R, double G, double B) XyToRgb(HueColor xy, double brightness)
+    internal static (double R, double G, double B) XyToRgb(HueColor xy, double brightness)
     {
         var x = xy.X;
         var y = xy.Y;
+
+        if (y <= 0) return (1.0, 1.0, 1.0); // White fallback for degenerate input
+
         var z = 1.0 - x - y;
 
         var Y = brightness;

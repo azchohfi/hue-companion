@@ -8,8 +8,9 @@ namespace HueWindows.Views.Rendering;
 /// <summary>
 /// Renders the time ruler with tick marks and time labels.
 /// </summary>
-public class TimeRulerRenderer
+public class TimeRulerRenderer : IDisposable
 {
+    private bool _disposed;
     private readonly CanvasTextFormat _labelFormat;
 
     /// <summary>
@@ -63,6 +64,15 @@ public class TimeRulerRenderer
                     _labelFormat
                 );
             }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _labelFormat.Dispose();
+            _disposed = true;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace HueWindows.Core.ViewModels;
 /// <summary>
 /// ViewModel for the main Scenes page showing both static and animated scenes.
 /// </summary>
-public partial class ScenesViewModel : ObservableObject
+public partial class ScenesViewModel : ObservableObject, IDisposable
 {
     private readonly IMultiBridgeService _multiBridgeService;
     private readonly IAnimationService _animationService;
@@ -241,5 +241,10 @@ public partial class ScenesViewModel : ObservableObject
         {
             ErrorMessage = result.Error ?? "Failed to save scene";
         }
+    }
+
+    public void Dispose()
+    {
+        _animationService.RoomAnimationChanged -= OnRoomAnimationChanged;
     }
 }

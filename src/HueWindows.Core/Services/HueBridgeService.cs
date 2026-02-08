@@ -16,6 +16,7 @@ public class HueBridgeService : IHueBridgeService
     private CancellationTokenSource? _eventStreamCts;
     private string? _lastIpAddress;
     private string? _lastAppKey;
+    private readonly SemaphoreSlim _connectionSemaphore = new(1, 1);
 
     // Short-lived cache for GetRoomAsync/GetZoneAsync to avoid refetching all rooms/zones
     private IReadOnlyList<RoomModel>? _roomsCache;
@@ -79,33 +80,41 @@ public class HueBridgeService : IHueBridgeService
     /// </summary>
     private async Task<bool> EnsureConnectedAsync()
     {
-        if (_hueApi != null)
+        await _connectionSemaphore.WaitAsync();
+        try
         {
-            try
+            if (_hueApi != null)
             {
-                // Quick validation - if this throws, we need to reconnect
-                await _hueApi.GetBridgeAsync();
-                return true;
+                try
+                {
+                    // Quick validation - if this throws, we need to reconnect
+                    await _hueApi.GetBridgeAsync();
+                    return true;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // API was disposed, need to reconnect
+                    _hueApi = null;
+                }
+                catch (HttpRequestException)
+                {
+                    // Network error, might need to reconnect
+                    _hueApi = null;
+                }
             }
-            catch (ObjectDisposedException)
-            {
-                // API was disposed, need to reconnect
-                _hueApi = null;
-            }
-            catch (HttpRequestException)
-            {
-                // Network error, might need to reconnect
-                _hueApi = null;
-            }
-        }
 
-        // Try to reconnect if we have credentials
-        if (_lastIpAddress != null && _lastAppKey != null)
+            // Try to reconnect if we have credentials
+            if (_lastIpAddress != null && _lastAppKey != null)
+            {
+                return await ConnectAsync(_lastIpAddress, _lastAppKey);
+            }
+
+            return false;
+        }
+        finally
         {
-            return await ConnectAsync(_lastIpAddress, _lastAppKey);
+            _connectionSemaphore.Release();
         }
-
-        return false;
     }
 
     /// <inheritdoc/>
@@ -246,17 +255,23 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var room = await _hueApi.Room.GetByIdAsync(roomId);
-        if (room?.Data == null || room.Data.Count == 0) return;
-
-        // Get the grouped_light service for this room
-        var groupedLightId = room.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            var room = await _hueApi.Room.GetByIdAsync(roomId);
+            if (room?.Data == null || room.Data.Count == 0) return;
+
+            var groupedLightId = room.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
+            {
+                var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetRoomOnAsync failed: {ex.Message}");
         }
     }
 
@@ -265,20 +280,27 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var room = await _hueApi.Room.GetByIdAsync(roomId);
-        if (room?.Data == null || room.Data.Count == 0) return;
-
-        var groupedLightId = room.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight
+            var room = await _hueApi.Room.GetByIdAsync(roomId);
+            if (room?.Data == null || room.Data.Count == 0) return;
+
+            var groupedLightId = room.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
             {
-                On = new HueApi.Models.On { IsOn = brightness > 0 },
-                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
-            };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+                var command = new UpdateGroupedLight
+                {
+                    On = new HueApi.Models.On { IsOn = brightness > 0 },
+                    Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
+                };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetRoomBrightnessAsync failed: {ex.Message}");
         }
     }
 
@@ -287,22 +309,29 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var room = await _hueApi.Room.GetByIdAsync(roomId);
-        if (room?.Data == null || room.Data.Count == 0) return;
-
-        var groupedLightId = room.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight
+            var room = await _hueApi.Room.GetByIdAsync(roomId);
+            if (room?.Data == null || room.Data.Count == 0) return;
+
+            var groupedLightId = room.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
             {
-                Color = new HueApi.Models.Color
+                var command = new UpdateGroupedLight
                 {
-                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
-                }
-            };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+                    Color = new HueApi.Models.Color
+                    {
+                        Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                    }
+                };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetRoomColorAsync failed: {ex.Message}");
         }
     }
 
@@ -408,17 +437,23 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
-        if (zone?.Data == null || zone.Data.Count == 0) return;
-
-        // Get the grouped_light service for this zone
-        var groupedLightId = zone.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+            if (zone?.Data == null || zone.Data.Count == 0) return;
+
+            var groupedLightId = zone.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
+            {
+                var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetZoneOnAsync failed: {ex.Message}");
         }
     }
 
@@ -427,20 +462,27 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
-        if (zone?.Data == null || zone.Data.Count == 0) return;
-
-        var groupedLightId = zone.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight
+            var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+            if (zone?.Data == null || zone.Data.Count == 0) return;
+
+            var groupedLightId = zone.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
             {
-                On = new HueApi.Models.On { IsOn = brightness > 0 },
-                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
-            };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+                var command = new UpdateGroupedLight
+                {
+                    On = new HueApi.Models.On { IsOn = brightness > 0 },
+                    Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
+                };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetZoneBrightnessAsync failed: {ex.Message}");
         }
     }
 
@@ -449,22 +491,29 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
-        if (zone?.Data == null || zone.Data.Count == 0) return;
-
-        var groupedLightId = zone.Data[0].Services?
-            .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
-
-        if (groupedLightId.HasValue)
+        try
         {
-            var command = new UpdateGroupedLight
+            var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+            if (zone?.Data == null || zone.Data.Count == 0) return;
+
+            var groupedLightId = zone.Data[0].Services?
+                .FirstOrDefault(s => s.Rtype == "grouped_light")?.Rid;
+
+            if (groupedLightId.HasValue)
             {
-                Color = new HueApi.Models.Color
+                var command = new UpdateGroupedLight
                 {
-                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
-                }
-            };
-            await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+                    Color = new HueApi.Models.Color
+                    {
+                        Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                    }
+                };
+                await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetZoneColorAsync failed: {ex.Message}");
         }
     }
 
@@ -573,8 +622,15 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var command = new UpdateLight { On = new HueApi.Models.On { IsOn = isOn } };
-        await _hueApi.Light.UpdateAsync(lightId, command);
+        try
+        {
+            var command = new UpdateLight { On = new HueApi.Models.On { IsOn = isOn } };
+            await _hueApi.Light.UpdateAsync(lightId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetLightOnAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -582,12 +638,19 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var command = new UpdateLight
+        try
         {
-            On = new HueApi.Models.On { IsOn = brightness > 0 },
-            Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
-        };
-        await _hueApi.Light.UpdateAsync(lightId, command);
+            var command = new UpdateLight
+            {
+                On = new HueApi.Models.On { IsOn = brightness > 0 },
+                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
+            };
+            await _hueApi.Light.UpdateAsync(lightId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetLightBrightnessAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -595,14 +658,21 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var command = new UpdateLight
+        try
         {
-            Color = new HueApi.Models.Color
+            var command = new UpdateLight
             {
-                Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
-            }
-        };
-        await _hueApi.Light.UpdateAsync(lightId, command);
+                Color = new HueApi.Models.Color
+                {
+                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                }
+            };
+            await _hueApi.Light.UpdateAsync(lightId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetLightColorAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -610,16 +680,23 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var command = new UpdateLight
+        try
         {
-            On = new HueApi.Models.On { IsOn = brightness > 0 },
-            Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 },
-            Color = new HueApi.Models.Color
+            var command = new UpdateLight
             {
-                Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
-            }
-        };
-        await _hueApi.Light.UpdateAsync(lightId, command);
+                On = new HueApi.Models.On { IsOn = brightness > 0 },
+                Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 },
+                Color = new HueApi.Models.Color
+                {
+                    Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
+                }
+            };
+            await _hueApi.Light.UpdateAsync(lightId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetLightColorAndBrightnessAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -627,11 +704,18 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        var command = new UpdateLight
+        try
         {
-            ColorTemperature = new HueApi.Models.ColorTemperature { Mirek = mirek }
-        };
-        await _hueApi.Light.UpdateAsync(lightId, command);
+            var command = new UpdateLight
+            {
+                ColorTemperature = new HueApi.Models.ColorTemperature { Mirek = mirek }
+            };
+            await _hueApi.Light.UpdateAsync(lightId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] SetLightTemperatureAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -639,40 +723,45 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        // Map string effect names to HueApi Effect enum
-        var effectEnum = effect.ToLowerInvariant() switch
+        try
         {
-            "fire" => Effect.fire,
-            "candle" => Effect.candle,
-            "sparkle" => Effect.sparkle,
-            "glisten" => Effect.glisten,
-            "opal" => Effect.opal,
-            "prism" => Effect.prism,
-            "underwater" => Effect.underwater,
-            "cosmos" => Effect.cosmos,
-            "sunbeam" => Effect.sunbeam,
-            "enchant" => Effect.enchant,
-            "none" => Effect.no_effect,
-            _ => Effect.no_effect
-        };
-
-        var command = new UpdateLight
-        {
-            Effects = new HueApi.Models.Effects { Effect = effectEnum }
-        };
-
-        // Add brightness if specified
-        if (brightness.HasValue)
-        {
-            command.Dimming = new HueApi.Models.Dimming
+            // Map string effect names to HueApi Effect enum
+            var effectEnum = effect.ToLowerInvariant() switch
             {
-                Brightness = brightness.Value * 100 // API expects 0-100
+                "fire" => Effect.fire,
+                "candle" => Effect.candle,
+                "sparkle" => Effect.sparkle,
+                "glisten" => Effect.glisten,
+                "opal" => Effect.opal,
+                "prism" => Effect.prism,
+                "underwater" => Effect.underwater,
+                "cosmos" => Effect.cosmos,
+                "sunbeam" => Effect.sunbeam,
+                "enchant" => Effect.enchant,
+                "none" => Effect.no_effect,
+                _ => Effect.no_effect
             };
+
+            var command = new UpdateLight
+            {
+                Effects = new HueApi.Models.Effects { Effect = effectEnum }
+            };
+
+            // Add brightness if specified
+            if (brightness.HasValue)
+            {
+                command.Dimming = new HueApi.Models.Dimming
+                {
+                    Brightness = brightness.Value * 100 // API expects 0-100
+                };
+            }
+
+            await _hueApi.Light.UpdateAsync(lightId, command);
         }
-
-        // Note: Speed may require EffectsV2 API - check HueApi support for future enhancement
-
-        await _hueApi.Light.UpdateAsync(lightId, command);
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] ApplyEffectAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -716,12 +805,18 @@ public class HueBridgeService : IHueBridgeService
     {
         if (_hueApi == null) return;
 
-        // Recall the scene to activate it
-        var command = new UpdateScene
+        try
         {
-            Recall = new Recall { Action = SceneRecallAction.active }
-        };
-        await _hueApi.Scene.UpdateAsync(sceneId, command);
+            var command = new UpdateScene
+            {
+                Recall = new Recall { Action = SceneRecallAction.active }
+            };
+            await _hueApi.Scene.UpdateAsync(sceneId, command);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HueBridgeService] ActivateSceneAsync failed: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
