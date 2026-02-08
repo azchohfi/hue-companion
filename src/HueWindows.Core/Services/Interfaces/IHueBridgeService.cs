@@ -71,6 +71,23 @@ public interface IHueBridgeService
     /// <param name="color">The color to set.</param>
     Task SetRoomColorAsync(Guid roomId, HueColor color);
 
+    // Room CRUD
+
+    /// <summary>
+    /// Creates a new room on the bridge.
+    /// </summary>
+    Task<Result<Guid>> CreateRoomAsync(string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Updates a room's name and archetype.
+    /// </summary>
+    Task<Result> UpdateRoomAsync(Guid roomId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Deletes a room from the bridge.
+    /// </summary>
+    Task<Result> DeleteRoomAsync(Guid roomId);
+
     // Zone operations
 
     /// <summary>
@@ -101,6 +118,23 @@ public interface IHueBridgeService
     /// <param name="zoneId">The zone ID.</param>
     /// <param name="color">The color to set.</param>
     Task SetZoneColorAsync(Guid zoneId, HueColor color);
+
+    // Zone CRUD
+
+    /// <summary>
+    /// Creates a new zone on the bridge.
+    /// </summary>
+    Task<Result<Guid>> CreateZoneAsync(string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Updates a zone's name and archetype.
+    /// </summary>
+    Task<Result> UpdateZoneAsync(Guid zoneId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Deletes a zone from the bridge.
+    /// </summary>
+    Task<Result> DeleteZoneAsync(Guid zoneId);
 
     /// <summary>
     /// Gets all scenes for a zone.

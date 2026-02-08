@@ -22,6 +22,7 @@ public class MultiBridgeService : IMultiBridgeService, IDisposable
 
     public event EventHandler<BridgeConnectionEventArgs>? BridgeConnectionChanged;
     public event EventHandler<MultiBridgeLightStateChangedEventArgs>? LightStateChanged;
+    public event EventHandler? RoomsOrZonesChanged;
 
     public MultiBridgeService(ISettingsService settingsService)
     {
@@ -281,6 +282,72 @@ public class MultiBridgeService : IMultiBridgeService, IDisposable
             }
         }
 
+        return result;
+    }
+
+    public async Task<Result<Guid>> CreateRoomAsync(string bridgeId, string name, RoomArchetype archetype)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result<Guid>.Failure("Bridge not connected.");
+
+        var result = await service.CreateRoomAsync(name, archetype);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> UpdateRoomAsync(string bridgeId, Guid roomId, string name, RoomArchetype archetype)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.UpdateRoomAsync(roomId, name, archetype);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> DeleteRoomAsync(string bridgeId, Guid roomId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.DeleteRoomAsync(roomId);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result<Guid>> CreateZoneAsync(string bridgeId, string name, RoomArchetype archetype)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result<Guid>.Failure("Bridge not connected.");
+
+        var result = await service.CreateZoneAsync(name, archetype);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> UpdateZoneAsync(string bridgeId, Guid zoneId, string name, RoomArchetype archetype)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.UpdateZoneAsync(zoneId, name, archetype);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> DeleteZoneAsync(string bridgeId, Guid zoneId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.DeleteZoneAsync(zoneId);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
         return result;
     }
 

@@ -466,6 +466,69 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Renames the current room/zone.
+    /// </summary>
+    public async Task<Result> RenameAsync(string newName)
+    {
+        if (_bridgeId == null)
+            return Result.Failure("No bridge context.");
+
+        var result = _groupType == LightGroupType.Room
+            ? await _multiBridgeService.UpdateRoomAsync(_bridgeId, _groupId, newName, _roomArchetype)
+            : await _multiBridgeService.UpdateZoneAsync(_bridgeId, _groupId, newName, _roomArchetype);
+
+        if (result.IsSuccess)
+            RoomName = newName;
+        else
+            ErrorMessage = result.Error;
+
+        return result;
+    }
+
+    /// <summary>
+    /// Changes the archetype of the current room/zone.
+    /// </summary>
+    public async Task<Result> ChangeArchetypeAsync(RoomArchetype newArchetype)
+    {
+        if (_bridgeId == null)
+            return Result.Failure("No bridge context.");
+
+        var result = _groupType == LightGroupType.Room
+            ? await _multiBridgeService.UpdateRoomAsync(_bridgeId, _groupId, RoomName, newArchetype)
+            : await _multiBridgeService.UpdateZoneAsync(_bridgeId, _groupId, RoomName, newArchetype);
+
+        if (result.IsSuccess)
+        {
+            _roomArchetype = newArchetype;
+            RoomIconGlyph = RoomIconHelper.GetIconForRoom(_groupId, _roomArchetype, _settingsService.Settings.CustomRoomIcons);
+        }
+        else
+        {
+            ErrorMessage = result.Error;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Deletes the current room/zone.
+    /// </summary>
+    public async Task<Result> DeleteAsync()
+    {
+        if (_bridgeId == null)
+            return Result.Failure("No bridge context.");
+
+        var result = _groupType == LightGroupType.Room
+            ? await _multiBridgeService.DeleteRoomAsync(_bridgeId, _groupId)
+            : await _multiBridgeService.DeleteZoneAsync(_bridgeId, _groupId);
+
+        if (result.IsFailure)
+            ErrorMessage = result.Error;
+
+        return result;
+    }
+
+    /// <summary>
     /// Applies a native Hue effect to a specific light.
     /// </summary>
     public async Task ApplyEffectToLightAsync(Guid lightId, string effect, double speed, double brightness)

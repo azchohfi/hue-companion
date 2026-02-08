@@ -83,6 +83,45 @@ public interface IMultiBridgeService
     Task<Result<IReadOnlyList<RoomModel>>> GetZonesForBridgeAsync(string bridgeId);
 
     /// <summary>
+    /// Event raised when rooms or zones are created, updated, or deleted.
+    /// </summary>
+    event EventHandler? RoomsOrZonesChanged;
+
+    // Room CRUD
+
+    /// <summary>
+    /// Creates a new room on the specified bridge.
+    /// </summary>
+    Task<Result<Guid>> CreateRoomAsync(string bridgeId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Updates a room's name and archetype on the specified bridge.
+    /// </summary>
+    Task<Result> UpdateRoomAsync(string bridgeId, Guid roomId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Deletes a room from the specified bridge.
+    /// </summary>
+    Task<Result> DeleteRoomAsync(string bridgeId, Guid roomId);
+
+    // Zone CRUD
+
+    /// <summary>
+    /// Creates a new zone on the specified bridge.
+    /// </summary>
+    Task<Result<Guid>> CreateZoneAsync(string bridgeId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Updates a zone's name and archetype on the specified bridge.
+    /// </summary>
+    Task<Result> UpdateZoneAsync(string bridgeId, Guid zoneId, string name, RoomArchetype archetype);
+
+    /// <summary>
+    /// Deletes a zone from the specified bridge.
+    /// </summary>
+    Task<Result> DeleteZoneAsync(string bridgeId, Guid zoneId);
+
+    /// <summary>
     /// Gets the bridge service for a specific bridge ID.
     /// </summary>
     IHueBridgeService? GetBridgeService(string bridgeId);

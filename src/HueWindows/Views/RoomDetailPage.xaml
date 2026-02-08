@@ -62,6 +62,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Room icon (tap to change) -->
@@ -122,8 +123,31 @@
                         <FontIcon Glyph="&#xE74E;" FontSize="16"/>
                     </Button>
 
+                    <!-- More menu -->
+                    <Button Grid.Column="4"
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTipService.ToolTip="More options"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                        <FontIcon Glyph="&#xE712;" FontSize="16"/>
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Rename" Click="RenameRoom_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8AC;"/></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Change Type" Click="ChangeRoomType_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xEBC6;"/></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="Delete" Click="DeleteRoom_Click" Foreground="#FF4444">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" Foreground="#FF4444"/></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+
                     <ToggleSwitch x:Name="RoomToggle"
-                                  Grid.Column="4"
+                                  Grid.Column="5"
                                   Style="{StaticResource GradientToggleSwitchStyle}"
                                   VerticalAlignment="Center"
                                   IsOn="{x:Bind ViewModel.IsOn, Mode=TwoWay}"

@@ -32,13 +32,18 @@
                            Style="{StaticResource PageSubtitleTextStyle}"/>
             </StackPanel>
 
-            <Button Grid.Column="1"
-                    VerticalAlignment="Top"
-                    ToolTipService.ToolTip="Refresh"
-                    Command="{x:Bind ViewModel.RefreshCommand}"
-                    Style="{StaticResource IconButtonStyle}">
-                <FontIcon Glyph="&#xE72C;" FontSize="16"/>
-            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
+                <Button ToolTipService.ToolTip="Add Room or Zone"
+                        Click="AddRoomOrZone_Click"
+                        Style="{StaticResource IconButtonStyle}">
+                    <FontIcon Glyph="&#xE710;" FontSize="16"/>
+                </Button>
+                <Button ToolTipService.ToolTip="Refresh"
+                        Command="{x:Bind ViewModel.RefreshCommand}"
+                        Style="{StaticResource IconButtonStyle}">
+                    <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Loading State -->
@@ -147,7 +152,7 @@
                            Style="{StaticResource SubtitleTextBlockStyle}"
                            HorizontalAlignment="Center"/>
 
-                <TextBlock Text="Your Hue bridge is connected but doesn't have any rooms configured yet. Create rooms in the Philips Hue app to organize your lights."
+                <TextBlock Text="Your Hue bridge is connected but doesn't have any rooms configured yet. Create a room to organize your lights."
                            Style="{StaticResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            TextAlignment="Center"
@@ -159,10 +164,10 @@
                         HorizontalAlignment="Center"
                         Spacing="8"
                         Margin="0,8,0,0">
-                <Button Content="Open Hue App"
-                        Click="OpenHueApp_Click"/>
-                <Button Content="Refresh"
+                <Button Content="Create Room"
                         Style="{StaticResource AccentButtonStyle}"
+                        Click="AddRoomOrZone_Click"/>
+                <Button Content="Refresh"
                         Command="{x:Bind ViewModel.RefreshCommand}"/>
             </StackPanel>
 

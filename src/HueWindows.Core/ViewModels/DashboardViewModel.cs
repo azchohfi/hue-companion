@@ -152,6 +152,34 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
         IsLoading = false;
     }
 
+    /// <summary>
+    /// Creates a new room or zone on the default bridge.
+    /// </summary>
+    public async Task<Result<Guid>> CreateRoomOrZoneAsync(string name, LightGroupType type, RoomArchetype archetype)
+    {
+        // Get the first connected bridge
+        var bridge = _multiBridgeService.ConfiguredBridges
+            .FirstOrDefault(b => _multiBridgeService.ConnectionStatus.TryGetValue(b.BridgeId, out var connected) && connected);
+
+        if (bridge == null)
+            return Result<Guid>.Failure("No bridge connected.");
+
+        var result = type == LightGroupType.Room
+            ? await _multiBridgeService.CreateRoomAsync(bridge.BridgeId, name, archetype)
+            : await _multiBridgeService.CreateZoneAsync(bridge.BridgeId, name, archetype);
+
+        if (result.IsSuccess)
+        {
+            await LoadRoomsAsync();
+        }
+        else
+        {
+            ErrorMessage = result.Error;
+        }
+
+        return result;
+    }
+
     [RelayCommand]
     private async Task RefreshAsync()
     {

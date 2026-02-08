@@ -117,6 +117,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _pinnedItemsService.PinnedItemsChanged += OnPinnedItemsChanged;
         UpdateMyDashboardVisibility();
 
+        // Subscribe to room/zone mutations for nav refresh
+        _multiBridgeService.RoomsOrZonesChanged += OnRoomsOrZonesChanged;
+
         // Initialize navigation
         _navigationService.Initialize(ContentFrame);
 
@@ -531,8 +534,36 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         RoomsNavItem.IsExpanded = false;
     }
 
+    private async void OnRoomsOrZonesChanged(object? sender, EventArgs e)
+    {
+        // Refresh nav items on UI thread
+        if (DispatcherQueue?.HasThreadAccess == true)
+        {
+            await RefreshNavigationItemsAsync();
+        }
+        else
+        {
+            DispatcherQueue?.TryEnqueue(async () => await RefreshNavigationItemsAsync());
+        }
+    }
+
+    private async Task RefreshNavigationItemsAsync()
+    {
+        _itemsLoaded = false;
+        await LoadChildNavigationItemsAsync();
+    }
+
     private async Task LoadChildNavigationItemsAsync()
     {
+        // Clear existing items to allow re-loading
+        foreach (var item in _zoneNavItems)
+            ZonesNavItem.MenuItems.Remove(item);
+        _zoneNavItems.Clear();
+
+        foreach (var item in _roomNavItems)
+            RoomsNavItem.MenuItems.Remove(item);
+        _roomNavItems.Clear();
+
         // Load zones from all bridges
         var zonesResult = await _multiBridgeService.GetAllZonesAsync();
         if (zonesResult.IsSuccess)

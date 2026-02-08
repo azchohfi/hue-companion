@@ -13,6 +13,7 @@ using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
+using HueWindows.Core.Utilities;
 using HueWindows.Utilities;
 using Windows.UI;
 using PinnedItemType = HueWindows.Core.Models.PinnedItemType;
@@ -885,6 +886,101 @@ public sealed partial class RoomDetailPage : Page
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[RoomDetailPage] Non-critical error updating nav icon: {ex.Message}");
+        }
+    }
+
+    private async void RenameRoom_Click(object sender, RoutedEventArgs e)
+    {
+        var input = new TextBox
+        {
+            PlaceholderText = "Name",
+            Text = ViewModel.RoomName
+        };
+        input.SelectAll();
+
+        var typeLabel = ViewModel.GroupType == LightGroupType.Room ? "Room" : "Zone";
+        var dialog = new ContentDialog
+        {
+            Title = $"Rename {typeLabel}",
+            Content = input,
+            PrimaryButtonText = "Rename",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = this.XamlRoot
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(input.Text))
+        {
+            await ViewModel.RenameAsync(input.Text.Trim());
+        }
+    }
+
+    private async void ChangeRoomType_Click(object sender, RoutedEventArgs e)
+    {
+        var archetypes = RoomIconHelper.GetAllArchetypes();
+        var gridView = new GridView
+        {
+            SelectionMode = ListViewSelectionMode.Single,
+            IsItemClickEnabled = true,
+            MaxHeight = 400,
+            ItemsSource = archetypes
+        };
+        gridView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
+            @"<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>
+                <StackPanel Width='80' Padding='8' Spacing='4' HorizontalAlignment='Center'>
+                    <FontIcon Glyph='{Binding IconGlyph}' FontSize='20' HorizontalAlignment='Center'/>
+                    <TextBlock Text='{Binding DisplayName}' FontSize='11' TextAlignment='Center'
+                               TextTrimming='CharacterEllipsis' HorizontalAlignment='Center'/>
+                </StackPanel>
+            </DataTemplate>");
+
+        var typeLabel = ViewModel.GroupType == LightGroupType.Room ? "Room" : "Zone";
+        var dialog = new ContentDialog
+        {
+            Title = $"Change {typeLabel} Type",
+            Content = gridView,
+            CloseButtonText = "Cancel",
+            XamlRoot = this.XamlRoot
+        };
+
+        // Close dialog on item click
+        (RoomArchetype Archetype, string DisplayName, string IconGlyph) selectedArchetype = default;
+        gridView.ItemClick += (s, args) =>
+        {
+            selectedArchetype = ((RoomArchetype Archetype, string DisplayName, string IconGlyph))args.ClickedItem;
+            dialog.Hide();
+        };
+
+        await dialog.ShowAsync();
+
+        if (selectedArchetype.DisplayName != null)
+        {
+            await ViewModel.ChangeArchetypeAsync(selectedArchetype.Archetype);
+        }
+    }
+
+    private async void DeleteRoom_Click(object sender, RoutedEventArgs e)
+    {
+        var typeLabel = ViewModel.GroupType == LightGroupType.Room ? "room" : "zone";
+        var dialog = new ContentDialog
+        {
+            Title = $"Delete {typeLabel}?",
+            Content = $"Are you sure you want to delete \"{ViewModel.RoomName}\"? Lights will become unassigned.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.XamlRoot
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            var result = await ViewModel.DeleteAsync();
+            if (result.IsSuccess)
+            {
+                // Navigate back to dashboard
+                var navigationService = App.Services.GetRequiredService<INavigationService>();
+                navigationService.NavigateTo<DashboardPage>();
+            }
         }
     }
 

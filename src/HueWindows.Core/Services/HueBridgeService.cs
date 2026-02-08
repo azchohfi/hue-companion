@@ -907,6 +907,156 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
+    public async Task<Result<Guid>> CreateRoomAsync(string name, RoomArchetype archetype)
+    {
+        if (_hueApi == null)
+            return Result<Guid>.Failure("Not connected to bridge.");
+
+        try
+        {
+            var request = new BaseResourceRequest
+            {
+                Metadata = new Metadata { Name = name, Archetype = RoomArchetypeToString(archetype) }
+            };
+            var result = await _hueApi.Room.CreateAsync(request);
+            var createdId = result?.Data?.FirstOrDefault()?.Rid;
+
+            // Invalidate cache
+            _roomsCache = null;
+
+            if (createdId.HasValue)
+                return Result<Guid>.Success(createdId.Value);
+
+            return Result<Guid>.Failure("Failed to create room - no ID returned.");
+        }
+        catch (Exception ex)
+        {
+            return Result<Guid>.Failure($"Failed to create room: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> UpdateRoomAsync(Guid roomId, string name, RoomArchetype archetype)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var request = new BaseResourceRequest
+            {
+                Metadata = new Metadata { Name = name, Archetype = RoomArchetypeToString(archetype) }
+            };
+            await _hueApi.Room.UpdateAsync(roomId, request);
+
+            // Invalidate cache
+            _roomsCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to update room: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> DeleteRoomAsync(Guid roomId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            await _hueApi.Room.DeleteAsync(roomId);
+
+            // Invalidate cache
+            _roomsCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to delete room: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result<Guid>> CreateZoneAsync(string name, RoomArchetype archetype)
+    {
+        if (_hueApi == null)
+            return Result<Guid>.Failure("Not connected to bridge.");
+
+        try
+        {
+            var request = new CreateZone
+            {
+                Metadata = new Metadata { Name = name, Archetype = RoomArchetypeToString(archetype) }
+            };
+            var result = await _hueApi.Zone.CreateAsync(request);
+            var createdId = result?.Data?.FirstOrDefault()?.Rid;
+
+            // Invalidate cache
+            _zonesCache = null;
+
+            if (createdId.HasValue)
+                return Result<Guid>.Success(createdId.Value);
+
+            return Result<Guid>.Failure("Failed to create zone - no ID returned.");
+        }
+        catch (Exception ex)
+        {
+            return Result<Guid>.Failure($"Failed to create zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> UpdateZoneAsync(Guid zoneId, string name, RoomArchetype archetype)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var request = new UpdateZone
+            {
+                Metadata = new Metadata { Name = name, Archetype = RoomArchetypeToString(archetype) }
+            };
+            await _hueApi.Zone.UpdateAsync(zoneId, request);
+
+            // Invalidate cache
+            _zonesCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to update zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> DeleteZoneAsync(Guid zoneId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            await _hueApi.Zone.DeleteAsync(zoneId);
+
+            // Invalidate cache
+            _zonesCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to delete zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
     public Task StartEventStreamAsync()
     {
         if (_hueApi == null) return Task.CompletedTask;
@@ -1018,6 +1168,53 @@ public class HueBridgeService : IHueBridgeService
             IsOn = isOn,
             Brightness = brightness,
             Color = color
+        };
+    }
+
+    internal static string RoomArchetypeToString(RoomArchetype archetype)
+    {
+        return archetype switch
+        {
+            RoomArchetype.LivingRoom => "living_room",
+            RoomArchetype.Kitchen => "kitchen",
+            RoomArchetype.Dining => "dining",
+            RoomArchetype.Bedroom => "bedroom",
+            RoomArchetype.KidsBedroom => "kids_bedroom",
+            RoomArchetype.Bathroom => "bathroom",
+            RoomArchetype.Nursery => "nursery",
+            RoomArchetype.Recreation => "recreation",
+            RoomArchetype.Office => "office",
+            RoomArchetype.Gym => "gym",
+            RoomArchetype.Hallway => "hallway",
+            RoomArchetype.Toilet => "toilet",
+            RoomArchetype.FrontDoor => "front_door",
+            RoomArchetype.Garage => "garage",
+            RoomArchetype.Terrace => "terrace",
+            RoomArchetype.Garden => "garden",
+            RoomArchetype.Driveway => "driveway",
+            RoomArchetype.Carport => "carport",
+            RoomArchetype.Home => "home",
+            RoomArchetype.Downstairs => "downstairs",
+            RoomArchetype.Upstairs => "upstairs",
+            RoomArchetype.TopFloor => "top_floor",
+            RoomArchetype.Attic => "attic",
+            RoomArchetype.GuestRoom => "guest_room",
+            RoomArchetype.Staircase => "staircase",
+            RoomArchetype.Lounge => "lounge",
+            RoomArchetype.ManCave => "man_cave",
+            RoomArchetype.Computer => "computer",
+            RoomArchetype.Studio => "studio",
+            RoomArchetype.Music => "music",
+            RoomArchetype.TV => "tv",
+            RoomArchetype.Reading => "reading",
+            RoomArchetype.Closet => "closet",
+            RoomArchetype.Storage => "storage",
+            RoomArchetype.LaundryRoom => "laundry_room",
+            RoomArchetype.Balcony => "balcony",
+            RoomArchetype.Porch => "porch",
+            RoomArchetype.Barbecue => "barbecue",
+            RoomArchetype.Pool => "pool",
+            _ => "other"
         };
     }
 
