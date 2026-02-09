@@ -104,6 +104,11 @@ public interface IMultiBridgeService
     /// </summary>
     Task<Result> DeleteRoomAsync(string bridgeId, Guid roomId);
 
+    /// <summary>
+    /// Moves a device (and all its lights) between rooms on the specified bridge.
+    /// </summary>
+    Task<Result> MoveDeviceToRoomAsync(string bridgeId, Guid deviceId, Guid sourceRoomId, Guid targetRoomId);
+
     // Zone CRUD
 
     /// <summary>
@@ -120,6 +125,26 @@ public interface IMultiBridgeService
     /// Deletes a zone from the specified bridge.
     /// </summary>
     Task<Result> DeleteZoneAsync(string bridgeId, Guid zoneId);
+
+    /// <summary>
+    /// Adds a light to a zone on the specified bridge.
+    /// </summary>
+    Task<Result> AddLightToZoneAsync(string bridgeId, Guid zoneId, Guid lightId);
+
+    /// <summary>
+    /// Removes a light from a zone on the specified bridge.
+    /// </summary>
+    Task<Result> RemoveLightFromZoneAsync(string bridgeId, Guid zoneId, Guid lightId);
+
+    /// <summary>
+    /// Gets all lights from the specified bridge.
+    /// </summary>
+    Task<Result<IReadOnlyList<LightModel>>> GetAllLightsForBridgeAsync(string bridgeId);
+
+    /// <summary>
+    /// Gets all lights from all connected bridges.
+    /// </summary>
+    Task<Result<IReadOnlyList<LightModel>>> GetAllLightsAsync();
 
     /// <summary>
     /// Gets the bridge service for a specific bridge ID.

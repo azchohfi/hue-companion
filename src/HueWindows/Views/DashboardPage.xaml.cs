@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using HueWindows.Constants;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
 using HueWindows.Utilities;
@@ -149,8 +150,8 @@ public sealed partial class DashboardPage : Page
         if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameBox.Text))
         {
             var type = typeRadio.SelectedIndex == 0 ? Core.Models.LightGroupType.Room : Core.Models.LightGroupType.Zone;
-            var selectedArchetype = archetypeGrid.SelectedItem is (Core.Models.RoomArchetype arch, string, string)
-                ? arch
+            var selectedArchetype = archetypeGrid.SelectedItem is ArchetypeItem item
+                ? item.Archetype
                 : Core.Models.RoomArchetype.Other;
 
             await ViewModel.CreateRoomOrZoneAsync(nameBox.Text.Trim(), type, selectedArchetype);

@@ -1,3 +1,6 @@
+using System.Net.Security;
+using System.Text;
+using System.Text.Json;
 using HueApi;
 using HueApi.Models;
 using HueApi.Models.Requests;
@@ -13,10 +16,17 @@ namespace HueWindows.Core.Services;
 public class HueBridgeService : IHueBridgeService
 {
     private LocalHueApi? _hueApi;
+    private HttpClient? _rawHttpClient;
     private CancellationTokenSource? _eventStreamCts;
     private string? _lastIpAddress;
     private string? _lastAppKey;
     private readonly SemaphoreSlim _connectionSemaphore = new(1, 1);
+
+    private static readonly JsonSerializerOptions RawJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
     // Short-lived cache for GetRoomAsync/GetZoneAsync to avoid refetching all rooms/zones
     private IReadOnlyList<RoomModel>? _roomsCache;
@@ -48,11 +58,25 @@ public class HueBridgeService : IHueBridgeService
 
             _hueApi = new LocalHueApi(ipAddress, appKey);
 
+            // Create raw HTTP client for API calls not supported by the NuGet library
+            // (e.g., updating zone/room children which is commented out in HueApi)
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+            };
+            _rawHttpClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri($"https://{ipAddress}")
+            };
+            _rawHttpClient.DefaultRequestHeaders.Add("hue-application-key", appKey);
+
             // Validate connection by fetching bridge info
             var bridge = await _hueApi.GetBridgeAsync();
             if (bridge?.Data == null || bridge.Data.Count == 0)
             {
                 _hueApi = null;
+                _rawHttpClient?.Dispose();
+                _rawHttpClient = null;
                 return Result.Failure("Could not retrieve bridge information. Please check the IP address and app key.");
             }
 
@@ -66,11 +90,15 @@ public class HueBridgeService : IHueBridgeService
         catch (HttpRequestException ex)
         {
             _hueApi = null;
+            _rawHttpClient?.Dispose();
+            _rawHttpClient = null;
             return Result.Failure($"Network error: Could not reach the bridge at {ipAddress}. {ex.Message}");
         }
         catch (Exception ex)
         {
             _hueApi = null;
+            _rawHttpClient?.Dispose();
+            _rawHttpClient = null;
             return Result.Failure($"Connection failed: {ex.Message}");
         }
     }
@@ -127,6 +155,8 @@ public class HueBridgeService : IHueBridgeService
     {
         StopEventStream();
         _hueApi = null;
+        _rawHttpClient?.Dispose();
+        _rawHttpClient = null;
         Disconnected?.Invoke(this, EventArgs.Empty);
     }
 
@@ -970,6 +1000,36 @@ public class HueBridgeService : IHueBridgeService
         }
     }
 
+    /// <summary>
+    /// Sends a raw PUT request to the Hue bridge.
+    /// Used for API operations not supported by the HueApi NuGet library
+    /// (e.g., updating zone/room children).
+    /// </summary>
+    private async Task<Result> RawPutAsync(string path, object payload)
+    {
+        if (_rawHttpClient == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var json = JsonSerializer.Serialize(payload, RawJsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _rawHttpClient.PutAsync(path, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                return Result.Failure($"Bridge returned {(int)response.StatusCode}: {body}");
+            }
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"HTTP request failed: {ex.Message}");
+        }
+    }
+
     /// <inheritdoc/>
     public async Task<Result<Guid>> CreateRoomAsync(string name, RoomArchetype archetype)
     {
@@ -1117,6 +1177,152 @@ public class HueBridgeService : IHueBridgeService
         catch (Exception ex)
         {
             return Result.Failure($"Failed to delete zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> SetZoneChildrenAsync(Guid zoneId, IReadOnlyList<Guid> lightIds)
+    {
+        var payload = new
+        {
+            children = lightIds.Select(id => new { rid = id.ToString(), rtype = "light" }).ToArray()
+        };
+
+        var result = await RawPutAsync($"/clip/v2/resource/zone/{zoneId}", payload);
+
+        if (result.IsSuccess)
+        {
+            _zonesCache = null;
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> AddLightToZoneAsync(Guid zoneId, Guid lightId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+            var zoneData = zone?.Data?.FirstOrDefault();
+            if (zoneData == null)
+                return Result.Failure("Zone not found.");
+
+            var currentLightIds = (zoneData.Children ?? [])
+                .Where(c => c.Rtype == "light")
+                .Select(c => c.Rid)
+                .ToList();
+
+            if (currentLightIds.Contains(lightId))
+                return Result.Success(); // Already in zone
+
+            currentLightIds.Add(lightId);
+            return await SetZoneChildrenAsync(zoneId, currentLightIds);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to add light to zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> RemoveLightFromZoneAsync(Guid zoneId, Guid lightId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            var zone = await _hueApi.Zone.GetByIdAsync(zoneId);
+            var zoneData = zone?.Data?.FirstOrDefault();
+            if (zoneData == null)
+                return Result.Failure("Zone not found.");
+
+            var currentLightIds = (zoneData.Children ?? [])
+                .Where(c => c.Rtype == "light")
+                .Select(c => c.Rid)
+                .Where(id => id != lightId)
+                .ToList();
+
+            return await SetZoneChildrenAsync(zoneId, currentLightIds);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to remove light from zone: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result> MoveDeviceToRoomAsync(Guid deviceId, Guid sourceRoomId, Guid targetRoomId)
+    {
+        if (_hueApi == null)
+            return Result.Failure("Not connected to bridge.");
+
+        try
+        {
+            // Get source room and remove device
+            var sourceRoom = await _hueApi.Room.GetByIdAsync(sourceRoomId);
+            var sourceData = sourceRoom?.Data?.FirstOrDefault();
+            if (sourceData == null)
+                return Result.Failure("Source room not found.");
+
+            var sourceChildren = (sourceData.Children ?? [])
+                .Where(c => !(c.Rtype == "device" && c.Rid == deviceId))
+                .Select(c => new { rid = c.Rid.ToString(), rtype = c.Rtype })
+                .ToArray();
+
+            var removeResult = await RawPutAsync($"/clip/v2/resource/room/{sourceRoomId}", new { children = sourceChildren });
+            if (!removeResult.IsSuccess)
+                return Result.Failure($"Failed to remove device from source room: {removeResult.Error}");
+
+            // Get target room and add device
+            var targetRoom = await _hueApi.Room.GetByIdAsync(targetRoomId);
+            var targetData = targetRoom?.Data?.FirstOrDefault();
+            if (targetData == null)
+                return Result.Failure("Target room not found.");
+
+            var targetChildren = (targetData.Children ?? [])
+                .Select(c => new { rid = c.Rid.ToString(), rtype = c.Rtype })
+                .ToList();
+            targetChildren.Add(new { rid = deviceId.ToString(), rtype = "device" });
+
+            var addResult = await RawPutAsync($"/clip/v2/resource/room/{targetRoomId}", new { children = targetChildren.ToArray() });
+            if (!addResult.IsSuccess)
+                return Result.Failure($"Failed to add device to target room: {addResult.Error}");
+
+            // Invalidate both caches
+            _roomsCache = null;
+            _zonesCache = null;
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to move device: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<Result<IReadOnlyList<LightModel>>> GetAllLightsAsync()
+    {
+        if (_hueApi == null)
+            return Result<IReadOnlyList<LightModel>>.Failure("Not connected to bridge.");
+
+        try
+        {
+            var allLights = await _hueApi.Light.GetAllAsync();
+            if (allLights?.Data == null)
+                return Result<IReadOnlyList<LightModel>>.Success(Array.Empty<LightModel>());
+
+            var lights = allLights.Data.Select(MapLightData).ToList();
+            return Result<IReadOnlyList<LightModel>>.Success(lights);
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<LightModel>>.Failure($"Failed to get lights: {ex.Message}");
         }
     }
 

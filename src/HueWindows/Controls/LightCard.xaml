@@ -74,6 +74,22 @@
                                 <FontIcon Glyph="&#xE728;"/>
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutSubItem x:Name="MoveToRoomSubMenu" Text="Move to room...">
+                            <MenuFlyoutSubItem.Icon>
+                                <FontIcon Glyph="&#xE8DE;"/>
+                            </MenuFlyoutSubItem.Icon>
+                        </MenuFlyoutSubItem>
+                        <MenuFlyoutSubItem x:Name="AddToZoneSubMenu" Text="Add to zone...">
+                            <MenuFlyoutSubItem.Icon>
+                                <FontIcon Glyph="&#xE710;"/>
+                            </MenuFlyoutSubItem.Icon>
+                        </MenuFlyoutSubItem>
+                        <MenuFlyoutSubItem x:Name="RemoveFromZoneSubMenu" Text="Remove from zone...">
+                            <MenuFlyoutSubItem.Icon>
+                                <FontIcon Glyph="&#xE738;"/>
+                            </MenuFlyoutSubItem.Icon>
+                        </MenuFlyoutSubItem>
                     </MenuFlyout>
                 </Grid.ContextFlyout>
 

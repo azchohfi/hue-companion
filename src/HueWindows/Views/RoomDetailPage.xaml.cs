@@ -11,9 +11,9 @@ using HueWindows.Constants;
 using HueWindows.Controls;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
+using HueWindows.Core.Utilities;
 using HueWindows.Core.ViewModels;
 using HueWindows.Helpers;
-using HueWindows.Core.Utilities;
 using HueWindows.Utilities;
 using Windows.UI;
 using PinnedItemType = HueWindows.Core.Models.PinnedItemType;
@@ -604,6 +604,12 @@ public sealed partial class RoomDetailPage : Page
         {
             lightCard.AddToDashboardRequested -= OnLightAddToDashboardRequested;
             lightCard.AddToDashboardRequested += OnLightAddToDashboardRequested;
+            lightCard.MoveToRoomRequested -= OnLightMoveToRoomRequested;
+            lightCard.MoveToRoomRequested += OnLightMoveToRoomRequested;
+            lightCard.AddToZoneRequested -= OnLightAddToZoneRequested;
+            lightCard.AddToZoneRequested += OnLightAddToZoneRequested;
+            lightCard.RemoveFromZoneRequested -= OnLightRemoveFromZoneRequested;
+            lightCard.RemoveFromZoneRequested += OnLightRemoveFromZoneRequested;
         }
 
         if (!args.InRecycleQueue && args.Phase == 0)
@@ -729,6 +735,61 @@ public sealed partial class RoomDetailPage : Page
         await _pinnedItemsService.PinAsync(lightId, PinnedItemType.Light);
     }
 
+    private async void OnLightMoveToRoomRequested(object? sender,
+        (Guid LightId, Guid DeviceId, Guid TargetRoomId, string TargetRoomName) args)
+    {
+        var lightName = ViewModel.Lights.FirstOrDefault(l => l.LightId == args.LightId)?.Name ?? "this light";
+        var dialog = new ContentDialog
+        {
+            Title = "Move to room",
+            Content = $"Move \"{lightName}\" and its device to \"{args.TargetRoomName}\"? It will be removed from \"{ViewModel.RoomName}\".",
+            PrimaryButtonText = "Move",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.XamlRoot
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+        var bridgeId = ViewModel.Lights.FirstOrDefault(l => l.LightId == args.LightId)?.BridgeId;
+        if (bridgeId == null) return;
+
+        var multiBridge = App.Services.GetRequiredService<IMultiBridgeService>();
+        var result = await multiBridge.MoveDeviceToRoomAsync(bridgeId, args.DeviceId, ViewModel.GroupId, args.TargetRoomId);
+        if (result.IsFailure)
+        {
+            ViewModel.ErrorMessage = result.Error;
+        }
+        else
+        {
+            // Reload to reflect the removed light
+            await ViewModel.LoadRoomAsync(ViewModel.GroupId, ViewModel.GroupType);
+        }
+    }
+
+    private async void OnLightAddToZoneRequested(object? sender,
+        (Guid LightId, Guid TargetZoneId, string TargetZoneName) args)
+    {
+        var bridgeId = ViewModel.Lights.FirstOrDefault(l => l.LightId == args.LightId)?.BridgeId;
+        if (bridgeId == null) return;
+
+        var multiBridge = App.Services.GetRequiredService<IMultiBridgeService>();
+        var result = await multiBridge.AddLightToZoneAsync(bridgeId, args.TargetZoneId, args.LightId);
+        if (result.IsFailure)
+            ViewModel.ErrorMessage = result.Error;
+    }
+
+    private async void OnLightRemoveFromZoneRequested(object? sender,
+        (Guid LightId, Guid SourceZoneId, string SourceZoneName) args)
+    {
+        var bridgeId = ViewModel.Lights.FirstOrDefault(l => l.LightId == args.LightId)?.BridgeId;
+        if (bridgeId == null) return;
+
+        var multiBridge = App.Services.GetRequiredService<IMultiBridgeService>();
+        var result = await multiBridge.RemoveLightFromZoneAsync(bridgeId, args.SourceZoneId, args.LightId);
+        if (result.IsFailure)
+            ViewModel.ErrorMessage = result.Error;
+    }
 
     private void ColorPickerFlyout_Opening(object sender, object e)
     {
@@ -1024,16 +1085,16 @@ public sealed partial class RoomDetailPage : Page
         };
 
         // Close dialog on item click
-        (RoomArchetype Archetype, string DisplayName, string IconGlyph) selectedArchetype = default;
+        ArchetypeItem? selectedArchetype = null;
         gridView.ItemClick += (s, args) =>
         {
-            selectedArchetype = ((RoomArchetype Archetype, string DisplayName, string IconGlyph))args.ClickedItem;
+            selectedArchetype = (ArchetypeItem)args.ClickedItem;
             dialog.Hide();
         };
 
         await dialog.ShowAsync();
 
-        if (selectedArchetype.DisplayName != null)
+        if (selectedArchetype != null)
         {
             await ViewModel.ChangeArchetypeAsync(selectedArchetype.Archetype);
         }

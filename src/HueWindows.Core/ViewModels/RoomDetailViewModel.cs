@@ -141,6 +141,15 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
         if (_bridgeService == null)
         {
             _bridgeService = _multiBridgeService.GetDefaultBridgeService();
+
+            // Derive bridge ID from configured bridges when using default
+            if (_bridgeId == null)
+            {
+                var connected = _multiBridgeService.ConnectionStatus
+                    .FirstOrDefault(kvp => kvp.Value);
+                if (connected.Key != null)
+                    _bridgeId = connected.Key;
+            }
         }
 
         if (_bridgeService == null)
@@ -163,6 +172,7 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
         }
 
         var group = groupResult.Value!;
+
         RoomName = group.DisplayName;
         _roomArchetype = group.Archetype;
         RoomIconGlyph = RoomIconHelper.GetIconForRoom(_groupId, _roomArchetype, _settingsService.Settings.CustomRoomIcons);
@@ -176,6 +186,7 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
         foreach (var light in group.Lights)
         {
             var lightVm = new LightItemViewModel(light, _bridgeService);
+            lightVm.BridgeId = _bridgeId;
             lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
             lightVm.PropertyChanged += OnLightPropertyChanged;
             lightVms.Add(lightVm);
@@ -604,6 +615,8 @@ public partial class LightItemViewModel : ObservableObject
     private readonly LightModel _light;
 
     public Guid LightId => _light.Id;
+    public Guid? DeviceId => _light.DeviceId;
+    public string? BridgeId { get; set; }
 
     [ObservableProperty]
     private string _name;

@@ -61,6 +61,11 @@ public class LightModel
     public Guid? DeviceId { get; set; }
 
     /// <summary>
+    /// The name of the room this light belongs to (populated during zone loading).
+    /// </summary>
+    public string? RoomName { get; set; }
+
+    /// <summary>
     /// The product name of the light (e.g., "Hue color lamp").
     /// </summary>
     public string? ProductName { get; set; }

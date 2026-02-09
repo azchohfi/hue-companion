@@ -88,6 +88,11 @@ public interface IHueBridgeService
     /// </summary>
     Task<Result> DeleteRoomAsync(Guid roomId);
 
+    /// <summary>
+    /// Moves a device (and all its lights) from one room to another.
+    /// </summary>
+    Task<Result> MoveDeviceToRoomAsync(Guid deviceId, Guid sourceRoomId, Guid targetRoomId);
+
     // Zone operations
 
     /// <summary>
@@ -137,11 +142,31 @@ public interface IHueBridgeService
     Task<Result> DeleteZoneAsync(Guid zoneId);
 
     /// <summary>
+    /// Sets the complete list of lights in a zone.
+    /// </summary>
+    Task<Result> SetZoneChildrenAsync(Guid zoneId, IReadOnlyList<Guid> lightIds);
+
+    /// <summary>
+    /// Adds a light to a zone.
+    /// </summary>
+    Task<Result> AddLightToZoneAsync(Guid zoneId, Guid lightId);
+
+    /// <summary>
+    /// Removes a light from a zone.
+    /// </summary>
+    Task<Result> RemoveLightFromZoneAsync(Guid zoneId, Guid lightId);
+
+    /// <summary>
     /// Gets all scenes for a zone.
     /// </summary>
     Task<Result<IReadOnlyList<SceneModel>>> GetScenesForZoneAsync(Guid zoneId);
 
     // Light operations
+
+    /// <summary>
+    /// Gets all lights on the bridge.
+    /// </summary>
+    Task<Result<IReadOnlyList<LightModel>>> GetAllLightsAsync();
 
     /// <summary>
     /// Gets all lights in a room.

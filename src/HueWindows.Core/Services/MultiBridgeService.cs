@@ -351,6 +351,63 @@ public class MultiBridgeService : IMultiBridgeService, IDisposable
         return result;
     }
 
+    public async Task<Result> MoveDeviceToRoomAsync(string bridgeId, Guid deviceId, Guid sourceRoomId, Guid targetRoomId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.MoveDeviceToRoomAsync(deviceId, sourceRoomId, targetRoomId);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> AddLightToZoneAsync(string bridgeId, Guid zoneId, Guid lightId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.AddLightToZoneAsync(zoneId, lightId);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result> RemoveLightFromZoneAsync(string bridgeId, Guid zoneId, Guid lightId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result.Failure("Bridge not connected.");
+
+        var result = await service.RemoveLightFromZoneAsync(zoneId, lightId);
+        if (result.IsSuccess)
+            RoomsOrZonesChanged?.Invoke(this, EventArgs.Empty);
+        return result;
+    }
+
+    public async Task<Result<IReadOnlyList<LightModel>>> GetAllLightsForBridgeAsync(string bridgeId)
+    {
+        var service = GetBridgeService(bridgeId);
+        if (service == null) return Result<IReadOnlyList<LightModel>>.Failure("Bridge not connected.");
+
+        return await service.GetAllLightsAsync();
+    }
+
+    public async Task<Result<IReadOnlyList<LightModel>>> GetAllLightsAsync()
+    {
+        var allLights = new List<LightModel>();
+
+        foreach (var (bridgeId, service) in _bridgeServices)
+        {
+            if (!service.IsConnected) continue;
+
+            var result = await service.GetAllLightsAsync();
+            if (result.IsSuccess && result.Value != null)
+                allLights.AddRange(result.Value);
+        }
+
+        return Result<IReadOnlyList<LightModel>>.Success(allLights);
+    }
+
     public IHueBridgeService? GetBridgeService(string bridgeId)
     {
         _bridgeServices.TryGetValue(bridgeId, out var service);

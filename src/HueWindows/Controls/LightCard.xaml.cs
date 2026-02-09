@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -6,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
 using HueWindows.Core.Models;
+using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
 using Windows.UI;
@@ -38,6 +40,21 @@ public sealed partial class LightCard : UserControl
     /// Event raised when the user requests to add this light to the dashboard.
     /// </summary>
     public event EventHandler<Guid>? AddToDashboardRequested;
+
+    /// <summary>
+    /// Event raised when the user requests to move this light's device to another room.
+    /// </summary>
+    public event EventHandler<(Guid LightId, Guid DeviceId, Guid TargetRoomId, string TargetRoomName)>? MoveToRoomRequested;
+
+    /// <summary>
+    /// Event raised when the user requests to add this light to a zone.
+    /// </summary>
+    public event EventHandler<(Guid LightId, Guid TargetZoneId, string TargetZoneName)>? AddToZoneRequested;
+
+    /// <summary>
+    /// Event raised when the user requests to remove this light from a zone.
+    /// </summary>
+    public event EventHandler<(Guid LightId, Guid SourceZoneId, string SourceZoneName)>? RemoveFromZoneRequested;
 
     public LightCard()
     {
@@ -388,12 +405,121 @@ public sealed partial class LightCard : UserControl
     // Shared clipboard for copy/paste color between light cards
     private static HueColor? _clipboardColor;
 
-    private void ContextMenu_Opening(object sender, object e)
+    private async void ContextMenu_Opening(object sender, object e)
     {
         // Show paste option only when clipboard has a color and light supports color
         PasteColorMenuItem.Visibility = (_clipboardColor != null && ViewModel?.SupportsColor == true)
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+        await PopulateRoomZoneMenusAsync();
+    }
+
+    private async Task PopulateRoomZoneMenusAsync()
+    {
+        if (ViewModel == null)
+        {
+            MoveToRoomSubMenu.Visibility = Visibility.Collapsed;
+            AddToZoneSubMenu.Visibility = Visibility.Collapsed;
+            RemoveFromZoneSubMenu.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var bridgeId = ViewModel.BridgeId;
+        if (bridgeId == null)
+        {
+            MoveToRoomSubMenu.Visibility = Visibility.Collapsed;
+            AddToZoneSubMenu.Visibility = Visibility.Collapsed;
+            RemoveFromZoneSubMenu.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var multiBridge = App.Services.GetRequiredService<IMultiBridgeService>();
+
+        MoveToRoomSubMenu.Items.Clear();
+        AddToZoneSubMenu.Items.Clear();
+        RemoveFromZoneSubMenu.Items.Clear();
+
+        // Populate "Move to room..." - show all rooms except the one this light is in
+        if (ViewModel.DeviceId.HasValue)
+        {
+            var roomsResult = await multiBridge.GetRoomsForBridgeAsync(bridgeId);
+            if (roomsResult.IsSuccess && roomsResult.Value != null)
+            {
+                Guid? currentRoomId = null;
+                foreach (var room in roomsResult.Value)
+                {
+                    if (room.Lights.Any(l => l.Id == ViewModel.LightId))
+                    {
+                        currentRoomId = room.Id;
+                        break;
+                    }
+                }
+
+                foreach (var room in roomsResult.Value)
+                {
+                    if (room.Id == currentRoomId) continue;
+                    var item = new MenuFlyoutItem { Text = room.Name, Tag = room };
+                    item.Click += MoveToRoom_Click;
+                    MoveToRoomSubMenu.Items.Add(item);
+                }
+            }
+        }
+
+        // Populate zone menus
+        var zonesResult = await multiBridge.GetZonesForBridgeAsync(bridgeId);
+        if (zonesResult.IsSuccess && zonesResult.Value != null)
+        {
+            foreach (var zone in zonesResult.Value)
+            {
+                bool lightInZone = zone.Lights.Any(l => l.Id == ViewModel.LightId);
+
+                if (!lightInZone)
+                {
+                    var item = new MenuFlyoutItem { Text = zone.Name, Tag = zone };
+                    item.Click += AddToZone_Click;
+                    AddToZoneSubMenu.Items.Add(item);
+                }
+                else
+                {
+                    var item = new MenuFlyoutItem { Text = zone.Name, Tag = zone };
+                    item.Click += RemoveFromZone_Click;
+                    RemoveFromZoneSubMenu.Items.Add(item);
+                }
+            }
+        }
+
+        MoveToRoomSubMenu.Visibility = MoveToRoomSubMenu.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        AddToZoneSubMenu.Visibility = AddToZoneSubMenu.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        RemoveFromZoneSubMenu.Visibility = RemoveFromZoneSubMenu.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void MoveToRoom_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is RoomModel room
+            && ViewModel != null && ViewModel.DeviceId.HasValue)
+        {
+            MoveToRoomRequested?.Invoke(this,
+                (ViewModel.LightId, ViewModel.DeviceId.Value, room.Id, room.Name));
+        }
+    }
+
+    private void AddToZone_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is RoomModel zone && ViewModel != null)
+        {
+            AddToZoneRequested?.Invoke(this,
+                (ViewModel.LightId, zone.Id, zone.Name));
+        }
+    }
+
+    private void RemoveFromZone_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is RoomModel zone && ViewModel != null)
+        {
+            RemoveFromZoneRequested?.Invoke(this,
+                (ViewModel.LightId, zone.Id, zone.Name));
+        }
     }
 
     private void Identify_Click(object sender, RoutedEventArgs e)

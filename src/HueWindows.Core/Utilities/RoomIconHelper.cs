@@ -8,6 +8,12 @@ namespace HueWindows.Core.Utilities;
 public record IconItem(string Glyph, string Name);
 
 /// <summary>
+/// A room archetype choice for the archetype picker.
+/// Record properties are bindable in DataTemplates (unlike named value tuples).
+/// </summary>
+public record ArchetypeItem(RoomArchetype Archetype, string DisplayName, string IconGlyph);
+
+/// <summary>
 /// Provides a single source of truth for mapping room archetypes to icon glyphs.
 /// </summary>
 public static class RoomIconHelper
@@ -76,7 +82,7 @@ public static class RoomIconHelper
     /// Gets all room archetypes with their display names and icon glyphs.
     /// Used for archetype pickers in create/edit dialogs.
     /// </summary>
-    public static IReadOnlyList<(RoomArchetype Archetype, string DisplayName, string IconGlyph)> GetAllArchetypes() => AllArchetypes;
+    public static IReadOnlyList<ArchetypeItem> GetAllArchetypes() => AllArchetypes;
 
     /// <summary>
     /// Gets all available icons for the icon picker.
@@ -173,47 +179,47 @@ public static class RoomIconHelper
         new("\uE8D1", "Flag"),
     };
 
-    private static readonly IReadOnlyList<(RoomArchetype Archetype, string DisplayName, string IconGlyph)> AllArchetypes = new List<(RoomArchetype, string, string)>
+    private static readonly IReadOnlyList<ArchetypeItem> AllArchetypes = new List<ArchetypeItem>
     {
-        (RoomArchetype.LivingRoom, "Living Room", "\uE7F4"),
-        (RoomArchetype.Lounge, "Lounge", "\uE7F4"),
-        (RoomArchetype.Kitchen, "Kitchen", "\uED56"),
-        (RoomArchetype.Dining, "Dining", "\uE799"),
-        (RoomArchetype.Bedroom, "Bedroom", "\uEC32"),
-        (RoomArchetype.KidsBedroom, "Kids Bedroom", "\uEC32"),
-        (RoomArchetype.GuestRoom, "Guest Room", "\uEC32"),
-        (RoomArchetype.Bathroom, "Bathroom", "\uE9FC"),
-        (RoomArchetype.Toilet, "Toilet", "\uE9FC"),
-        (RoomArchetype.Nursery, "Nursery", "\uE734"),
-        (RoomArchetype.Recreation, "Recreation", "\uE7FC"),
-        (RoomArchetype.ManCave, "Man Cave", "\uE7FC"),
-        (RoomArchetype.Office, "Office", "\uE821"),
-        (RoomArchetype.Computer, "Computer", "\uE7F8"),
-        (RoomArchetype.Studio, "Studio", "\uE722"),
-        (RoomArchetype.Gym, "Gym", "\uE805"),
-        (RoomArchetype.Hallway, "Hallway", "\uE8B0"),
-        (RoomArchetype.Staircase, "Staircase", "\uE74A"),
-        (RoomArchetype.FrontDoor, "Front Door", "\uE7AD"),
-        (RoomArchetype.Garage, "Garage", "\uE804"),
-        (RoomArchetype.Carport, "Carport", "\uE804"),
-        (RoomArchetype.Driveway, "Driveway", "\uE804"),
-        (RoomArchetype.Terrace, "Terrace", "\uE8B3"),
-        (RoomArchetype.Garden, "Garden", "\uE8E2"),
-        (RoomArchetype.Balcony, "Balcony", "\uE8B3"),
-        (RoomArchetype.Porch, "Porch", "\uE8B3"),
-        (RoomArchetype.Pool, "Pool", "\uE8A2"),
-        (RoomArchetype.Barbecue, "Barbecue", "\uE8F9"),
-        (RoomArchetype.Home, "Home", "\uE80F"),
-        (RoomArchetype.Downstairs, "Downstairs", "\uE74B"),
-        (RoomArchetype.Upstairs, "Upstairs", "\uE74A"),
-        (RoomArchetype.TopFloor, "Top Floor", "\uE74A"),
-        (RoomArchetype.Attic, "Attic", "\uE74A"),
-        (RoomArchetype.Music, "Music", "\uE8D6"),
-        (RoomArchetype.TV, "TV", "\uE7F4"),
-        (RoomArchetype.Reading, "Reading", "\uE736"),
-        (RoomArchetype.Closet, "Closet", "\uE8AF"),
-        (RoomArchetype.Storage, "Storage", "\uE8AF"),
-        (RoomArchetype.LaundryRoom, "Laundry Room", "\uE8AF"),
-        (RoomArchetype.Other, "Other", "\uE781"),
+        new(RoomArchetype.LivingRoom, "Living Room", "\uE7F4"),
+        new(RoomArchetype.Lounge, "Lounge", "\uE7F4"),
+        new(RoomArchetype.Kitchen, "Kitchen", "\uED56"),
+        new(RoomArchetype.Dining, "Dining", "\uE799"),
+        new(RoomArchetype.Bedroom, "Bedroom", "\uEC32"),
+        new(RoomArchetype.KidsBedroom, "Kids Bedroom", "\uEC32"),
+        new(RoomArchetype.GuestRoom, "Guest Room", "\uEC32"),
+        new(RoomArchetype.Bathroom, "Bathroom", "\uE9FC"),
+        new(RoomArchetype.Toilet, "Toilet", "\uE9FC"),
+        new(RoomArchetype.Nursery, "Nursery", "\uE734"),
+        new(RoomArchetype.Recreation, "Recreation", "\uE7FC"),
+        new(RoomArchetype.ManCave, "Man Cave", "\uE7FC"),
+        new(RoomArchetype.Office, "Office", "\uE821"),
+        new(RoomArchetype.Computer, "Computer", "\uE7F8"),
+        new(RoomArchetype.Studio, "Studio", "\uE722"),
+        new(RoomArchetype.Gym, "Gym", "\uE805"),
+        new(RoomArchetype.Hallway, "Hallway", "\uE8B0"),
+        new(RoomArchetype.Staircase, "Staircase", "\uE74A"),
+        new(RoomArchetype.FrontDoor, "Front Door", "\uE7AD"),
+        new(RoomArchetype.Garage, "Garage", "\uE804"),
+        new(RoomArchetype.Carport, "Carport", "\uE804"),
+        new(RoomArchetype.Driveway, "Driveway", "\uE804"),
+        new(RoomArchetype.Terrace, "Terrace", "\uE8B3"),
+        new(RoomArchetype.Garden, "Garden", "\uE8E2"),
+        new(RoomArchetype.Balcony, "Balcony", "\uE8B3"),
+        new(RoomArchetype.Porch, "Porch", "\uE8B3"),
+        new(RoomArchetype.Pool, "Pool", "\uE8A2"),
+        new(RoomArchetype.Barbecue, "Barbecue", "\uE8F9"),
+        new(RoomArchetype.Home, "Home", "\uE80F"),
+        new(RoomArchetype.Downstairs, "Downstairs", "\uE74B"),
+        new(RoomArchetype.Upstairs, "Upstairs", "\uE74A"),
+        new(RoomArchetype.TopFloor, "Top Floor", "\uE74A"),
+        new(RoomArchetype.Attic, "Attic", "\uE74A"),
+        new(RoomArchetype.Music, "Music", "\uE8D6"),
+        new(RoomArchetype.TV, "TV", "\uE7F4"),
+        new(RoomArchetype.Reading, "Reading", "\uE736"),
+        new(RoomArchetype.Closet, "Closet", "\uE8AF"),
+        new(RoomArchetype.Storage, "Storage", "\uE8AF"),
+        new(RoomArchetype.LaundryRoom, "Laundry Room", "\uE8AF"),
+        new(RoomArchetype.Other, "Other", "\uE781"),
     };
 }
