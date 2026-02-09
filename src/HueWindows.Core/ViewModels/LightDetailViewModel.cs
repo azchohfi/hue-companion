@@ -134,7 +134,8 @@ public partial class LightDetailViewModel : ObservableObject
 
         var light = lightResult.Value!;
         LightName = light.Name;
-        IsOn = light.IsOn;
+        _isOn = light.IsOn; // Use backing field to avoid triggering OnIsOnChanged → SetLightOnAsync
+        OnPropertyChanged(nameof(IsOn));
         Brightness = light.Brightness;
         SupportsColor = light.SupportsColor;
         SupportsColorTemperature = light.SupportsColorTemperature;

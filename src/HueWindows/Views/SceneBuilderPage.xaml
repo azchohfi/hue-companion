@@ -435,7 +435,7 @@
         <Border x:Name="SidePanel"
                 Grid.RowSpan="4"
                 Width="280"
-                MaxHeight="500"
+                MaxHeight="600"
                 Margin="0,0,52,16"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"

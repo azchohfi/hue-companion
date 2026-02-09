@@ -166,7 +166,8 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
         RoomName = group.DisplayName;
         _roomArchetype = group.Archetype;
         RoomIconGlyph = RoomIconHelper.GetIconForRoom(_groupId, _roomArchetype, _settingsService.Settings.CustomRoomIcons);
-        IsOn = group.IsOn;
+        _isOn = group.IsOn; // Use backing field to avoid triggering OnIsOnChanged → SetRoomOnAsync
+        OnPropertyChanged(nameof(IsOn));
         Brightness = group.Brightness;
 
         // Load lights
@@ -432,8 +433,9 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
             }
         }
 
-        // Update room state
-        IsOn = group.IsOn;
+        // Update room state (use backing fields to avoid triggering API calls)
+        _isOn = group.IsOn;
+        OnPropertyChanged(nameof(IsOn));
         Brightness = group.Brightness;
     }
 

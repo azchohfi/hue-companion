@@ -276,7 +276,7 @@ public class GradientTrackRenderer
 
     /// <summary>
     /// Interpolates between two HueColors using HSV color space to match playback behavior.
-    /// This ensures the gradient preview matches what the lights actually produce.
+    /// Uses full brightness for display — brightness is a separate dimension shown in keyframe circles.
     /// </summary>
     private Color InterpolateColor(HueColor startColor, HueColor endColor, double t)
     {
@@ -286,11 +286,12 @@ public class GradientTrackRenderer
     }
 
     /// <summary>
-    /// Converts HueColor to Windows.UI.Color using canonical ToRgb() method.
+    /// Converts HueColor to Windows.UI.Color at full brightness for visualization.
+    /// Matches how light cards display colors (color identity, not dimmed appearance).
     /// </summary>
     private Color HueColorToWindowsColor(HueColor color)
     {
-        var (r, g, b) = color.ToRgb(1.0); // brightness=1.0 for visualization
+        var (r, g, b) = color.ToRgb(1.0);
         return Color.FromArgb(255, r, g, b);
     }
 }

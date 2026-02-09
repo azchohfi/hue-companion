@@ -166,7 +166,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         ItemType = room.GroupType == LightGroupType.Zone ? PinnedItemType.Zone : PinnedItemType.Room;
 
         RoomName = room.DisplayName;
-        IsOn = room.IsOn;
+        _isOn = room.IsOn; // Use backing field to avoid triggering OnIsOnChanged → SetRoomOnAsync
         Brightness = room.Brightness;
         DominantColor = room.DominantColor;
         LightCount = room.Lights.Count;
@@ -193,7 +193,7 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
         ItemType = PinnedItemType.Light;
 
         RoomName = light.Name;
-        IsOn = light.IsOn;
+        _isOn = light.IsOn; // Use backing field to avoid triggering OnIsOnChanged → SetLightOnAsync
         Brightness = light.Brightness;
         DominantColor = light.CurrentColor;
         LightCount = 1;

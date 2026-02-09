@@ -177,6 +177,13 @@ public static class ColorConverter
     /// <returns>Interpolated XY color.</returns>
     public static HueColor InterpolateHsv(HueColor start, HueColor end, double t, double startBrightness = 1.0, double endBrightness = 1.0)
     {
+        // Short-circuit: return exact XY color at endpoints or when colors are identical
+        // to avoid lossy XY→RGB→HSV→RGB→XY round-trip that shifts hues
+        if (t <= 0) return start;
+        if (t >= 1) return end;
+        if (Math.Abs(start.X - end.X) < 0.0001 && Math.Abs(start.Y - end.Y) < 0.0001)
+            return start;
+
         // Convert to HSV at full brightness to preserve color saturation
         // Brightness is handled separately in the keyframe system
         var (h1, s1, _) = XyToHsv(start, 1.0);

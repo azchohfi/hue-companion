@@ -1300,13 +1300,17 @@ public sealed partial class SceneBuilderPage : Page
                 }
 
                 ViewModel.AddKeyframe(_marqueeTrack, timeSeconds);
-                RenderTimeline();
 
+                // Select the new keyframe visually but don't open the side panel —
+                // let the user see where they placed it before editing
                 var newKeyframe = _marqueeTrack.Keyframes.FirstOrDefault(k => Math.Abs(k.TimeSeconds - timeSeconds) < 0.1);
                 if (newKeyframe != null)
                 {
-                    SelectKeyframe(newKeyframe);
+                    ViewModel.SelectedKeyframes.Clear();
+                    ViewModel.SelectedKeyframes.Add(newKeyframe);
+                    ViewModel.SelectedKeyframe = newKeyframe;
                 }
+                RenderTimeline();
             }
         }
 

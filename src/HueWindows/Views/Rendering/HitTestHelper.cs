@@ -51,17 +51,23 @@ public static class HitTestHelper
         IReadOnlyCollection<KeyframeViewModel> selectedKeyframes,
         float zoomLevel)
     {
-        // Test playhead first (topmost layer)
-        if (HitTestPlayhead(point, playheadX, canvasHeight))
+        // Test playhead handle first (top triangle, highest priority)
+        if (HitTestPlayheadHandle(point, playheadX))
         {
             return new HitTestResult { Type = HitType.Playhead };
         }
 
-        // Test keyframes (next layer)
+        // Test keyframes (higher priority than playhead line in track area)
         var keyframeResult = HitTestKeyframes(point, tracks, selectedKeyframes, zoomLevel);
         if (keyframeResult != null)
         {
             return keyframeResult;
+        }
+
+        // Test playhead line (lower priority than keyframes so dots are clickable)
+        if (HitTestPlayheadLine(point, playheadX, canvasHeight))
+        {
+            return new HitTestResult { Type = HitType.Playhead };
         }
 
         // Test event tracks
@@ -82,18 +88,19 @@ public static class HitTestHelper
         return new HitTestResult { Type = HitType.None };
     }
 
-    private static bool HitTestPlayhead(Vector2 point, float playheadX, float height)
+    private static bool HitTestPlayheadHandle(Vector2 point, float playheadX)
     {
         // Top area: 44x44px hit zone for triangle handle (WCAG 2.5.5 compliant)
-        if (point.Y <= PlayheadTriangleHitHeight)
-        {
-            var hitLeft = playheadX - PlayheadHitWidth / 2;
-            var hitRight = playheadX + PlayheadHitWidth / 2;
+        if (point.Y > PlayheadTriangleHitHeight)
+            return false;
 
-            if (point.X >= hitLeft && point.X <= hitRight)
-                return true;
-        }
+        var hitLeft = playheadX - PlayheadHitWidth / 2;
+        var hitRight = playheadX + PlayheadHitWidth / 2;
+        return point.X >= hitLeft && point.X <= hitRight;
+    }
 
+    private static bool HitTestPlayheadLine(Vector2 point, float playheadX, float height)
+    {
         // Rest of line: narrower hit area (12px wide) for precision
         var lineHitLeft = playheadX - PlayheadLineHitWidth / 2;
         var lineHitRight = playheadX + PlayheadLineHitWidth / 2;
