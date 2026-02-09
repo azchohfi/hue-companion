@@ -393,6 +393,10 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
                 ActiveScene = activeScene;
             }
 
+            // Record for dashboard quick-access chips
+            DashboardCardViewModel.RecordSceneActivation(_settingsService, _groupId, sceneId);
+            await _settingsService.SaveAsync();
+
             // Refresh light colors after scene activation (brief delay for bridge to update)
             await Task.Delay(500);
             await RefreshLightColorsAsync();

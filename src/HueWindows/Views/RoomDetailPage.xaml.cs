@@ -27,6 +27,7 @@ public sealed partial class RoomDetailPage : Page
 {
     public RoomDetailViewModel ViewModel { get; }
     private readonly IPinnedItemsService _pinnedItemsService;
+    private readonly ISettingsService _settingsService;
     private bool _isLoaded;
     private Color _accentColor = Colors.White;
     private SolidColorBrush? _roomIconBrush;
@@ -52,6 +53,7 @@ public sealed partial class RoomDetailPage : Page
     {
         ViewModel = App.Services.GetRequiredService<RoomDetailViewModel>();
         _pinnedItemsService = App.Services.GetRequiredService<IPinnedItemsService>();
+        _settingsService = App.Services.GetRequiredService<ISettingsService>();
 
         this.InitializeComponent();
         this.ActualThemeChanged += OnActualThemeChanged;
@@ -661,6 +663,29 @@ public sealed partial class RoomDetailPage : Page
         if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(input.Text))
         {
             await ViewModel.SaveAsSceneCommand.ExecuteAsync(input.Text);
+        }
+    }
+
+    /// <summary>
+    /// Toggles a scene as a dashboard quick-access favorite.
+    /// </summary>
+    private async void FavoriteScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item && item.Tag is UnifiedSceneItemViewModel scene && scene.NativeSceneId.HasValue)
+        {
+            var groupKey = ViewModel.GroupId.ToString();
+            var sceneId = scene.NativeSceneId.Value.ToString();
+
+            var favs = _settingsService.Settings.SceneFavorites;
+            if (!favs.ContainsKey(groupKey))
+                favs[groupKey] = new();
+
+            if (favs[groupKey].Contains(sceneId))
+                favs[groupKey].Remove(sceneId);
+            else
+                favs[groupKey].Add(sceneId);
+
+            await _settingsService.SaveAsync();
         }
     }
 

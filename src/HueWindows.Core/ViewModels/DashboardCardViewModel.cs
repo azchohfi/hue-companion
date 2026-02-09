@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -6,6 +7,11 @@ using HueWindows.Core.Services.Interfaces;
 using HueWindows.Core.Utilities;
 
 namespace HueWindows.Core.ViewModels;
+
+/// <summary>
+/// Lightweight data carrier for a scene chip displayed on a dashboard card.
+/// </summary>
+public record SceneChipItem(Guid SceneId, string Name, string Color1Hex, bool IsFavorite);
 
 /// <summary>
 /// Unified ViewModel for items on the custom dashboard.
@@ -53,6 +59,16 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
 
     [ObservableProperty]
     private bool _isAdjusting;
+
+    // Scene quick-access fields (only used for room/zone items)
+    private bool _scenesLoaded;
+    private List<SceneModel> _allScenes = new();
+
+    [ObservableProperty]
+    private ObservableCollection<SceneChipItem> _sceneChips = new();
+
+    [ObservableProperty]
+    private bool _hasScenes;
 
     /// <summary>
     /// Event raised when the card is tapped (for navigation).
@@ -296,6 +312,153 @@ public partial class DashboardCardViewModel : ObservableObject, IRoomCardViewMod
     {
         await _pinnedItemsService.UnpinAsync(ItemId, ItemType);
     }
+
+    /// <summary>
+    /// Lazily loads scenes for this room/zone on first call. No-op for individual lights.
+    /// </summary>
+    public async Task LoadScenesAsync()
+    {
+        if (_scenesLoaded || _room == null) return;
+        _scenesLoaded = true;
+
+        var bridgeService = GetBridgeService();
+        if (bridgeService == null) return;
+
+        var result = _room.GroupType == LightGroupType.Zone
+            ? await bridgeService.GetScenesForZoneAsync(ItemId)
+            : await bridgeService.GetScenesForRoomAsync(ItemId);
+
+        if (result.IsFailure) return;
+        _allScenes = result.Value!.ToList();
+
+        RebuildSceneChips();
+        HasScenes = _allScenes.Count > 0;
+    }
+
+    /// <summary>
+    /// Activates a scene and records the activation for quick-access tracking.
+    /// </summary>
+    public async Task ActivateSceneAsync(Guid sceneId)
+    {
+        var bridgeService = GetBridgeService();
+        if (bridgeService == null) return;
+
+        await bridgeService.ActivateSceneAsync(sceneId);
+        RecordSceneActivation(_settingsService, ItemId, sceneId);
+        await _settingsService.SaveAsync();
+    }
+
+    /// <summary>
+    /// Gets all scenes as SceneChipItem list for the flyout.
+    /// </summary>
+    public IReadOnlyList<SceneChipItem> GetAllSceneItems()
+    {
+        var groupKey = ItemId.ToString();
+        var favs = _settingsService.Settings.SceneFavorites.TryGetValue(groupKey, out var f) ? f : new();
+        return _allScenes.Select(s =>
+        {
+            var hex = s.PaletteColors.Count > 0
+                ? ToHex(s.PaletteColors[0].ToRgb(1.0))
+                : "#888888";
+            return new SceneChipItem(s.Id, s.Name, hex, favs.Contains(s.Id.ToString()));
+        }).ToList();
+    }
+
+    private void RebuildSceneChips()
+    {
+        SceneChips.Clear();
+        var quickIds = GetQuickAccessSceneIds(_settingsService, ItemId, 3);
+        foreach (var id in quickIds)
+        {
+            var scene = _allScenes.FirstOrDefault(s => s.Id == id);
+            if (scene == null) continue;
+            var hex = scene.PaletteColors.Count > 0
+                ? ToHex(scene.PaletteColors[0].ToRgb(1.0))
+                : "#888888";
+            var groupKey = ItemId.ToString();
+            var isFav = _settingsService.Settings.SceneFavorites
+                .TryGetValue(groupKey, out var favs) && favs.Contains(id.ToString());
+            SceneChips.Add(new SceneChipItem(scene.Id, scene.Name, hex, isFav));
+        }
+    }
+
+    /// <summary>
+    /// Returns quick-access scene IDs: favorites first, then most recent, deduplicated.
+    /// </summary>
+    public static List<Guid> GetQuickAccessSceneIds(ISettingsService settings, Guid groupId, int max = 3)
+    {
+        var groupKey = groupId.ToString();
+        var result = new List<Guid>();
+        var seen = new HashSet<string>();
+
+        // Favorites first
+        if (settings.Settings.SceneFavorites.TryGetValue(groupKey, out var favs))
+        {
+            foreach (var id in favs)
+            {
+                if (seen.Add(id) && Guid.TryParse(id, out var guid))
+                {
+                    result.Add(guid);
+                    if (result.Count >= max) return result;
+                }
+            }
+        }
+
+        // Then recents by most recent first
+        if (settings.Settings.SceneRecents.TryGetValue(groupKey, out var recents))
+        {
+            foreach (var activation in recents.OrderByDescending(a => a.ActivatedAt))
+            {
+                if (seen.Add(activation.SceneId) && Guid.TryParse(activation.SceneId, out var guid))
+                {
+                    result.Add(guid);
+                    if (result.Count >= max) return result;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Records a scene activation for recency tracking. Call from any context that activates a scene.
+    /// </summary>
+    public static void RecordSceneActivation(ISettingsService settings, Guid groupId, Guid sceneId)
+    {
+        var groupKey = groupId.ToString();
+        var sceneKey = sceneId.ToString();
+
+        if (!settings.Settings.SceneRecents.TryGetValue(groupKey, out var recents))
+        {
+            recents = new();
+            settings.Settings.SceneRecents[groupKey] = recents;
+        }
+
+        var existing = recents.FirstOrDefault(r => r.SceneId == sceneKey);
+        if (existing != null)
+        {
+            existing.ActivatedAt = DateTime.UtcNow;
+            existing.ActivationCount++;
+        }
+        else
+        {
+            recents.Add(new SceneActivation
+            {
+                SceneId = sceneKey,
+                ActivatedAt = DateTime.UtcNow,
+                ActivationCount = 1
+            });
+        }
+
+        // Cap at 20 recents per room
+        if (recents.Count > 20)
+        {
+            var oldest = recents.OrderBy(r => r.ActivatedAt).First();
+            recents.Remove(oldest);
+        }
+    }
+
+    private static string ToHex((byte R, byte G, byte B) color) => $"#{color.R:X2}{color.G:X2}{color.B:X2}";
 
     /// <summary>
     /// Called when a light state change event is received.

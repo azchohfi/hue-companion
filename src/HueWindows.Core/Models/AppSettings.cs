@@ -51,6 +51,16 @@ public class AppSettings
     /// Custom light ordering per room/zone (group ID string -> list of light ID strings).
     /// </summary>
     public Dictionary<string, List<string>> LightOrders { get; set; } = new();
+
+    /// <summary>
+    /// Favorited scenes per room/zone (group ID string -> list of scene ID strings).
+    /// </summary>
+    public Dictionary<string, List<string>> SceneFavorites { get; set; } = new();
+
+    /// <summary>
+    /// Recent scene activations per room/zone (group ID string -> list of activation records).
+    /// </summary>
+    public Dictionary<string, List<SceneActivation>> SceneRecents { get; set; } = new();
 }
 
 /// <summary>

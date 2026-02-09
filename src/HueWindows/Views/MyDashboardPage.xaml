@@ -72,7 +72,7 @@
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal"
                                            ItemWidth="220"
-                                           ItemHeight="128"/>
+                                           ItemHeight="164"/>
                         </ItemsPanelTemplate>
                     </ListView.ItemsPanel>
                     <ListView.ItemContainerStyle>

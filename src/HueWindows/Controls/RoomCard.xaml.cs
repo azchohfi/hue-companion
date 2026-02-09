@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using HueWindows.Constants;
+using HueWindows.Converters;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
 using Windows.UI;
@@ -401,10 +402,13 @@ public sealed partial class RoomCard : UserControl
 
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Prevent navigation if clicking the toggle
-        if (e.OriginalSource is DependencyObject obj && obj.IsDescendantOf(RoomToggle))
+        // Prevent navigation if clicking the toggle or scene chips
+        if (e.OriginalSource is DependencyObject obj)
         {
-            return;
+            if (obj.IsDescendantOf(RoomToggle))
+                return;
+            if (obj.IsDescendantOf(SceneChipsPanel))
+                return;
         }
 
         if (!_isDragging && ViewModel != null)
@@ -427,6 +431,10 @@ public sealed partial class RoomCard : UserControl
             ApplyThemeBackground();
             AnimateScale(1.015);
             VisualStateManager.GoToState(this, "Hover", true);
+
+            // Lazy load scenes on first hover (only for dashboard cards)
+            if (DataContext is DashboardCardViewModel dashVm)
+                _ = LoadAndDisplayScenesAsync(dashVm);
         }
     }
 
@@ -457,6 +465,141 @@ public sealed partial class RoomCard : UserControl
         sb.Children.Add(animX);
         sb.Children.Add(animY);
         sb.Begin();
+    }
+
+    // Scene chip buttons and their child elements, indexed by slot
+    private Button[] SceneChipButtons => new[] { SceneChip0, SceneChip1, SceneChip2 };
+    private Microsoft.UI.Xaml.Shapes.Ellipse[] SceneChipDots => new[] { SceneChip0Dot, SceneChip1Dot, SceneChip2Dot };
+    private TextBlock[] SceneChipTexts => new[] { SceneChip0Text, SceneChip1Text, SceneChip2Text };
+
+    private async Task LoadAndDisplayScenesAsync(DashboardCardViewModel dashVm)
+    {
+        await dashVm.LoadScenesAsync();
+        UpdateSceneChips(dashVm);
+    }
+
+    private void UpdateSceneChips(DashboardCardViewModel dashVm)
+    {
+        var chips = dashVm.SceneChips;
+        var hasChips = chips.Count > 0;
+
+        SceneChipsPanel.Visibility = hasChips ? Visibility.Visible : Visibility.Collapsed;
+
+        var converter = new HexToSolidColorBrushConverter();
+        var bgConverter = new HexToGradientBackgroundConverter();
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (i < chips.Count)
+            {
+                var chip = chips[i];
+                SceneChipButtons[i].Visibility = Visibility.Visible;
+                SceneChipButtons[i].Tag = chip.SceneId;
+                SceneChipButtons[i].Background = bgConverter.Convert(chip.Color1Hex, typeof(Brush), null!, null!) as Brush
+                    ?? new SolidColorBrush(Colors.Transparent);
+                SceneChipDots[i].Fill = converter.Convert(chip.Color1Hex, typeof(Brush), null!, null!) as Brush
+                    ?? new SolidColorBrush(Colors.Gray);
+                SceneChipTexts[i].Text = chip.Name;
+            }
+            else
+            {
+                SceneChipButtons[i].Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Show "More" button if there are more scenes than chips shown
+        MoreScenesButton.Visibility = dashVm.HasScenes ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void SceneChip_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is Guid sceneId && DataContext is DashboardCardViewModel dashVm)
+        {
+            await dashVm.ActivateSceneAsync(sceneId);
+        }
+    }
+
+    private void AllScenesFlyout_Opening(object sender, object e)
+    {
+        if (DataContext is not DashboardCardViewModel dashVm) return;
+
+        var allItems = dashVm.GetAllSceneItems();
+        ScenesFlyoutContent.Children.Clear();
+
+        // Header
+        ScenesFlyoutContent.Children.Add(new TextBlock
+        {
+            Text = "Scenes",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontSize = 13,
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+
+        var converter = new HexToSolidColorBrushConverter();
+
+        foreach (var item in allItems)
+        {
+            var btn = new Button
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(8, 6, 8, 6),
+                CornerRadius = new CornerRadius(8),
+                BorderThickness = new Thickness(0),
+                Background = new SolidColorBrush(Colors.Transparent),
+                Tag = item.SceneId
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var dot = new Microsoft.UI.Xaml.Shapes.Ellipse
+            {
+                Width = 10, Height = 10,
+                Margin = new Thickness(0, 0, 8, 0),
+                Fill = converter.Convert(item.Color1Hex, typeof(Brush), null!, null!) as Brush
+                    ?? new SolidColorBrush(Colors.Gray)
+            };
+            Grid.SetColumn(dot, 0);
+            grid.Children.Add(dot);
+
+            var name = new TextBlock
+            {
+                Text = item.Name,
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(name, 1);
+            grid.Children.Add(name);
+
+            if (item.IsFavorite)
+            {
+                var star = new FontIcon
+                {
+                    Glyph = "\uE735",
+                    FontSize = 12,
+                    Foreground = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"]
+                };
+                Grid.SetColumn(star, 2);
+                grid.Children.Add(star);
+            }
+
+            btn.Content = grid;
+            btn.Click += SceneFlyoutItem_Click;
+            ScenesFlyoutContent.Children.Add(btn);
+        }
+    }
+
+    private async void SceneFlyoutItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is Guid sceneId && DataContext is DashboardCardViewModel dashVm)
+        {
+            AllScenesFlyout.Hide();
+            await dashVm.ActivateSceneAsync(sceneId);
+        }
     }
 
 }

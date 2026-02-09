@@ -70,6 +70,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Header: Icon and Name -->
@@ -156,6 +157,63 @@
                         <Run Text=" %"/>
                     </TextBlock>
                 </Grid>
+
+                <!-- Scene chips row -->
+                <StackPanel x:Name="SceneChipsPanel" Grid.Row="3"
+                            Orientation="Horizontal" Spacing="4" Margin="0,8,0,0"
+                            Visibility="Collapsed">
+                    <Button x:Name="SceneChip0" MinHeight="24" MaxHeight="24"
+                            Padding="8,2" CornerRadius="12" BorderThickness="0"
+                            Click="SceneChip_Click" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Ellipse x:Name="SceneChip0Dot" Width="8" Height="8"/>
+                            <TextBlock x:Name="SceneChip0Text" FontSize="11"
+                                       MaxWidth="56" TextTrimming="CharacterEllipsis"
+                                       Foreground="{ThemeResource CardPrimaryTextBrush}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SceneChip1" MinHeight="24" MaxHeight="24"
+                            Padding="8,2" CornerRadius="12" BorderThickness="0"
+                            Click="SceneChip_Click" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Ellipse x:Name="SceneChip1Dot" Width="8" Height="8"/>
+                            <TextBlock x:Name="SceneChip1Text" FontSize="11"
+                                       MaxWidth="56" TextTrimming="CharacterEllipsis"
+                                       Foreground="{ThemeResource CardPrimaryTextBrush}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SceneChip2" MinHeight="24" MaxHeight="24"
+                            Padding="8,2" CornerRadius="12" BorderThickness="0"
+                            Click="SceneChip_Click" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Ellipse x:Name="SceneChip2Dot" Width="8" Height="8"/>
+                            <TextBlock x:Name="SceneChip2Text" FontSize="11"
+                                       MaxWidth="56" TextTrimming="CharacterEllipsis"
+                                       Foreground="{ThemeResource CardPrimaryTextBrush}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="MoreScenesButton" MinHeight="24" MaxHeight="24"
+                            Padding="6,2" CornerRadius="12" BorderThickness="0"
+                            Background="{ThemeResource CardIconBackgroundBrush}"
+                            Visibility="Collapsed">
+                        <FontIcon Glyph="&#xE712;" FontSize="10"
+                                  Foreground="{ThemeResource CardSecondaryTextBrush}"/>
+                        <Button.Flyout>
+                            <Flyout x:Name="AllScenesFlyout" Placement="Bottom"
+                                    ShouldConstrainToRootBounds="False"
+                                    Opening="AllScenesFlyout_Opening">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="Padding" Value="8"/>
+                                        <Setter Property="CornerRadius" Value="12"/>
+                                        <Setter Property="MaxHeight" Value="320"/>
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <StackPanel x:Name="ScenesFlyoutContent" Width="200"/>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
             </Grid>
             
 

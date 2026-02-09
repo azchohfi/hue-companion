@@ -317,6 +317,15 @@
                                             Command="{x:Bind ActivateCommand}">
                                         <Button.ContextFlyout>
                                             <MenuFlyout>
+                                                <MenuFlyoutItem Text="Add to Quick Access"
+                                                                Click="FavoriteScene_Click"
+                                                                Tag="{x:Bind}"
+                                                                Visibility="{x:Bind IsNative}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE734;"/>
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutSeparator/>
                                                 <MenuFlyoutItem Text="Delete"
                                                                 Click="DeleteScene_Click"
                                                                 Tag="{x:Bind}"
