@@ -128,7 +128,7 @@
             </StackPanel>
 
             <Button Content="Go to Dashboard"
-                    Style="{StaticResource AccentButtonStyle}"
+                    Style="{StaticResource PrimaryButtonStyle}"
                     HorizontalAlignment="Center"
                     Click="GoToDashboard_Click"/>
         </StackPanel>

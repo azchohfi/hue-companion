@@ -165,7 +165,7 @@
                         Spacing="8"
                         Margin="0,8,0,0">
                 <Button Content="Create Room"
-                        Style="{StaticResource AccentButtonStyle}"
+                        Style="{StaticResource PrimaryButtonStyle}"
                         Click="AddRoomOrZone_Click"/>
                 <Button Content="Refresh"
                         Command="{x:Bind ViewModel.RefreshCommand}"/>

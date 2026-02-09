@@ -275,12 +275,12 @@ public class GradientTrackRenderer
     }
 
     /// <summary>
-    /// Interpolates between two HueColors using HSV color space to match playback behavior.
+    /// Interpolates between two HueColors using direct CIE xy interpolation to match playback behavior.
     /// Uses full brightness for display — brightness is a separate dimension shown in keyframe circles.
     /// </summary>
     private Color InterpolateColor(HueColor startColor, HueColor endColor, double t)
     {
-        var interpolated = ColorConverter.InterpolateHsv(startColor, endColor, t);
+        var interpolated = ColorConverter.InterpolateXy(startColor, endColor, t);
         var (r, g, b) = interpolated.ToRgb(1.0);
         return Color.FromArgb(255, r, g, b);
     }

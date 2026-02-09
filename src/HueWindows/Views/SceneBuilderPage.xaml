@@ -69,7 +69,7 @@
                 <!-- Save -->
                 <Button Content="Save"
                         Click="SaveButton_Click"
-                        Style="{StaticResource AccentButtonStyle}"/>
+                        Style="{StaticResource PrimaryButtonStyle}"/>
 
                 <!-- Export -->
                 <Button Click="ExportFile_Click"
@@ -291,7 +291,7 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                         <Button x:Name="PlayButton"
                                 Click="PlayButton_Click"
-                                Style="{StaticResource AccentButtonStyle}"
+                                Style="{StaticResource PrimaryButtonStyle}"
                                 ToolTipService.ToolTip="Play/Pause (Space)"
                                 AutomationProperties.Name="Play or Pause Timeline"
                                 AutomationProperties.AcceleratorKey="Space">
@@ -426,7 +426,7 @@
                     <Button Grid.Column="2"
                             Content="Save Scene"
                             Click="SaveButton_Click"
-                            Style="{StaticResource AccentButtonStyle}"/>
+                            Style="{StaticResource PrimaryButtonStyle}"/>
                 </Grid>
             </Grid>
         </Border>

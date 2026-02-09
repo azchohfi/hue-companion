@@ -44,7 +44,7 @@
 
             <!-- Search Button -->
             <Button Content="Search for Bridges"
-                    Style="{StaticResource AccentButtonStyle}"
+                    Style="{StaticResource PrimaryButtonStyle}"
                     HorizontalAlignment="Center"
                     Command="{x:Bind ViewModel.DiscoverBridgesCommand}"
                     Visibility="{x:Bind InvertBool(ViewModel.IsDiscovering), Mode=OneWay}"/>
@@ -117,7 +117,7 @@
                 </Border>
 
                 <Button Content="Connect"
-                        Style="{StaticResource AccentButtonStyle}"
+                        Style="{StaticResource PrimaryButtonStyle}"
                         HorizontalAlignment="Center"
                         MinWidth="200"
                         Command="{x:Bind ViewModel.RegisterWithBridgeCommand}"/>

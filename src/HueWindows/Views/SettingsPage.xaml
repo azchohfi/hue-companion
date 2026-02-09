@@ -309,7 +309,7 @@
                     <Border Grid.Column="0"
                             Width="48" Height="48"
                             CornerRadius="8"
-                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            Background="#25FFFFFF"
                             Margin="0,0,16,0">
                         <FontIcon Glyph="&#xE781;" FontSize="24"
                                   Foreground="White"

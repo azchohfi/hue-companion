@@ -166,6 +166,26 @@ public static class ColorConverter
     }
 
     /// <summary>
+    /// Interpolates between two colors directly in CIE xy chromaticity space.
+    /// This avoids the lossy XY→RGB→HSV→RGB→XY round-trip that can shift hues,
+    /// and matches how the Hue bridge itself transitions between colors.
+    /// </summary>
+    /// <param name="start">Starting XY color.</param>
+    /// <param name="end">Ending XY color.</param>
+    /// <param name="t">Interpolation factor (0.0 to 1.0).</param>
+    /// <returns>Interpolated XY color.</returns>
+    public static HueColor InterpolateXy(HueColor start, HueColor end, double t)
+    {
+        if (t <= 0) return start;
+        if (t >= 1) return end;
+
+        var x = start.X + (end.X - start.X) * t;
+        var y = start.Y + (end.Y - start.Y) * t;
+
+        return new HueColor(x, y);
+    }
+
+    /// <summary>
     /// Interpolates between two colors in HSV color space to avoid muddy colors.
     /// Brightness is handled separately and should not affect the color interpolation.
     /// </summary>

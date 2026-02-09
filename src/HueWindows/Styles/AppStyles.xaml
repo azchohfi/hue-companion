@@ -62,6 +62,19 @@
             <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#E0FFFFFF"/>
             <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="#60FFFFFF"/>
+            <!-- ToggleButton checked state (replaces accent color) -->
+            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#30FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#38FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#22FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedDisabled" Color="#15FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="White"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="White"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#D0FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedDisabled" Color="#60FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#25FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="#30FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="#18FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedDisabled" Color="#10FFFFFF"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <!-- Card gradient colors for light theme (90% opacity for ambient wash bleed-through) -->
@@ -119,6 +132,19 @@
             <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FF1A1A1A"/>
             <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#E0000000"/>
             <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="#60000000"/>
+            <!-- ToggleButton checked state (replaces accent color) -->
+            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#20000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#28000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#15000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedDisabled" Color="#10000000"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="Black"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="Black"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#D0000000"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedDisabled" Color="#60000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#20000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="#28000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="#15000000"/>
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedDisabled" Color="#10000000"/>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -130,11 +156,15 @@
          (Off-state track, border, and knob overrides are in ThemeDictionaries above)
          ===================================================== -->
 
-    <!-- Track (On State) - Accent color (theme-independent) -->
-    <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="AccentFillColorDefaultBrush"/>
-    <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="AccentFillColorSecondaryBrush"/>
-    <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="AccentFillColorTertiaryBrush"/>
-    <StaticResource x:Key="ToggleSwitchFillOnDisabled" ResourceKey="AccentFillColorDisabledBrush"/>
+    <!-- Override system AccentButtonStyle with our dark premium look.
+         This catches ContentDialog default buttons and any other system controls. -->
+    <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}"/>
+
+    <!-- Track (On State) - Neutral white for premium dark look -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#B0FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#C0FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#90FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#40FFFFFF"/>
 
     <!-- Track Border (On State) - Clean with no border -->
     <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent"/>
@@ -394,8 +424,61 @@
         <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorSecondaryBrush}"/>
     </Style>
 
+    <!-- Primary Button Style - Dark, premium look for action buttons (replaces AccentButtonStyle) -->
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="RootGrid"
+                          Background="#20FFFFFF"
+                          CornerRadius="{TemplateBinding CornerRadius}"
+                          BorderBrush="#25FFFFFF"
+                          BorderThickness="{TemplateBinding BorderThickness}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PressedOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.1"/>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <Border x:Name="HoverOverlay" Background="#10FFFFFF" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
+                        <Border x:Name="PressedOverlay" Background="#10000000" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"/>
+
+                        <ContentPresenter x:Name="ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Padding="{TemplateBinding Padding}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          FontWeight="{TemplateBinding FontWeight}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Active Scene Button Style -->
-    <Style x:Key="ActiveSceneButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+    <Style x:Key="ActiveSceneButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>

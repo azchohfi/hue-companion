@@ -105,7 +105,7 @@
                 <Button Content="Open Hue App"
                         Click="OpenHueApp_Click"/>
                 <Button Content="Refresh"
-                        Style="{StaticResource AccentButtonStyle}"
+                        Style="{StaticResource PrimaryButtonStyle}"
                         Command="{x:Bind ViewModel.RefreshCommand}"/>
             </StackPanel>
 

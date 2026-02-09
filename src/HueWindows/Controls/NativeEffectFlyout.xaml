@@ -78,7 +78,7 @@
                         Click="SaveButton_Click"/>
                 <Button x:Name="ApplyButton" Grid.Column="2"
                         Content="Apply"
-                        Style="{StaticResource AccentButtonStyle}"
+                        Style="{StaticResource PrimaryButtonStyle}"
                         HorizontalAlignment="Stretch"
                         Click="ApplyButton_Click"/>
             </Grid>

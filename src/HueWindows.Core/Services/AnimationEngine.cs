@@ -216,12 +216,7 @@ public class AnimationEngine : IDisposable
                 if (prev.Color != null && next.Color != null &&
                     prev.Brightness.HasValue && next.Brightness.HasValue)
                 {
-                    var color = ColorConverter.InterpolateHsv(
-                        prev.Color,
-                        next.Color,
-                        progress,
-                        prev.Brightness ?? 1.0,
-                        next.Brightness ?? 1.0);
+                    var color = ColorConverter.InterpolateXy(prev.Color, next.Color, progress);
                     var brightness = prev.Brightness.Value + (next.Brightness.Value - prev.Brightness.Value) * progress;
                     // Send color and brightness atomically to avoid white flash
                     await _bridgeService.SetLightColorAndBrightnessAsync(lightId, color, brightness);
@@ -233,12 +228,7 @@ public class AnimationEngine : IDisposable
                 }
                 else if (prev.Color != null && next.Color != null)
                 {
-                    var color = ColorConverter.InterpolateHsv(
-                        prev.Color,
-                        next.Color,
-                        progress,
-                        prev.Brightness ?? 1.0,
-                        next.Brightness ?? 1.0);
+                    var color = ColorConverter.InterpolateXy(prev.Color, next.Color, progress);
                     await _bridgeService.SetLightColorAsync(lightId, color);
                 }
 
