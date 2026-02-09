@@ -45,6 +45,8 @@ public sealed partial class RoomDetailPage : Page
     private int _lightEntranceIndex; // Track stagger index for light cards
     private bool _useInstantColorUpdate; // Use instant update (no animation) when initial state was set from navigation params
     private const double ItemMargin = 12.0; // Total horizontal margin (6px each side) used in adaptive grid sizing
+    private SolidColorBrush? _sliderTrackFillBrush; // Track fill brush for colored slider
+    private Color _currentSliderTrackColor = Colors.Transparent;
 
     public RoomDetailPage()
     {
@@ -132,6 +134,7 @@ public sealed partial class RoomDetailPage : Page
         UpdateRoomIconColor(isActive, colors, instant);
         UpdateBrightnessIconColor(isActive, colors, instant);
         UpdateColorButtonColor(isActive, colors, instant);
+        UpdateSliderTrackColor(isActive, instant);
 
         // Notify MainWindow for ambient wash and nav indicator
         try
@@ -347,6 +350,53 @@ public sealed partial class RoomDetailPage : Page
             AnimationHelper.AnimateColor(_colorButtonBrush, _currentColorButtonColor, targetColor);
         }
         _currentColorButtonColor = targetColor;
+    }
+
+    private void UpdateSliderTrackColor(bool isActive, bool instant = false)
+    {
+        if (BrightnessSlider == null) return;
+
+        // Lazily find the track fill rectangle in the slider's visual tree
+        if (_sliderTrackFillBrush == null)
+        {
+            var trackFill = FindDescendantByName(BrightnessSlider, "HorizontalDecreaseRect");
+            if (trackFill is Microsoft.UI.Xaml.Shapes.Rectangle rect)
+            {
+                _sliderTrackFillBrush = new SolidColorBrush(_currentSliderTrackColor);
+                rect.Fill = _sliderTrackFillBrush;
+            }
+            else
+            {
+                return; // Slider template not loaded yet
+            }
+        }
+
+        var targetColor = isActive ? _accentColor : Colors.Gray;
+
+        if (instant)
+        {
+            _sliderTrackFillBrush.Color = targetColor;
+        }
+        else
+        {
+            AnimationHelper.AnimateColor(_sliderTrackFillBrush, _currentSliderTrackColor, targetColor);
+        }
+        _currentSliderTrackColor = targetColor;
+    }
+
+    private static DependencyObject? FindDescendantByName(DependencyObject parent, string name)
+    {
+        var count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is FrameworkElement fe && fe.Name == name)
+                return child;
+            var result = FindDescendantByName(child, name);
+            if (result != null)
+                return result;
+        }
+        return null;
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -829,6 +879,11 @@ public sealed partial class RoomDetailPage : Page
                 await ApplyNativeEffectAsync(args);
             }
         }
+    }
+
+    private async void LightsGrid_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+    {
+        await ViewModel.SaveLightOrderAsync();
     }
 
     private void LightsGrid_SizeChanged(object sender, SizeChangedEventArgs e)

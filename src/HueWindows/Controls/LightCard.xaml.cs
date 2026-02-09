@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using HueWindows.Constants;
+using HueWindows.Core.Models;
 using HueWindows.Core.ViewModels;
 using HueWindows.Utilities;
 using Windows.UI;
@@ -27,6 +28,9 @@ public sealed partial class LightCard : UserControl
     private SolidColorBrush? _colorButtonBrush;
     private bool _useFirstBorder = true; // Toggle between two borders for cross-fade
     private LightItemViewModel? _currentViewModel;
+    private DispatcherTimer? _brightnessDebounceTimer;
+    private double _pendingBrightness;
+    private bool _isUpdatingSlider;
 
     public LightItemViewModel? ViewModel => DataContext as LightItemViewModel;
 
@@ -135,7 +139,8 @@ public sealed partial class LightCard : UserControl
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(LightItemViewModel.IsOn) ||
-            e.PropertyName == nameof(LightItemViewModel.CurrentColorRgb))
+            e.PropertyName == nameof(LightItemViewModel.CurrentColorRgb) ||
+            e.PropertyName == nameof(LightItemViewModel.ColorModeLabel))
         {
             if (DispatcherQueue?.HasThreadAccess == true)
             {
@@ -146,6 +151,26 @@ public sealed partial class LightCard : UserControl
                 DispatcherQueue?.TryEnqueue(UpdateActiveState);
             }
         }
+        else if (e.PropertyName == nameof(LightItemViewModel.BrightnessPercent))
+        {
+            // Update slider from external changes (bridge events) without triggering debounce
+            if (DispatcherQueue?.HasThreadAccess == true)
+            {
+                UpdateSliderFromViewModel();
+            }
+            else
+            {
+                DispatcherQueue?.TryEnqueue(UpdateSliderFromViewModel);
+            }
+        }
+    }
+
+    private void UpdateSliderFromViewModel()
+    {
+        if (ViewModel == null) return;
+        _isUpdatingSlider = true;
+        BrightnessSlider.Value = ViewModel.BrightnessPercent;
+        _isUpdatingSlider = false;
     }
 
     private void UpdateActiveState()
@@ -170,6 +195,14 @@ public sealed partial class LightCard : UserControl
         UpdateToggleColor(isActive);
         UpdateIconColor(isActive);
         UpdateColorButtonColor(isActive);
+        UpdateColorModeLabel();
+    }
+
+    private void UpdateColorModeLabel()
+    {
+        var label = ViewModel?.ColorModeLabel ?? string.Empty;
+        var hasLabel = !string.IsNullOrEmpty(label);
+        ColorModeText.Visibility = hasLabel ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void UpdateBorderEffect(bool isActive)
@@ -285,17 +318,39 @@ public sealed partial class LightCard : UserControl
 
     private void CardRoot_Tapped(object sender, TappedRoutedEventArgs e)
     {
-        // Prevent navigation if clicking the toggle or color button
+        // Prevent navigation if clicking the toggle, color button, or brightness slider
         if (e.OriginalSource is DependencyObject obj)
         {
             if (obj.IsDescendantOf(LightToggle))
                 return;
             if (ColorSplitButton != null && obj.IsDescendantOf(ColorSplitButton))
                 return;
+            if (obj.IsDescendantOf(BrightnessSlider))
+                return;
         }
 
         ViewModel?.TapLightCommand.Execute(null);
         e.Handled = true;
+    }
+
+    private void BrightnessSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (_isUpdatingSlider || ViewModel == null) return;
+
+        _pendingBrightness = e.NewValue / 100.0;
+
+        if (_brightnessDebounceTimer == null)
+        {
+            _brightnessDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            _brightnessDebounceTimer.Tick += (s, args) =>
+            {
+                _brightnessDebounceTimer.Stop();
+                ViewModel?.SetBrightnessCommand.Execute(_pendingBrightness);
+            };
+        }
+
+        _brightnessDebounceTimer.Stop();
+        _brightnessDebounceTimer.Start();
     }
 
     private void LightToggle_Tapped(object sender, TappedRoutedEventArgs e)
@@ -327,6 +382,38 @@ public sealed partial class LightCard : UserControl
         if (ViewModel != null)
         {
             AddToDashboardRequested?.Invoke(this, ViewModel.LightId);
+        }
+    }
+
+    // Shared clipboard for copy/paste color between light cards
+    private static HueColor? _clipboardColor;
+
+    private void ContextMenu_Opening(object sender, object e)
+    {
+        // Show paste option only when clipboard has a color and light supports color
+        PasteColorMenuItem.Visibility = (_clipboardColor != null && ViewModel?.SupportsColor == true)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void Identify_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel?.IdentifyCommand.Execute(null);
+    }
+
+    private void CopyColor_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel?.CurrentColor != null)
+        {
+            _clipboardColor = ViewModel.CurrentColor;
+        }
+    }
+
+    private void PasteColor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_clipboardColor != null)
+        {
+            ViewModel?.PasteColorCommand.Execute(_clipboardColor);
         }
     }
 

@@ -46,6 +46,11 @@ public class AppSettings
     /// Custom icon overrides per room/zone (room ID string -> glyph string).
     /// </summary>
     public Dictionary<string, string> CustomRoomIcons { get; set; } = new();
+
+    /// <summary>
+    /// Custom light ordering per room/zone (group ID string -> list of light ID strings).
+    /// </summary>
+    public Dictionary<string, List<string>> LightOrders { get; set; } = new();
 }
 
 /// <summary>

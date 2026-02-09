@@ -201,13 +201,17 @@
             <StackPanel Padding="36,0,36,36" Spacing="28">
 
                 <!-- Lights Section -->
-                <StackPanel>
-                    <TextBlock Text="Lights"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
+                <Expander IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <Expander.Header>
+                        <TextBlock Text="Lights" Style="{StaticResource SectionHeaderTextStyle}"/>
+                    </Expander.Header>
                     <GridView x:Name="LightsGrid"
                               ItemsSource="{x:Bind ViewModel.Lights, Mode=OneWay}"
                               SelectionMode="None"
                               IsItemClickEnabled="False"
+                              CanReorderItems="True"
+                              AllowDrop="True"
+                              DragItemsCompleted="LightsGrid_DragItemsCompleted"
                               ContainerContentChanging="LightsGrid_ContainerContentChanging"
                               SizeChanged="LightsGrid_SizeChanged"
                               Margin="-6,0,-6,0">
@@ -229,26 +233,29 @@
                             </DataTemplate>
                         </GridView.ItemTemplate>
                     </GridView>
-                </StackPanel>
+                </Expander>
 
                 <!-- Scenes Section (unified: native + animated) -->
-                <StackPanel Visibility="{x:Bind HasScenes(ViewModel.UnifiedScenes.Count), Mode=OneWay}">
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Scenes"
-                                   Style="{StaticResource SectionHeaderTextStyle}"/>
-                        <Button Grid.Column="1"
-                                Click="AddScene_Click"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTipService.ToolTip="Add scene from library"
-                                VerticalAlignment="Center">
-                            <FontIcon Glyph="&#xE710;" FontSize="14"/>
-                        </Button>
-                    </Grid>
-
+                <Expander IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          Visibility="{x:Bind HasScenes(ViewModel.UnifiedScenes.Count), Mode=OneWay}">
+                    <Expander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Scenes"
+                                       Style="{StaticResource SectionHeaderTextStyle}"/>
+                            <Button Grid.Column="1"
+                                    Click="AddScene_Click"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTipService.ToolTip="Add scene from library"
+                                    VerticalAlignment="Center">
+                                <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                            </Button>
+                        </Grid>
+                    </Expander.Header>
+                    <StackPanel>
                     <!-- Now Playing Card -->
                     <Border Visibility="{x:Bind ViewModel.IsAnimationRunning, Mode=OneWay}"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -356,21 +363,33 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </Button>
-                                    <Border BorderThickness="2"
+                                    <Border BorderThickness="3"
                                             BorderBrush="{x:Bind Color1Hex, Converter={StaticResource HexToGradientBorderConverter}}"
                                             CornerRadius="8"
                                             IsHitTestVisible="False"
                                             Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"/>
+                                    <!-- Active checkmark badge -->
+                                    <Border CornerRadius="10" Width="20" Height="20"
+                                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                            Margin="4"
+                                            Background="{x:Bind Color1Hex, Converter={StaticResource HexToBrushConverter}}"
+                                            Opacity="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BoolToOpacityActiveConverter}}"
+                                            IsHitTestVisible="False">
+                                        <FontIcon Glyph="&#xE73E;" FontSize="10" Foreground="White"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>
                     </GridView>
-                </StackPanel>
+                    </StackPanel>
+                </Expander>
 
                 <!-- Hue Effects Section -->
-                <StackPanel>
-                    <TextBlock Text="Hue Effects"
-                               Style="{StaticResource SectionHeaderTextStyle}"/>
+                <Expander IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <Expander.Header>
+                        <TextBlock Text="Hue Effects" Style="{StaticResource SectionHeaderTextStyle}"/>
+                    </Expander.Header>
                     <GridView x:Name="NativeEffectsGrid"
                               ItemsSource="{x:Bind ViewModel.NativeEffects}"
                               SelectionMode="None"
@@ -392,11 +411,12 @@
                             <DataTemplate x:DataType="models:NativeEffectInfo">
                                 <Grid HorizontalAlignment="Stretch">
                                     <Button Style="{StaticResource EffectCardButtonStyle}"
+                                            Background="{x:Bind AccentColorHex, Converter={StaticResource HexToGradientBackgroundConverter}}"
                                             Click="NativeEffect_Click"
                                             Tag="{x:Bind}">
                                         <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                            <FontIcon Glyph="&#xE7B1;" FontSize="16"
-                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                            <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="16"
+                                                      Foreground="{x:Bind AccentColorHex, Converter={StaticResource HexToBrushConverter}}"/>
                                             <TextBlock Text="{x:Bind Name}"
                                                        Style="{StaticResource CaptionTextBlockStyle}"
                                                        TextTrimming="CharacterEllipsis"
@@ -409,7 +429,7 @@
                             </DataTemplate>
                         </GridView.ItemTemplate>
                     </GridView>
-                </StackPanel>
+                </Expander>
 
             </StackPanel>
         </ScrollViewer>

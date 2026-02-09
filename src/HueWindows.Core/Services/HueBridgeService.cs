@@ -561,14 +561,26 @@ public class HueBridgeService : IHueBridgeService
     {
         var colors = new List<Models.HueColor>();
 
-        // Try to get colors from the palette
+        // Try to get colors from the palette (xy color entries)
         if (scene.Palette?.Color != null)
         {
-            foreach (var colorPalette in scene.Palette.Color.Take(4)) // Limit to 4 colors for UI
+            foreach (var colorPalette in scene.Palette.Color.Take(4))
             {
                 if (colorPalette.Color?.Xy != null)
                 {
                     colors.Add(new Models.HueColor(colorPalette.Color.Xy.X, colorPalette.Color.Xy.Y));
+                }
+            }
+        }
+
+        // Fallback to color temperature palette entries (scenes like Read, Relax, Energise)
+        if (colors.Count == 0 && scene.Palette?.ColorTemperature != null)
+        {
+            foreach (var ctPalette in scene.Palette.ColorTemperature.Take(4))
+            {
+                if (ctPalette.Mirek != null)
+                {
+                    colors.Add(Models.HueColor.FromMirek((int)ctPalette.Mirek));
                 }
             }
         }
@@ -581,6 +593,10 @@ public class HueBridgeService : IHueBridgeService
                 if (action.Action?.Color?.Xy != null)
                 {
                     colors.Add(new Models.HueColor(action.Action.Color.Xy.X, action.Action.Color.Xy.Y));
+                }
+                else if (action.Action?.ColorTemperature?.Mirek != null)
+                {
+                    colors.Add(Models.HueColor.FromMirek(action.Action.ColorTemperature.Mirek.Value));
                 }
             }
         }

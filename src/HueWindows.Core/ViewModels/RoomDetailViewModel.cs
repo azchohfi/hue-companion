@@ -171,13 +171,36 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
 
         // Load lights
         Lights.Clear();
+        var lightVms = new List<LightItemViewModel>();
         foreach (var light in group.Lights)
         {
             var lightVm = new LightItemViewModel(light, _bridgeService);
             lightVm.LightTapped += (s, id) => LightSelected?.Invoke(this, id);
             lightVm.PropertyChanged += OnLightPropertyChanged;
-            Lights.Add(lightVm);
+            lightVms.Add(lightVm);
         }
+
+        // Apply saved light order
+        var groupKey = groupId.ToString();
+        if (_settingsService.Settings.LightOrders.TryGetValue(groupKey, out var savedOrder) && savedOrder.Count > 0)
+        {
+            var orderMap = new Dictionary<string, int>();
+            for (int i = 0; i < savedOrder.Count; i++)
+                orderMap[savedOrder[i]] = i;
+
+            lightVms.Sort((a, b) =>
+            {
+                var aHas = orderMap.TryGetValue(a.LightId.ToString(), out var aIdx);
+                var bHas = orderMap.TryGetValue(b.LightId.ToString(), out var bIdx);
+                if (aHas && bHas) return aIdx.CompareTo(bIdx);
+                if (aHas) return -1;
+                if (bHas) return 1;
+                return 0;
+            });
+        }
+
+        foreach (var lvm in lightVms)
+            Lights.Add(lvm);
 
         // Load unified scenes (native + assigned animated)
         await LoadUnifiedScenesAsync(groupId, groupType);
@@ -401,7 +424,7 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
             var freshLight = group.Lights.FirstOrDefault(l => l.Id == lightVm.LightId);
             if (freshLight != null)
             {
-                lightVm.UpdateFromBridge(freshLight.IsOn, freshLight.Brightness, freshLight.CurrentColor);
+                lightVm.UpdateFromBridge(freshLight.IsOn, freshLight.Brightness, freshLight.CurrentColor, freshLight.ColorTemperature);
             }
         }
 
@@ -463,6 +486,17 @@ public partial class RoomDetailViewModel : ObservableObject, IDisposable
         var defaultGlyph = RoomIconHelper.GetIconForArchetype(_roomArchetype);
         RoomIconGlyph = defaultGlyph;
         CustomIconChanged?.Invoke(this, defaultGlyph);
+    }
+
+    /// <summary>
+    /// Saves the current light order to settings for persistence across navigations.
+    /// </summary>
+    public async Task SaveLightOrderAsync()
+    {
+        var groupKey = _groupId.ToString();
+        var order = Lights.Select(l => l.LightId.ToString()).ToList();
+        _settingsService.Settings.LightOrders[groupKey] = order;
+        await _settingsService.SaveAsync();
     }
 
     /// <summary>
@@ -580,6 +614,12 @@ public partial class LightItemViewModel : ObservableObject
     [ObservableProperty]
     private HueColor? _currentColor;
 
+    [ObservableProperty]
+    private bool _supportsColorTemperature;
+
+    [ObservableProperty]
+    private int? _colorTemperature;
+
     /// <summary>
     /// Event raised when the light is tapped for detail view.
     /// </summary>
@@ -605,6 +645,34 @@ public partial class LightItemViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Gets a label describing the light's current color mode (Warm, Cool, Neutral, Color, or empty).
+    /// </summary>
+    public string ColorModeLabel
+    {
+        get
+        {
+            if (!IsOn) return string.Empty;
+            if (SupportsColor && CurrentColor != null && !IsColorTemperatureMode)
+                return "Color";
+            if (SupportsColorTemperature && ColorTemperature.HasValue)
+            {
+                if (ColorTemperature.Value >= 400) return "Warm";
+                if (ColorTemperature.Value <= 250) return "Cool";
+                return "Neutral";
+            }
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Whether the light is currently in color temperature mode (vs xy color mode).
+    /// Heuristic: if light has a color temperature value and the current color matches
+    /// what FromMirek would produce, it's in temperature mode.
+    /// </summary>
+    private bool IsColorTemperatureMode =>
+        SupportsColorTemperature && ColorTemperature.HasValue && ColorTemperature.Value >= 153;
+
     public LightItemViewModel(LightModel light, IHueBridgeService bridgeService)
     {
         _light = light;
@@ -615,24 +683,33 @@ public partial class LightItemViewModel : ObservableObject
         _brightness = light.Brightness;
         _supportsColor = light.SupportsColor;
         _currentColor = light.CurrentColor;
+        _supportsColorTemperature = light.SupportsColorTemperature;
+        _colorTemperature = light.ColorTemperature;
     }
 
     partial void OnIsOnChanged(bool value)
     {
         OnPropertyChanged(nameof(IconOpacity));
         OnPropertyChanged(nameof(CurrentColorRgb));
+        OnPropertyChanged(nameof(ColorModeLabel));
         _bridgeService.SetLightOnAsync(LightId, value).FireAndForget();
     }
 
     partial void OnCurrentColorChanged(HueColor? value)
     {
         OnPropertyChanged(nameof(CurrentColorRgb));
+        OnPropertyChanged(nameof(ColorModeLabel));
+    }
+
+    partial void OnColorTemperatureChanged(int? value)
+    {
+        OnPropertyChanged(nameof(ColorModeLabel));
     }
 
     /// <summary>
     /// Updates light state from bridge data without triggering API calls.
     /// </summary>
-    public void UpdateFromBridge(bool isOn, double brightness, HueColor? color)
+    public void UpdateFromBridge(bool isOn, double brightness, HueColor? color, int? colorTemperature = null)
     {
         // Use SetProperty to update fields directly and notify, avoiding OnXxxChanged partial methods
         // that would trigger API calls
@@ -653,6 +730,11 @@ public partial class LightItemViewModel : ObservableObject
 
         // Color can use the property setter since it doesn't trigger API calls
         CurrentColor = color;
+
+        if (colorTemperature != null)
+        {
+            ColorTemperature = colorTemperature;
+        }
     }
 
     [RelayCommand]
@@ -672,6 +754,20 @@ public partial class LightItemViewModel : ObservableObject
         var color = HueColor.FromRgb(rgb.R, rgb.G, rgb.B);
         CurrentColor = color;
 
+        await _bridgeService.SetLightColorAsync(LightId, color);
+    }
+
+    [RelayCommand]
+    private async Task IdentifyAsync()
+    {
+        await _bridgeService.IdentifyLightAsync(LightId);
+    }
+
+    [RelayCommand]
+    private async Task PasteColorAsync(HueColor color)
+    {
+        if (!SupportsColor) return;
+        CurrentColor = color;
         await _bridgeService.SetLightColorAsync(LightId, color);
     }
 
