@@ -123,7 +123,7 @@
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.FilteredScenes, Mode=OneWay}">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="250"
-                                               MinItemHeight="140"
+                                               MinItemHeight="180"
                                                MinRowSpacing="16"
                                                MinColumnSpacing="16"
                                                ItemsStretch="Fill"/>
