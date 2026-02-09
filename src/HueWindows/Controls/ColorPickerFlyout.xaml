@@ -9,14 +9,13 @@
     mc:Ignorable="d">
 
     <Grid x:Name="RootGrid" CornerRadius="12" Padding="16" MinWidth="300"
+          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+          BorderThickness="1"
           RenderTransformOrigin="0.5,0">
         <Grid.RenderTransform>
             <ScaleTransform x:Name="RootScaleTransform" ScaleX="1" ScaleY="1"/>
         </Grid.RenderTransform>
-        <!-- Theme-aware background -->
-        <Grid.Background>
-            <SolidColorBrush Color="{ThemeResource SystemFillColorSolidNeutral}"/>
-        </Grid.Background>
 
         <StackPanel Spacing="12">
             <TextBlock Text="Choose Color"
