@@ -101,6 +101,11 @@ public class HueBridgeService : IHueBridgeService
                     // Network error, might need to reconnect
                     _hueApi = null;
                 }
+                catch (Exception)
+                {
+                    // JSON parse error or other failure (bridge returned non-JSON response), reconnect
+                    _hueApi = null;
+                }
             }
 
             // Try to reconnect if we have credentials
