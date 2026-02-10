@@ -5,9 +5,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using Windows.ApplicationModel.DataTransfer;
 using HueCompanion.Core.Models;
 using HueCompanion.Core.Services.Interfaces;
 using HueCompanion.Core.ViewModels;
+using HueCompanion.Services;
 
 namespace HueCompanion.Views;
 
@@ -29,6 +31,7 @@ public sealed partial class SettingsPage : Page
         ViewModel.RepairBridgeRequested += OnRepairBridgeRequested;
         ViewModel.BridgeSetupRequested += OnBridgeSetupRequested;
         ViewModel.HotkeySettingsChanged += OnHotkeySettingsChanged;
+        ViewModel.McpEnabledChanged += OnMcpEnabledChanged;
 
         this.InitializeComponent();
 
@@ -41,6 +44,7 @@ public sealed partial class SettingsPage : Page
         ViewModel.RepairBridgeRequested -= OnRepairBridgeRequested;
         ViewModel.BridgeSetupRequested -= OnBridgeSetupRequested;
         ViewModel.HotkeySettingsChanged -= OnHotkeySettingsChanged;
+        ViewModel.McpEnabledChanged -= OnMcpEnabledChanged;
         (ViewModel as IDisposable)?.Dispose();
     }
 
@@ -382,6 +386,43 @@ public sealed partial class SettingsPage : Page
 
         card.Child = grid;
         return card;
+    }
+
+    private void OnMcpEnabledChanged(object? sender, bool enabled)
+    {
+        var manager = App.Services.GetRequiredService<McpServerManager>();
+        if (enabled)
+            manager.Start();
+        else
+            manager.Stop();
+    }
+
+    private async void OpenMcpSetupGuide_Click(object sender, RoutedEventArgs e)
+    {
+        await Windows.System.Launcher.LaunchUriAsync(new System.Uri(SettingsViewModel.McpSetupGuideUrl));
+    }
+
+    private void CopyClaudeDesktopConfig_Click(object sender, RoutedEventArgs e)
+    {
+        CopyMcpConfigToClipboard("claude-desktop");
+    }
+
+    private void CopyClaudeCodeConfig_Click(object sender, RoutedEventArgs e)
+    {
+        CopyMcpConfigToClipboard("claude-code");
+    }
+
+    private void CopyVSCodeConfig_Click(object sender, RoutedEventArgs e)
+    {
+        CopyMcpConfigToClipboard("vscode");
+    }
+
+    private void CopyMcpConfigToClipboard(string clientType)
+    {
+        var json = ViewModel.GetMcpConfigJson(clientType);
+        var dataPackage = new DataPackage();
+        dataPackage.SetText(json);
+        Clipboard.SetContent(dataPackage);
     }
 
     private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

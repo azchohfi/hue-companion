@@ -22,5 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HueCompanion.Core\HueCompanion.Core.csproj" />
+    <ProjectReference Include="..\HueCompanion.Mcp\HueCompanion.Mcp.csproj" />
   </ItemGroup>
 </Project>

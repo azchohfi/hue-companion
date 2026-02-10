@@ -19,6 +19,7 @@ A modern Windows 11 app for controlling Philips Hue smart lights, built with Win
 - **Individual Light Control** - Fine-grained control of each light
 - **Dark/Light Theme** - Follows system theme or manual selection
 - **Mica Backdrop** - Modern Windows 11 visual style with premium styling
+- **MCP Server** - Control lights from Claude Desktop, Claude Code, and VS Code via Model Context Protocol
 
 ## Scene Builder
 
@@ -96,6 +97,40 @@ Names are matched case-insensitively with flexible formatting:
 | `--id <guid>` | | GUID for pages that require it |
 | `--screenshot` | `-s` | Auto-close app after delay |
 | `--delay <ms>` | | Delay before auto-close (default: 5000ms) |
+
+## MCP Server (AI Assistant Integration)
+
+Hue Companion includes a built-in [MCP](https://modelcontextprotocol.io) server that lets AI assistants control your lights through natural language. Works with Claude Desktop, Claude Code, and VS Code Copilot.
+
+### Capabilities
+
+- Control individual lights or entire rooms (on/off, brightness, color, temperature)
+- Create and activate scenes, including animated keyframe-based scenes
+- Fuzzy name matching — say "bedroom" instead of exact room names
+- Supports hex (`#FF0000`), RGB (`rgb(255,0,0)`), and named colors (`warm white`)
+
+### Quick Setup
+
+1. Enable the MCP server in **Settings → MCP Server**
+2. Use the **copy button** in Settings to get the config for your AI client
+3. Paste into your client's config file and restart
+
+For detailed step-by-step instructions, see the [MCP Setup Guide](https://hue-companion.drayne.xyz/mcp-setup).
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `hue_set_light` | Control a light (on/off, brightness, color, temperature) |
+| `hue_set_room` | Control all lights in a room or zone |
+| `hue_list_rooms` | List rooms/zones with light states |
+| `hue_activate_scene` | Activate a saved scene |
+| `hue_create_animated_scene` | Create keyframe-based animated scenes |
+| `hue_play_animation` / `hue_stop_animation` | Start/stop animations |
+| `hue_list_scenes` / `hue_create_scene` / `hue_delete_scene` | Scene management |
+| `hue_list_bridges` / `hue_get_light` / `hue_turn_off_all` | Bridge and light info |
+
+See [tools/hue-mcp/README.md](tools/hue-mcp/README.md) for full documentation including building, config formats, and color reference.
 
 ## Upgrading from HueWindows
 
@@ -223,6 +258,10 @@ hue-companion/
 │   │   ├── Models/                 # Data models
 │   │   ├── ViewModels/             # MVVM ViewModels
 │   │   └── Services/               # Hue API and settings services
+│   │
+│   ├── HueCompanion.Mcp/             # MCP server (AI assistant integration)
+│   │   ├── Tools/                  # MCP tool implementations
+│   │   └── Services/               # Color parsing, fuzzy matching
 │   │
 │   └── HueCompanion.Tests/           # Unit tests
 │

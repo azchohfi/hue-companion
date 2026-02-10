@@ -43,6 +43,12 @@ public class AppSettings
     public bool StartMinimized { get; set; } = false;
 
     /// <summary>
+    /// Whether the MCP server is enabled. When false, the MCP server process
+    /// will exit immediately instead of serving tools.
+    /// </summary>
+    public bool McpEnabled { get; set; } = true;
+
+    /// <summary>
     /// Custom icon overrides per room/zone (room ID string -> glyph string).
     /// </summary>
     public Dictionary<string, string> CustomRoomIcons { get; set; } = new();

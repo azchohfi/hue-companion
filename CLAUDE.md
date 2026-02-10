@@ -35,6 +35,7 @@ Both can run simultaneously (separate MSIX identities).
 src/
 ├── HueCompanion/              # WinUI 3 App (views, controls, styles)
 ├── HueCompanion.Core/         # Business logic (models, viewmodels, services)
+├── HueCompanion.Mcp/          # MCP server (stdio + HTTP transport)
 └── HueCompanion.Tests/        # Unit tests
 ```
 
@@ -62,6 +63,13 @@ src/
 | `Core/ViewModels/SceneBuilderViewModel.cs` | Scene Builder state and keyframe editing |
 | `Core/Models/AnimationDefinition.cs` | Animation types, keyframes, event patterns |
 | `Core/Models/AnimatedSceneModel.cs` | Complete scene with multiple animations |
+| `Mcp/Program.cs` | MCP server entry point (stdio + HTTP modes) |
+| `Mcp/Tools/LightTools.cs` | MCP tools for light/room control |
+| `Mcp/Tools/SceneTools.cs` | MCP tools for scene management |
+| `Mcp/Tools/AnimationTools.cs` | MCP tools for animated scenes |
+| `Mcp/Services/ColorParser.cs` | Parses hex/RGB/named colors to HueColor |
+| `Mcp/Services/FuzzyMatcher.cs` | Fuzzy name matching for lights and rooms |
+| `Services/McpServerManager.cs` | Manages MCP server process lifecycle |
 
 ## Styling Approach
 
@@ -250,3 +258,44 @@ Scenes save as `AnimatedSceneModel` JSON in `%LOCALAPPDATA%/HueCompanion/Scenes/
 - **Space** - Play/Pause
 - **Ctrl+Click** - Add keyframe without snap
 - **Ctrl+Drag** - Move keyframe without snap
+
+## MCP Server
+
+Model Context Protocol server that exposes Hue light control to AI assistants (Claude Desktop, Claude Code, VS Code Copilot).
+
+### Architecture
+
+```
+HueCompanion.Mcp/
+├── Program.cs                    # Entry point: --stdio (for AI clients) or HTTP (localhost:5680)
+├── Tools/
+│   ├── LightTools.cs             # hue_list_rooms, hue_get_light, hue_set_light, hue_set_room, hue_turn_off_all
+│   ├── SceneTools.cs             # hue_list_scenes, hue_activate_scene, hue_create_scene, hue_delete_scene
+│   ├── AnimationTools.cs         # hue_create_animated_scene, hue_play_animation, hue_stop_animation, hue_edit_scene
+│   └── BridgeTools.cs            # hue_list_bridges
+└── Services/
+    ├── ColorParser.cs            # Parses hex/RGB/named colors → HueColor
+    ├── FuzzyMatcher.cs           # Case-insensitive partial name matching
+    └── FileSettingsService.cs    # Reads app settings from %LOCALAPPDATA%/HueCompanion
+```
+
+### Transport Modes
+
+- **stdio** (`--stdio` flag): Used by Claude Desktop and Claude Code. AI client launches the exe as a child process.
+- **HTTP** (default): Runs on `https://localhost:5680`. Used by VS Code and for development. Requires the Hue Companion app to be running.
+
+### In-App Integration
+
+- `McpServerManager` (in HueCompanion project) manages the HTTP server as a child process
+- Toggle in Settings enables/disables the server
+- Settings page has copy buttons that generate config JSON with the correct exe path
+- "Open guide" button links to the setup guide on the website
+
+### Adding New MCP Tools
+
+1. Create a new `[McpServerToolType]` class in `Tools/` (or add methods to existing)
+2. Add `[McpServerTool]` attribute with Name and Description
+3. Inject services via constructor (e.g., `IMultiBridgeService`)
+4. Return JSON result strings (not exceptions) for errors
+5. Use `FuzzyMatcher` for room/light name resolution
+6. Use `ColorParser` for color input handling

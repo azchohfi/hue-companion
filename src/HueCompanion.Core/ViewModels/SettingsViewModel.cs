@@ -64,6 +64,10 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _startMinimized;
 
+    // MCP server settings
+    [ObservableProperty]
+    private bool _mcpEnabled;
+
     /// <summary>
     /// Event raised when user wants to navigate to bridge setup.
     /// </summary>
@@ -73,6 +77,11 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     /// Event raised when user wants to repair bridge connection.
     /// </summary>
     public event EventHandler? RepairBridgeRequested;
+
+    /// <summary>
+    /// Event raised when MCP enabled state changes.
+    /// </summary>
+    public event EventHandler<bool>? McpEnabledChanged;
 
     /// <summary>
     /// Event raised when hotkey settings change and need to be re-registered.
@@ -115,6 +124,9 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
         // Load tray settings
         MinimizeToTray = _settingsService.Settings.MinimizeToTray;
         StartMinimized = _settingsService.Settings.StartMinimized;
+
+        // Load MCP settings
+        McpEnabled = _settingsService.Settings.McpEnabled;
 
         // Update status from service
         UpdateHotkeyStatus();
@@ -247,6 +259,13 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
         _settingsService.SaveAsync().FireAndForget();
     }
 
+    partial void OnMcpEnabledChanged(bool value)
+    {
+        _settingsService.Settings.McpEnabled = value;
+        _settingsService.SaveAsync().FireAndForget();
+        McpEnabledChanged?.Invoke(this, value);
+    }
+
     private void SaveAndApplyHotkeySettings()
     {
         // Validate modifiers - if none selected and hotkey is enabled, show error
@@ -335,6 +354,69 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     private void OnBridgeConnectionChanged(object? sender, BridgeConnectionEventArgs e)
     {
         UpdateBridgeCounts();
+    }
+
+    public const string McpSetupGuideUrl = "https://hue-companion.drayne.xyz/mcp-setup";
+    private const int McpPort = 5680;
+    private static string McpHttpUrl => $"https://localhost:{McpPort}";
+
+    /// <summary>
+    /// Resolves the MCP server executable path for stdio configs.
+    /// </summary>
+    private static string GetMcpExePath()
+    {
+        var appDir = AppContext.BaseDirectory;
+        var colocated = Path.Combine(appDir, "HueCompanion.Mcp.exe");
+        if (File.Exists(colocated))
+            return Path.GetFullPath(colocated);
+
+        var dir = new DirectoryInfo(appDir);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "src", "HueCompanion.Mcp", "bin", "Debug", "net8.0", "HueCompanion.Mcp.exe");
+            if (File.Exists(candidate))
+                return Path.GetFullPath(candidate);
+            dir = dir.Parent;
+        }
+
+        return "HueCompanion.Mcp.exe";
+    }
+
+    /// <summary>
+    /// Generates JSON config snippet for a given AI client.
+    /// </summary>
+    public string GetMcpConfigJson(string clientType)
+    {
+        var url = McpHttpUrl;
+        var exe = GetMcpExePath().Replace("\\", "\\\\");
+
+        return clientType switch
+        {
+            // Claude Desktop / Claude Code: stdio via config file
+            "claude-desktop" or "claude-code" => $$"""
+                {
+                  "mcpServers": {
+                    "hue": {
+                      "command": "{{exe}}",
+                      "args": ["--stdio"]
+                    }
+                  }
+                }
+                """,
+            // VS Code connects to running server via URL
+            "vscode" => $$"""
+                {
+                  "mcp": {
+                    "servers": {
+                      "hue": {
+                        "url": "{{url}}"
+                      }
+                    }
+                  }
+                }
+                """,
+            _ => ""
+        };
     }
 
     public void Dispose()

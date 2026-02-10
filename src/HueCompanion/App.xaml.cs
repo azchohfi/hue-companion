@@ -118,6 +118,12 @@ public partial class App : Application
             var settingsService = Services.GetRequiredService<ISettingsService>();
             await settingsService.LoadAsync();
 
+            // Start MCP server if enabled
+            if (settingsService.Settings.McpEnabled)
+            {
+                Services.GetRequiredService<McpServerManager>().Start();
+            }
+
             // Create and activate main window
             MainWindow = new MainWindow();
 
@@ -159,11 +165,12 @@ public partial class App : Application
         services.AddSingleton<IAnimationService, AnimationService>();
         services.AddSingleton<IRoomSceneAssignmentService, RoomSceneAssignmentService>();
 
-        // Register hotkey and system tray services
+        // Register hotkey, system tray, and MCP server services
         services.AddSingleton<HotkeyService>();
         services.AddSingleton<IHotkeyService>(sp => sp.GetRequiredService<HotkeyService>());
         services.AddSingleton<SystemTrayService>();
         services.AddSingleton<ISystemTrayService>(sp => sp.GetRequiredService<SystemTrayService>());
+        services.AddSingleton<McpServerManager>();
 
         // Register ViewModels
         services.AddTransient<DashboardViewModel>();

@@ -65,6 +65,12 @@ dotnet build src/HueCompanion.Mcp -c Release
 dotnet publish src/HueCompanion.Mcp -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/mcp
 ```
 
+### Easiest Setup
+
+Use the **copy button** in Hue Companion's Settings → MCP Server section — it generates the config with the correct executable path for your system.
+
+For step-by-step instructions with screenshots, see the [MCP Setup Guide](https://hue-companion.drayne.xyz/mcp-setup).
+
 ### Claude Desktop Configuration
 
 Add to `%APPDATA%/Claude/claude_desktop_config.json`:
@@ -72,22 +78,24 @@ Add to `%APPDATA%/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "hue": {
+    "hue-companion": {
       "command": "C:/path/to/HueCompanion.Mcp.exe",
-      "args": []
+      "args": ["--stdio"]
     }
   }
 }
 ```
 
-Or if using `dotnet run`:
+### Claude Code Configuration
+
+Add to `.mcp.json` in your project root:
 
 ```json
 {
   "mcpServers": {
-    "hue": {
-      "command": "dotnet",
-      "args": ["run", "--project", "C:/path/to/src/HueCompanion.Mcp"]
+    "hue-companion": {
+      "command": "C:/path/to/HueCompanion.Mcp.exe",
+      "args": ["--stdio"]
     }
   }
 }
@@ -95,14 +103,17 @@ Or if using `dotnet run`:
 
 ### VS Code / GitHub Copilot Configuration
 
+Hue Companion must be running with the MCP server enabled (uses HTTP transport).
+
 Add to `.vscode/mcp.json` in your workspace:
 
 ```json
 {
-  "servers": {
-    "hue": {
-      "type": "stdio",
-      "command": "C:/path/to/HueCompanion.Mcp.exe"
+  "mcp": {
+    "servers": {
+      "hue-companion": {
+        "url": "https://localhost:5680"
+      }
     }
   }
 }

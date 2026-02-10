@@ -5,8 +5,8 @@
       "args": ["tools/screenshot-mcp/server.js"]
     },
     "hue": {
-      "command": "dotnet",
-      "args": ["run", "--project", "src/HueCompanion.Mcp"]
+      "command": "C:\\Users\\danie\\Documents\\Code\\hue-companion\\src\\HueCompanion.Mcp\\bin\\Debug\\net8.0\\HueCompanion.Mcp.exe",
+      "args": ["--stdio"]
     }
   }
 }

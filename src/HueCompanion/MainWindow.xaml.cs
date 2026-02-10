@@ -289,6 +289,15 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing SystemTrayService: {ex.Message}");
         }
+
+        try
+        {
+            App.Services.GetRequiredService<McpServerManager>().Dispose();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Error disposing McpServerManager: {ex.Message}");
+        }
     }
 
     private string GetAppTitle()

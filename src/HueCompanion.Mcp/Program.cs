@@ -1,3 +1,5 @@
+using System.Net;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,40 +8,117 @@ using HueCompanion.Core.Services.Interfaces;
 using HueCompanion.Mcp.Services;
 using ModelContextProtocol.Server;
 
-var builder = Host.CreateApplicationBuilder(args);
+const int DefaultPort = 5680;
 
-// All logging to stderr so stdout stays clean for MCP JSON-RPC
-builder.Logging.AddConsole(options =>
+if (args.Contains("--stdio"))
 {
-    options.LogToStandardErrorThreshold = LogLevel.Trace;
-});
+    await RunStdio(args);
+}
+else
+{
+    var useHttps = !args.Contains("--http");
+    var port = DefaultPort;
+    var portIndex = Array.IndexOf(args, "--port");
+    if (portIndex >= 0 && portIndex + 1 < args.Length)
+        int.TryParse(args[portIndex + 1], out port);
 
-// Core services
-builder.Services.AddSingleton<ISettingsService, FileSettingsService>();
-builder.Services.AddSingleton<IMultiBridgeService, MultiBridgeService>();
-builder.Services.AddSingleton<ISceneStorageService, SceneStorageService>();
-builder.Services.AddSingleton<IAnimationService, AnimationService>();
+    await RunHttp(args, port, useHttps);
+}
 
-// MCP server with stdio transport
-builder.Services
-    .AddMcpServer(options =>
+async Task RunStdio(string[] args)
+{
+    var builder = Host.CreateApplicationBuilder(args);
+
+    builder.Logging.AddConsole(options =>
     {
-        options.ServerInfo = new()
+        options.LogToStandardErrorThreshold = LogLevel.Trace;
+    });
+
+    RegisterCoreServices(builder.Services);
+
+    builder.Services
+        .AddMcpServer(ConfigureMcp)
+        .WithStdioServerTransport()
+        .WithToolsFromAssembly();
+
+    var host = builder.Build();
+
+    if (!await LoadAndCheck(host.Services))
+        return;
+
+    await host.RunAsync();
+}
+
+async Task RunHttp(string[] args, int port, bool useHttps)
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    var scheme = useHttps ? "https" : "http";
+
+    builder.WebHost.ConfigureKestrel(kestrel =>
+    {
+        kestrel.Listen(IPAddress.Loopback, port, listenOptions =>
         {
-            Name = "Hue Companion",
-            Version = "1.0.0"
-        };
-    })
-    .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+            if (useHttps)
+                listenOptions.UseHttps();
+        });
+    });
 
-var host = builder.Build();
+    builder.Logging.AddConsole(options =>
+    {
+        options.LogToStandardErrorThreshold = LogLevel.Trace;
+    });
 
-// Load settings and connect to bridges before serving
-var settings = host.Services.GetRequiredService<ISettingsService>();
-await settings.LoadAsync();
+    RegisterCoreServices(builder.Services);
 
-var multiBridge = host.Services.GetRequiredService<IMultiBridgeService>();
-await multiBridge.ConnectAllAsync();
+    builder.Services
+        .AddMcpServer(ConfigureMcp)
+        .WithHttpTransport()
+        .WithToolsFromAssembly();
 
-await host.RunAsync();
+    var app = builder.Build();
+
+    if (!await LoadAndCheck(app.Services))
+        return;
+
+    app.MapMcp();
+
+    var url = $"{scheme}://localhost:{port}";
+    Console.Error.WriteLine($"Hue Companion MCP server listening on {url}");
+    Console.Error.WriteLine($"Use this URL in Claude Desktop: {url}/mcp");
+
+    app.Run();
+}
+
+void RegisterCoreServices(IServiceCollection services)
+{
+    services.AddSingleton<ISettingsService, FileSettingsService>();
+    services.AddSingleton<IMultiBridgeService, MultiBridgeService>();
+    services.AddSingleton<ISceneStorageService, SceneStorageService>();
+    services.AddSingleton<IAnimationService, AnimationService>();
+}
+
+void ConfigureMcp(McpServerOptions options)
+{
+    options.ServerInfo = new()
+    {
+        Name = "Hue Companion",
+        Version = "1.0.0"
+    };
+}
+
+async Task<bool> LoadAndCheck(IServiceProvider services)
+{
+    var settings = services.GetRequiredService<ISettingsService>();
+    await settings.LoadAsync();
+
+    if (!settings.Settings.McpEnabled)
+    {
+        Console.Error.WriteLine("Hue Companion MCP server is disabled. Enable it in Settings > MCP Server.");
+        return false;
+    }
+
+    var multiBridge = services.GetRequiredService<IMultiBridgeService>();
+    await multiBridge.ConnectAllAsync();
+    return true;
+}
