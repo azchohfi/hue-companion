@@ -30,7 +30,21 @@ public class SceneTools
         if (!allScenes.IsSuccess)
             return JsonSerializer.Serialize(new { error = "Failed to load scenes" }, JsonOpts);
 
-        var scenes = allScenes.Value!.Select(s => new
+        var filtered = allScenes.Value!.AsEnumerable();
+
+        // Apply type filter
+        switch (type.ToLowerInvariant())
+        {
+            case "static":
+                filtered = filtered.Where(s => s.Animations.All(a => a.Type == AnimationType.Keyframe && a.RepeatMode == RepeatMode.Once));
+                break;
+            case "animated":
+                filtered = filtered.Where(s => s.Animations.Any(a => a.Type == AnimationType.Event || a.RepeatMode == RepeatMode.Loop));
+                break;
+            // "all" — no filter
+        }
+
+        var scenes = filtered.Select(s => new
         {
             s.Id,
             s.Name,
@@ -95,8 +109,9 @@ public class SceneTools
             lightInputs = JsonSerializer.Deserialize<List<LightStateInput>>(lights,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch
+        catch (JsonException)
         {
+            // Intentionally catch only deserialization errors — return a user-friendly message
             return JsonSerializer.Serialize(new { error = "Invalid lights JSON format" }, JsonOpts);
         }
 
@@ -113,19 +128,19 @@ public class SceneTools
             Version = "1.0"
         };
 
-        // Create a single keyframe animation with the specified states
-        var animation = new AnimationDefinition
-        {
-            Id = Guid.NewGuid().ToString("N"),
-            Name = name,
-            Type = AnimationType.Keyframe,
-            LightAssignment = LightAssignment.All,
-            RepeatMode = RepeatMode.Once,
-            DurationSeconds = 0
-        };
-
+        // Create one animation per light so each light's state is stored separately
         foreach (var input in lightInputs)
         {
+            var animation = new AnimationDefinition
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Name = $"{name} - {input.Light}",
+                Type = AnimationType.Keyframe,
+                LightAssignment = LightAssignment.All,
+                RepeatMode = RepeatMode.Once,
+                DurationSeconds = 0
+            };
+
             var kf = new AnimationKeyframe
             {
                 TimeSeconds = 0,
@@ -135,9 +150,8 @@ public class SceneTools
                 TransitionStyle = TransitionStyle.Linear
             };
             animation.Keyframes.Add(kf);
+            scene.Animations.Add(animation);
         }
-
-        scene.Animations.Add(animation);
 
         var result = await _sceneStorage.SaveSceneAsync(scene);
         if (!result.IsSuccess)

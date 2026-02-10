@@ -99,11 +99,13 @@ public class LightTools
         if (bridge == null)
             return JsonSerializer.Serialize(new { error = "No connected bridge" }, JsonOpts);
 
+        int? transition = transitionMs > 0 ? transitionMs : null;
+
         if (on.HasValue)
-            await bridge.SetLightOnAsync(l.Id, on.Value);
+            await bridge.SetLightOnAsync(l.Id, on.Value, transition);
 
         if (brightness.HasValue)
-            await bridge.SetLightBrightnessAsync(l.Id, Math.Clamp(brightness.Value / 100.0, 0, 1));
+            await bridge.SetLightBrightnessAsync(l.Id, Math.Clamp(brightness.Value / 100.0, 0, 1), transition);
 
         if (color != null)
         {
@@ -111,14 +113,14 @@ public class LightTools
             if (parsed != null)
             {
                 if (brightness.HasValue)
-                    await bridge.SetLightColorAndBrightnessAsync(l.Id, parsed, Math.Clamp(brightness.Value / 100.0, 0, 1));
+                    await bridge.SetLightColorAndBrightnessAsync(l.Id, parsed, Math.Clamp(brightness.Value / 100.0, 0, 1), transition);
                 else
-                    await bridge.SetLightColorAsync(l.Id, parsed);
+                    await bridge.SetLightColorAsync(l.Id, parsed, transition);
             }
         }
 
         if (colorTemperatureMirek.HasValue)
-            await bridge.SetLightTemperatureAsync(l.Id, Math.Clamp(colorTemperatureMirek.Value, 153, 500));
+            await bridge.SetLightTemperatureAsync(l.Id, Math.Clamp(colorTemperatureMirek.Value, 153, 500), transition);
 
         return JsonSerializer.Serialize(new { success = true, light = l.Name, room = room.Name }, JsonOpts);
     }
@@ -142,24 +144,26 @@ public class LightTools
         if (bridge == null)
             return JsonSerializer.Serialize(new { error = "No connected bridge" }, JsonOpts);
 
+        int? transition = transitionMs > 0 ? transitionMs : null;
+
         if (on.HasValue)
-            await bridge.SetRoomOnAsync(found.Id, on.Value);
+            await bridge.SetRoomOnAsync(found.Id, on.Value, transition);
 
         if (brightness.HasValue)
-            await bridge.SetRoomBrightnessAsync(found.Id, Math.Clamp(brightness.Value / 100.0, 0, 1));
+            await bridge.SetRoomBrightnessAsync(found.Id, Math.Clamp(brightness.Value / 100.0, 0, 1), transition);
 
         if (color != null)
         {
             var parsed = ColorParser.Parse(color);
             if (parsed != null)
-                await bridge.SetRoomColorAsync(found.Id, parsed);
+                await bridge.SetRoomColorAsync(found.Id, parsed, transition);
         }
 
         if (colorTemperatureMirek.HasValue)
         {
             // Set temperature on each light individually (no room-level temp API)
             foreach (var l in found.Lights.Where(l => l.SupportsColorTemperature))
-                await bridge.SetLightTemperatureAsync(l.Id, Math.Clamp(colorTemperatureMirek.Value, 153, 500));
+                await bridge.SetLightTemperatureAsync(l.Id, Math.Clamp(colorTemperatureMirek.Value, 153, 500), transition);
         }
 
         return JsonSerializer.Serialize(new
@@ -175,13 +179,16 @@ public class LightTools
     {
         var groups = await GetAllGroupsAsync();
         int count = 0;
-        foreach (var room in groups.Where(r => r.GroupType == LightGroupType.Room))
+        foreach (var group in groups)
         {
-            var bridge = room.BridgeId != null ? _multiBridge.GetBridgeService(room.BridgeId) : _multiBridge.GetDefaultBridgeService();
+            var bridge = group.BridgeId != null ? _multiBridge.GetBridgeService(group.BridgeId) : _multiBridge.GetDefaultBridgeService();
             if (bridge != null)
             {
-                await bridge.SetRoomOnAsync(room.Id, false);
-                count += room.Lights.Count;
+                if (group.GroupType == LightGroupType.Zone)
+                    await bridge.SetZoneOnAsync(group.Id, false);
+                else
+                    await bridge.SetRoomOnAsync(group.Id, false);
+                count += group.Lights.Count;
             }
         }
 

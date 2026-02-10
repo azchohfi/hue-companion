@@ -55,21 +55,24 @@ public interface IHueBridgeService
     /// <summary>
     /// Sets the on/off state for all lights in a room.
     /// </summary>
-    Task SetRoomOnAsync(Guid roomId, bool isOn);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetRoomOnAsync(Guid roomId, bool isOn, int? transitionMs = null);
 
     /// <summary>
     /// Sets the brightness for all lights in a room.
     /// </summary>
     /// <param name="roomId">The room ID.</param>
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
-    Task SetRoomBrightnessAsync(Guid roomId, double brightness);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetRoomBrightnessAsync(Guid roomId, double brightness, int? transitionMs = null);
 
     /// <summary>
     /// Sets the color for all color-capable lights in a room.
     /// </summary>
     /// <param name="roomId">The room ID.</param>
     /// <param name="color">The color to set.</param>
-    Task SetRoomColorAsync(Guid roomId, HueColor color);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetRoomColorAsync(Guid roomId, HueColor color, int? transitionMs = null);
 
     // Room CRUD
 
@@ -201,19 +204,24 @@ public interface IHueBridgeService
     /// <summary>
     /// Sets the on/off state for a light.
     /// </summary>
-    Task SetLightOnAsync(Guid lightId, bool isOn);
+    /// <param name="lightId">The light ID.</param>
+    /// <param name="isOn">On or off.</param>
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetLightOnAsync(Guid lightId, bool isOn, int? transitionMs = null);
 
     /// <summary>
     /// Sets the brightness for a light.
     /// </summary>
     /// <param name="lightId">The light ID.</param>
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
-    Task SetLightBrightnessAsync(Guid lightId, double brightness);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetLightBrightnessAsync(Guid lightId, double brightness, int? transitionMs = null);
 
     /// <summary>
     /// Sets the color for a light.
     /// </summary>
-    Task SetLightColorAsync(Guid lightId, HueColor color);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetLightColorAsync(Guid lightId, HueColor color, int? transitionMs = null);
 
     /// <summary>
     /// Sets the color and brightness for a light in a single atomic command.
@@ -222,14 +230,16 @@ public interface IHueBridgeService
     /// <param name="lightId">The light ID.</param>
     /// <param name="color">The color to set.</param>
     /// <param name="brightness">Brightness value (0.0 to 1.0).</param>
-    Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness, int? transitionMs = null);
 
     /// <summary>
     /// Sets the color temperature for a light.
     /// </summary>
     /// <param name="lightId">The light ID.</param>
     /// <param name="mirek">Color temperature in mirek (153-500).</param>
-    Task SetLightTemperatureAsync(Guid lightId, int mirek);
+    /// <param name="transitionMs">Transition duration in milliseconds (null = bridge default).</param>
+    Task SetLightTemperatureAsync(Guid lightId, int mirek, int? transitionMs = null);
 
     /// <summary>
     /// Applies a native Hue effect to a light (fire, candle, etc.).

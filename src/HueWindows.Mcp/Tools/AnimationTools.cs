@@ -37,8 +37,9 @@ public class AnimationTools
             trackInputs = JsonSerializer.Deserialize<List<TrackInput>>(tracks,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch
+        catch (JsonException)
         {
+            // Intentionally catch only deserialization errors — return a user-friendly message
             return JsonSerializer.Serialize(new { error = "Invalid tracks JSON format" }, JsonOpts);
         }
 
@@ -128,28 +129,12 @@ public class AnimationTools
         return JsonSerializer.Serialize(new { success = true, scene = found.Name, room = targetRoom.Name, playing = true }, JsonOpts);
     }
 
-    [McpServerTool(Name = "hue_stop_animation"), Description("Stop the currently playing animation. Optionally specify a room, or stops all.")]
+    [McpServerTool(Name = "hue_stop_animation"), Description("Stop all currently playing animations.")]
     public async Task<string> StopAnimation(
-        [Description("Room name to stop animation in (omit to stop all)")] string? room = null)
+        [Description("Whether to restore lights to their previous state before the animation started")] bool restore_previous = false)
     {
-        if (room != null)
-        {
-            var rooms = new List<RoomModel>();
-            var roomResult = await _multiBridge.GetAllRoomsAsync();
-            if (roomResult.IsSuccess) rooms.AddRange(roomResult.Value!);
-            var zoneResult = await _multiBridge.GetAllZonesAsync();
-            if (zoneResult.IsSuccess) rooms.AddRange(zoneResult.Value!);
-
-            var targetRoom = FuzzyMatcher.FindRoom(rooms, room);
-            if (targetRoom == null)
-                return JsonSerializer.Serialize(new { error = $"Room '{room}' not found" }, JsonOpts);
-
-            await _animationService.StopSceneInRoomAsync(targetRoom.Id);
-            return JsonSerializer.Serialize(new { success = true, room = targetRoom.Name, stopped = true }, JsonOpts);
-        }
-
         await _animationService.StopAllScenesAsync();
-        return JsonSerializer.Serialize(new { success = true, stoppedAll = true }, JsonOpts);
+        return JsonSerializer.Serialize(new { success = true, stoppedAll = true, restoredPrevious = restore_previous }, JsonOpts);
     }
 
     [McpServerTool(Name = "hue_edit_scene"), Description("Edit an existing scene. Accepts high-level edits like transitions, keyframe changes, and effect additions.")]
@@ -177,8 +162,9 @@ public class AnimationTools
             editInputs = JsonSerializer.Deserialize<List<EditInput>>(edits,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch
+        catch (JsonException)
         {
+            // Intentionally catch only deserialization errors — return a user-friendly message
             return JsonSerializer.Serialize(new { error = "Invalid edits JSON format" }, JsonOpts);
         }
 

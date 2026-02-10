@@ -170,8 +170,14 @@ public class SceneStorageService : ISceneStorageService
                 return Result.Failure("Cannot overwrite built-in scenes");
             }
 
-            var fileName = $"{scene.Id}.json";
+            var sanitizedId = SanitizeFileName(scene.Id);
+            var fileName = $"{sanitizedId}.json";
             var filePath = Path.Combine(UserScenesPath, fileName);
+
+            // Verify the resolved path is still within the user scenes directory
+            var fullPath = Path.GetFullPath(filePath);
+            if (!fullPath.StartsWith(Path.GetFullPath(UserScenesPath), StringComparison.OrdinalIgnoreCase))
+                return Result.Failure("Invalid scene ID: path traversal detected");
 
             var json = JsonSerializer.Serialize(scene, _jsonOptions);
             await File.WriteAllTextAsync(filePath, json);
@@ -189,8 +195,14 @@ public class SceneStorageService : ISceneStorageService
     {
         try
         {
-            var fileName = $"{sceneId}.json";
+            var sanitizedId = SanitizeFileName(sceneId);
+            var fileName = $"{sanitizedId}.json";
             var filePath = Path.Combine(UserScenesPath, fileName);
+
+            // Verify the resolved path is still within the user scenes directory
+            var fullPath = Path.GetFullPath(filePath);
+            if (!fullPath.StartsWith(Path.GetFullPath(UserScenesPath), StringComparison.OrdinalIgnoreCase))
+                return Result.Failure("Invalid scene ID: path traversal detected");
 
             if (!File.Exists(filePath))
             {
@@ -254,6 +266,24 @@ public class SceneStorageService : ISceneStorageService
         }
 
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Sanitize a string for use as a filename, stripping path traversal characters.
+    /// </summary>
+    private static string SanitizeFileName(string name)
+    {
+        // Remove path separators and traversal patterns
+        var sanitized = name
+            .Replace("/", "_")
+            .Replace("\\", "_")
+            .Replace("..", "_");
+
+        // Also strip any remaining invalid filename characters
+        foreach (var c in Path.GetInvalidFileNameChars())
+            sanitized = sanitized.Replace(c, '_');
+
+        return sanitized;
     }
 
     private Result ValidateAnimation(AnimationDefinition animation, int index)

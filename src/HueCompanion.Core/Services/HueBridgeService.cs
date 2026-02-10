@@ -287,7 +287,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetRoomOnAsync(Guid roomId, bool isOn)
+    public async Task SetRoomOnAsync(Guid roomId, bool isOn, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -302,6 +302,8 @@ public class HueBridgeService : IHueBridgeService
             if (groupedLightId.HasValue)
             {
                 var command = new UpdateGroupedLight { On = new HueApi.Models.On { IsOn = isOn } };
+                if (transitionMs.HasValue)
+                    command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
                 await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
             }
         }
@@ -312,7 +314,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetRoomBrightnessAsync(Guid roomId, double brightness)
+    public async Task SetRoomBrightnessAsync(Guid roomId, double brightness, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -331,6 +333,8 @@ public class HueBridgeService : IHueBridgeService
                     On = new HueApi.Models.On { IsOn = brightness > 0 },
                     Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
                 };
+                if (transitionMs.HasValue)
+                    command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
                 await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
             }
         }
@@ -341,7 +345,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetRoomColorAsync(Guid roomId, HueColor color)
+    public async Task SetRoomColorAsync(Guid roomId, HueColor color, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -362,6 +366,8 @@ public class HueBridgeService : IHueBridgeService
                         Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
                     }
                 };
+                if (transitionMs.HasValue)
+                    command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
                 await _hueApi.GroupedLight.UpdateAsync(groupedLightId.Value, command);
             }
         }
@@ -712,13 +718,15 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetLightOnAsync(Guid lightId, bool isOn)
+    public async Task SetLightOnAsync(Guid lightId, bool isOn, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
         try
         {
             var command = new UpdateLight { On = new HueApi.Models.On { IsOn = isOn } };
+            if (transitionMs.HasValue)
+                command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
             await _hueApi.Light.UpdateAsync(lightId, command);
         }
         catch (Exception ex)
@@ -728,7 +736,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetLightBrightnessAsync(Guid lightId, double brightness)
+    public async Task SetLightBrightnessAsync(Guid lightId, double brightness, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -739,6 +747,8 @@ public class HueBridgeService : IHueBridgeService
                 On = new HueApi.Models.On { IsOn = brightness > 0 },
                 Dimming = new HueApi.Models.Dimming { Brightness = brightness * 100 }
             };
+            if (transitionMs.HasValue)
+                command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
             await _hueApi.Light.UpdateAsync(lightId, command);
         }
         catch (Exception ex)
@@ -748,7 +758,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetLightColorAsync(Guid lightId, HueColor color)
+    public async Task SetLightColorAsync(Guid lightId, HueColor color, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -761,6 +771,8 @@ public class HueBridgeService : IHueBridgeService
                     Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
                 }
             };
+            if (transitionMs.HasValue)
+                command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
             await _hueApi.Light.UpdateAsync(lightId, command);
         }
         catch (Exception ex)
@@ -770,7 +782,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness)
+    public async Task SetLightColorAndBrightnessAsync(Guid lightId, HueColor color, double brightness, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -785,6 +797,8 @@ public class HueBridgeService : IHueBridgeService
                     Xy = new HueApi.Models.XyPosition { X = color.X, Y = color.Y }
                 }
             };
+            if (transitionMs.HasValue)
+                command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
             await _hueApi.Light.UpdateAsync(lightId, command);
         }
         catch (Exception ex)
@@ -794,7 +808,7 @@ public class HueBridgeService : IHueBridgeService
     }
 
     /// <inheritdoc/>
-    public async Task SetLightTemperatureAsync(Guid lightId, int mirek)
+    public async Task SetLightTemperatureAsync(Guid lightId, int mirek, int? transitionMs = null)
     {
         if (_hueApi == null) return;
 
@@ -804,6 +818,8 @@ public class HueBridgeService : IHueBridgeService
             {
                 ColorTemperature = new HueApi.Models.ColorTemperature { Mirek = mirek }
             };
+            if (transitionMs.HasValue)
+                command.Dynamics = new HueApi.Models.Dynamics { Duration = transitionMs.Value };
             await _hueApi.Light.UpdateAsync(lightId, command);
         }
         catch (Exception ex)

@@ -76,9 +76,10 @@ public static partial class ColorParser
         var rgbMatch = RgbRegex().Match(input);
         if (rgbMatch.Success)
         {
-            byte r = byte.Parse(rgbMatch.Groups[1].Value);
-            byte g = byte.Parse(rgbMatch.Groups[2].Value);
-            byte b = byte.Parse(rgbMatch.Groups[3].Value);
+            // Clamp to 0-255 to prevent overflow from out-of-range values
+            byte r = (byte)Math.Clamp(int.Parse(rgbMatch.Groups[1].Value), 0, 255);
+            byte g = (byte)Math.Clamp(int.Parse(rgbMatch.Groups[2].Value), 0, 255);
+            byte b = (byte)Math.Clamp(int.Parse(rgbMatch.Groups[3].Value), 0, 255);
             return HueColor.FromRgb(r, g, b);
         }
 
