@@ -7,15 +7,15 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="HueCompanion"
-    Publisher="CN=HueCompanion"
-    Version="0.0.1.0" />
+    Name="DanDrayne.HueCompanionforWindows"
+    Publisher="CN=735259C5-36E1-4C42-8024-19E6400C96F8"
+    Version="1.0.2.0" />
 
-  <mp:PhoneIdentity PhoneProductId="A1B2C3D4-E5F6-7890-ABCD-EF1234567890" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="aab6fef7-845f-4634-86d8-3282c33cb550" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Hue Companion</DisplayName>
-    <PublisherDisplayName>Hue Companion</PublisherDisplayName>
+    <PublisherDisplayName>Dan Drayne</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -50,6 +50,7 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
     <rescap:Capability Name="privateNetworkClientServer" />
   </Capabilities>
 </Package>

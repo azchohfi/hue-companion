@@ -170,7 +170,7 @@ jobs:
         ## Installation
 
         ### Option 1: Microsoft Store (Recommended)
-        Install from the [Microsoft Store](https://apps.microsoft.com/detail/TODO) for automatic updates.
+        Install from the [Microsoft Store](https://apps.microsoft.com/detail/9PNC5CQQ403T) for automatic updates.
 
         ### Option 2: Download ZIP (Portable)
         1. Download the zip file for your platform:
@@ -218,7 +218,7 @@ jobs:
   store-publish:
     name: Publish to Microsoft Store
     runs-on: windows-latest
-    needs: release
+    needs: build
     if: vars.STORE_ENABLED == 'true'
 
     steps:
@@ -233,13 +233,6 @@ jobs:
       with:
         name: HueCompanion-ARM64-msix
         path: ./packages
-
-    - name: Extract version from tag
-      id: version
-      shell: bash
-      run: |
-        VERSION=${GITHUB_REF_NAME#v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Publish to Store
       uses: microsoft/store-submission@v1
