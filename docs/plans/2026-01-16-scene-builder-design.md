@@ -252,7 +252,7 @@ Add "Animations" section to RoomDetailPage:
 
 **Locations:**
 - Built-in: `Assets/Scenes/*.json` (read-only)
-- User: `%LocalAppData%/HueWindows/Scenes/*.json`
+- User: `%LocalAppData%/HueCompanion/Scenes/*.json`
 
 **Entry points:**
 1. "Create New" from Scenes page → Blank scene, pick room

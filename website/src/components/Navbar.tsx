@@ -39,7 +39,7 @@ export function Navbar() {
                             {link.label}
                         </Link>
                     ))}
-                    <a href="https://github.com/ddrayne/hue-windows" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">GitHub</a>
+                    <a href="https://github.com/ddrayne/hue-companion" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">GitHub</a>
                 </nav>
             </div>
         </motion.header>

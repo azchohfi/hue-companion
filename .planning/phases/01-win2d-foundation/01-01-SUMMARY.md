@@ -27,12 +27,12 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows/Views/Rendering/RenderCache.cs
-    - src/HueWindows/Views/Rendering/TimeRulerRenderer.cs
-    - src/HueWindows/Views/Rendering/TrackLanesRenderer.cs
-    - src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs
-    - src/HueWindows/Views/Rendering/PlayheadRenderer.cs
-    - src/HueWindows/Views/Rendering/TimelineRenderer.cs
+    - src/HueCompanion/Views/Rendering/RenderCache.cs
+    - src/HueCompanion/Views/Rendering/TimeRulerRenderer.cs
+    - src/HueCompanion/Views/Rendering/TrackLanesRenderer.cs
+    - src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs
+    - src/HueCompanion/Views/Rendering/PlayheadRenderer.cs
+    - src/HueCompanion/Views/Rendering/TimelineRenderer.cs
 
 decisions:
   - id: layered-architecture
@@ -166,12 +166,12 @@ None - plan executed exactly as written.
 ## Files Modified
 
 **Created:**
-- src/HueWindows/Views/Rendering/RenderCache.cs (111 lines)
-- src/HueWindows/Views/Rendering/TimeRulerRenderer.cs (68 lines)
-- src/HueWindows/Views/Rendering/TrackLanesRenderer.cs (132 lines)
-- src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs (95 lines)
-- src/HueWindows/Views/Rendering/PlayheadRenderer.cs (74 lines)
-- src/HueWindows/Views/Rendering/TimelineRenderer.cs (164 lines)
+- src/HueCompanion/Views/Rendering/RenderCache.cs (111 lines)
+- src/HueCompanion/Views/Rendering/TimeRulerRenderer.cs (68 lines)
+- src/HueCompanion/Views/Rendering/TrackLanesRenderer.cs (132 lines)
+- src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs (95 lines)
+- src/HueCompanion/Views/Rendering/PlayheadRenderer.cs (74 lines)
+- src/HueCompanion/Views/Rendering/TimelineRenderer.cs (164 lines)
 
 Total: 644 lines of rendering infrastructure
 

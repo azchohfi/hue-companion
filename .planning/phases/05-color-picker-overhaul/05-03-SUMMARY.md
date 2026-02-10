@@ -27,8 +27,8 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows/Controls/GamutColorPicker.xaml
-    - src/HueWindows/Controls/GamutColorPicker.xaml.cs
+    - src/HueCompanion/Controls/GamutColorPicker.xaml
+    - src/HueCompanion/Controls/GamutColorPicker.xaml.cs
   modified: []
 
 key-decisions:
@@ -77,8 +77,8 @@ Each task was committed atomically:
 3. **Task 3: Add Unloaded cleanup for Win2D resources** - `de3f2a1` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows/Controls/GamutColorPicker.xaml` - UserControl with CanvasControl and brightness slider (37 lines)
-- `src/HueWindows/Controls/GamutColorPicker.xaml.cs` - Win2D rendering, input handling, color conversion (357 lines)
+- `src/HueCompanion/Controls/GamutColorPicker.xaml` - UserControl with CanvasControl and brightness slider (37 lines)
+- `src/HueCompanion/Controls/GamutColorPicker.xaml.cs` - Win2D rendering, input handling, color conversion (357 lines)
   - DrawHueRing() - Renders 60-segment color wheel
   - DrawSaturationArea() - Renders adaptive saturation area with gamut graying
   - DrawSelectionIndicator() - Shows current color selection
@@ -116,7 +116,7 @@ Each task was committed atomically:
 - **Found during:** Task 2 (Build verification)
 - **Issue:** Build failed with "Colors does not exist in the current context" errors
 - **Fix:** Added `using Microsoft.UI;` to access Colors.White, Colors.Black, Colors.Transparent
-- **Files modified:** src/HueWindows/Controls/GamutColorPicker.xaml.cs
+- **Files modified:** src/HueCompanion/Controls/GamutColorPicker.xaml.cs
 - **Verification:** Build succeeded with no errors
 - **Committed in:** 41f8175 (Task 2 commit, fixed before committing)
 
@@ -128,7 +128,7 @@ Each task was committed atomically:
 ## Issues Encountered
 
 **Dev instance file lock:**
-- Build initially failed due to running dev instance locking HueWindows.Core.dll
+- Build initially failed due to running dev instance locking HueCompanion.Core.dll
 - Killed process with taskkill, rebuild succeeded
 - Expected behavior for Windows locked file access
 

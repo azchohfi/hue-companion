@@ -153,7 +153,7 @@ IReadOnlyList<NativeEffectInfo> GetAvailableNativeEffects();
 
 ### Saved Configurations
 
-- Stored in `%LOCALAPPDATA%/HueWindows/Scenes/`
+- Stored in `%LOCALAPPDATA%/HueCompanion/Scenes/`
 - Uses existing `AnimatedSceneModel` JSON format with `AnimationType.NativeEffect`
 - Appear in "My Scenes" with sparkle icon
 - Can be deleted like any user scene

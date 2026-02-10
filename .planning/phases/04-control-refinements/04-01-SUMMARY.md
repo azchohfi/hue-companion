@@ -24,7 +24,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "Used same 150ms debounce interval as LightDetailPage for consistency"
@@ -64,7 +64,7 @@ Each task was committed atomically:
 1. **Task 1: Add debouncing to brightness and color picker handlers** - `bba3f54` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - Added debounce timers and refactored slider/picker handlers
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - Added debounce timers and refactored slider/picker handlers
 
 ## Decisions Made
 - Used same 150ms debounce interval as LightDetailPage for consistency across the app

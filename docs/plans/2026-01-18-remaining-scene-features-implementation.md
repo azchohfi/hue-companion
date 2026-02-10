@@ -13,11 +13,11 @@
 ## Task 1: Save Current Room as Scene
 
 **Files:**
-- Modify: `src/HueWindows.Core/Services/Interfaces/IHueBridgeService.cs`
-- Modify: `src/HueWindows.Core/Services/HueBridgeService.cs`
-- Modify: `src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/Services/Interfaces/IHueBridgeService.cs`
+- Modify: `src/HueCompanion.Core/Services/HueBridgeService.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
 
 **Step 1: Add interface method**
 
@@ -182,7 +182,7 @@ private async void SaveAsScene_Click(object sender, RoutedEventArgs e)
 **Step 6: Build and test**
 
 ```bash
-dotnet build src/HueWindows/HueWindows.csproj
+dotnet build src/HueCompanion/HueCompanion.csproj
 ```
 
 Run app, go to room detail, click save icon, enter name, verify scene appears in list.
@@ -199,11 +199,11 @@ git commit -m "feat: add save current room as scene"
 ## Task 2: Delete User Scenes
 
 **Files:**
-- Modify: `src/HueWindows.Core/Services/Interfaces/IHueBridgeService.cs`
-- Modify: `src/HueWindows.Core/Services/HueBridgeService.cs`
-- Modify: `src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/Services/Interfaces/IHueBridgeService.cs`
+- Modify: `src/HueCompanion.Core/Services/HueBridgeService.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
 
 **Step 1: Add interface method**
 
@@ -314,14 +314,14 @@ git commit -m "feat: add delete scene functionality"
 ## Task 3: Scene Assignment Service
 
 **Files:**
-- Create: `src/HueWindows.Core/Services/Interfaces/IRoomSceneAssignmentService.cs`
-- Create: `src/HueWindows.Core/Services/RoomSceneAssignmentService.cs`
-- Modify: `src/HueWindows/App.xaml.cs` (register service)
+- Create: `src/HueCompanion.Core/Services/Interfaces/IRoomSceneAssignmentService.cs`
+- Create: `src/HueCompanion.Core/Services/RoomSceneAssignmentService.cs`
+- Modify: `src/HueCompanion/App.xaml.cs` (register service)
 
 **Step 1: Create interface**
 
 ```csharp
-namespace HueWindows.Core.Services.Interfaces;
+namespace HueCompanion.Core.Services.Interfaces;
 
 /// <summary>
 /// Service for managing animated scene assignments to rooms.
@@ -354,9 +354,9 @@ public interface IRoomSceneAssignmentService
 
 ```csharp
 using System.Text.Json;
-using HueWindows.Core.Services.Interfaces;
+using HueCompanion.Core.Services.Interfaces;
 
-namespace HueWindows.Core.Services;
+namespace HueCompanion.Core.Services;
 
 public class RoomSceneAssignmentService : IRoomSceneAssignmentService
 {
@@ -367,7 +367,7 @@ public class RoomSceneAssignmentService : IRoomSceneAssignmentService
     public RoomSceneAssignmentService()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var folder = Path.Combine(appData, "HueWindows");
+        var folder = Path.Combine(appData, "HueCompanion");
         Directory.CreateDirectory(folder);
         _filePath = Path.Combine(folder, "room-scene-assignments.json");
     }
@@ -472,9 +472,9 @@ git commit -m "feat: add room scene assignment service"
 ## Task 4: Display Pinned Animations on Room Detail
 
 **Files:**
-- Modify: `src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
 
 **Step 1: Add pinned scenes collection and load method**
 
@@ -607,9 +607,9 @@ git commit -m "feat: display pinned animations on room detail"
 ## Task 5: Pin Animation from Scenes Page
 
 **Files:**
-- Modify: `src/HueWindows/Views/ScenesPage.xaml`
-- Modify: `src/HueWindows/Views/ScenesPage.xaml.cs`
-- Modify: `src/HueWindows.Core/ViewModels/ScenesViewModel.cs`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/ScenesViewModel.cs`
 
 **Step 1: Add assignment service to ScenesViewModel**
 
@@ -674,15 +674,15 @@ git commit -m "feat: add pin-to-room from scenes page"
 ## Task 6: Animated Preview Control
 
 **Files:**
-- Create: `src/HueWindows/Controls/AnimatedPreviewControl.xaml`
-- Create: `src/HueWindows/Controls/AnimatedPreviewControl.xaml.cs`
+- Create: `src/HueCompanion/Controls/AnimatedPreviewControl.xaml`
+- Create: `src/HueCompanion/Controls/AnimatedPreviewControl.xaml.cs`
 
 **Step 1: Create XAML**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <UserControl
-    x:Class="HueWindows.Controls.AnimatedPreviewControl"
+    x:Class="HueCompanion.Controls.AnimatedPreviewControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -704,10 +704,10 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
-using HueWindows.Core.Models;
+using HueCompanion.Core.Models;
 using Windows.UI;
 
-namespace HueWindows.Controls;
+namespace HueCompanion.Controls;
 
 public sealed partial class AnimatedPreviewControl : UserControl
 {
@@ -899,13 +899,13 @@ git commit -m "feat: add animated preview control"
 ## Task 7: Use Animated Preview in Scene Cards
 
 **Files:**
-- Modify: `src/HueWindows/Views/ScenesPage.xaml`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml`
 
 **Step 1: Add namespace and update template**
 
 Add namespace:
 ```xml
-xmlns:controls="using:HueWindows.Controls"
+xmlns:controls="using:HueCompanion.Controls"
 ```
 
 Update animated scene card template to include preview:
@@ -942,14 +942,14 @@ git commit -m "feat: use animated previews in scene cards"
 ## Task 8: Generate Remaining Scenes
 
 **Files:**
-- Create: `src/HueWindows/Assets/Scenes/scene_fireflies.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_autumn_warmth.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_rainforest.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_disco.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_chill_lounge.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_reading.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_meditation.json`
-- Create: `src/HueWindows/Assets/Scenes/scene_gaming_rgb.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_fireflies.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_autumn_warmth.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_rainforest.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_disco.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_chill_lounge.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_reading.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_meditation.json`
+- Create: `src/HueCompanion/Assets/Scenes/scene_gaming_rgb.json`
 
 Use the LLM prompt template at `tools/scene-generator-prompt.md` to generate each scene.
 
@@ -970,7 +970,7 @@ Use the LLM prompt template at `tools/scene-generator-prompt.md` to generate eac
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows/Assets/Scenes/scene_*.json
+git add src/HueCompanion/Assets/Scenes/scene_*.json
 git commit -m "feat: add 8 new preset scenes"
 ```
 
@@ -981,7 +981,7 @@ git commit -m "feat: add 8 new preset scenes"
 **Step 1: Full build**
 
 ```bash
-dotnet build src/HueWindows/HueWindows.csproj
+dotnet build src/HueCompanion/HueCompanion.csproj
 ```
 
 **Step 2: Manual testing checklist**

@@ -24,18 +24,18 @@
 ## Data Storage
 
 **Local File Storage:**
-- Settings: `%LOCALAPPDATA%\HueWindows\settings.json` (AppSettings model as JSON)
+- Settings: `%LOCALAPPDATA%\HueCompanion\settings.json` (AppSettings model as JSON)
   - Contains: Bridge credentials, user preferences, pinned items, scene assignments
   - Service: `SettingsService` (read/write via System.Text.Json)
 
 **Scene Storage:**
 - Built-in scenes: Bundled in application package at `Assets\Scenes\scene_*.json`
-- User-created scenes: `%LOCALAPPDATA%\HueWindows\Scenes\scene_*.json`
+- User-created scenes: `%LOCALAPPDATA%\HueCompanion\Scenes\scene_*.json`
 - Format: AnimatedSceneModel (JSON with camelCase naming policy)
 - Service: `SceneStorageService` with separate paths for built-in vs user scenes
 
 **Crash Logs:**
-- Location: `%LOCALAPPDATA%\HueWindows\crash.log`
+- Location: `%LOCALAPPDATA%\HueCompanion\crash.log`
 - Format: Plain text with timestamp, source, exception details
 - Usage: Unhandled exception logging (set in App.xaml.cs exception handlers)
 
@@ -69,7 +69,7 @@
 - Local crash logging: See "Crash Logs" under Data Storage
 
 **Logs:**
-- Crash logs written to `%LOCALAPPDATA%\HueWindows\crash.log`
+- Crash logs written to `%LOCALAPPDATA%\HueCompanion\crash.log`
 - Debug output via `System.Diagnostics.Debug.WriteLine()` in Visual Studio debugger
 - Three-layer exception handling in App.xaml.cs:
   - `UnhandledException` (XAML layer)

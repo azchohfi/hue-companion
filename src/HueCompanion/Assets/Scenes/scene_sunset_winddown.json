@@ -1,0 +1,74 @@
+{
+  "id": "sunset_winddown",
+  "name": "Sunset Wind-Down",
+  "description": "Gradual warm dimming to help you relax for sleep",
+  "category": "Focus",
+  "previewColor": {
+    "x": 0.52,
+    "y": 0.40
+  },
+  "paletteColors": [
+    { "x": 0.45, "y": 0.41 },
+    { "x": 0.52, "y": 0.40 },
+    { "x": 0.56, "y": 0.36 },
+    { "x": 0.58, "y": 0.32 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "sunset_progression",
+      "name": "Sunset Progression",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.70,
+          "color": { "x": 0.45, "y": 0.41 },
+          "isOn": true,
+          "transitionStyle": "linear"
+        },
+        {
+          "timeSeconds": 300,
+          "brightness": 0.50,
+          "color": { "x": 0.50, "y": 0.40 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 600,
+          "brightness": 0.35,
+          "color": { "x": 0.54, "y": 0.38 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 900,
+          "brightness": 0.20,
+          "color": { "x": 0.56, "y": 0.35 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 1200,
+          "brightness": 0.08,
+          "color": { "x": 0.58, "y": 0.32 },
+          "isOn": true,
+          "transitionStyle": "easeOut"
+        },
+        {
+          "timeSeconds": 1500,
+          "brightness": 0.02,
+          "color": { "x": 0.60, "y": 0.30 },
+          "isOn": true,
+          "transitionStyle": "easeOut"
+        }
+      ],
+      "durationSeconds": 1500,
+      "repeatMode": "once",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

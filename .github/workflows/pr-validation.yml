@@ -25,7 +25,7 @@ jobs:
 
     - name: Run unit tests with coverage
       run: |
-        dotnet test src/HueWindows.Tests `
+        dotnet test src/HueCompanion.Tests `
           --no-build `
           --configuration Release `
           --verbosity normal `
@@ -46,7 +46,7 @@ jobs:
       with:
         files: ./TestResults/**/coverage.cobertura.xml
         flags: unittests
-        name: codecov-hue-windows
+        name: codecov-hue-companion
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -68,7 +68,7 @@ jobs:
     - name: Restore and build
       run: |
         dotnet restore
-        dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+        dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
 
     - name: Capture UI screenshots
       run: |

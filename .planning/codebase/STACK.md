@@ -52,12 +52,12 @@
 **Environment:**
 - No required environment variables for runtime (app settings stored in JSON)
 - Development builds vs stable builds controlled via MSBuild property `DevBuild`:
-  - `DevBuild=true` → separate MSIX identity (HueWindows.Dev), title shows "(Dev)" with git hash
+  - `DevBuild=true` → separate MSIX identity (HueCompanion.Dev), title shows "(Dev)" with git hash
   - `DevBuild=false` (default) → standard package identity, release version from BaseVersion
-- Version configured in `HueWindows.csproj`: BaseVersion = 0.1.0
+- Version configured in `HueCompanion.csproj`: BaseVersion = 0.1.0
 
 **Build:**
-- MSBuild project files: `HueWindows.csproj`, `HueWindows.Core.csproj`, `HueWindows.Tests.csproj`
+- MSBuild project files: `HueCompanion.csproj`, `HueCompanion.Core.csproj`, `HueCompanion.Tests.csproj`
 - Directory.Build.props: Global C# language settings (LangVersion=latest, Nullable=enable, ImplicitUsings=enable)
 - Publish profiles: `win-x64.pubxml`, `win-ARM64.pubxml` for platform-specific MSIX generation
 - Multi-platform support via `<Platforms>x64;ARM64</Platforms>`
@@ -80,21 +80,21 @@
 
 **Application Structure:**
 - WinUI 3 desktop app with MVVM pattern
-- Separate projects: `HueWindows` (UI), `HueWindows.Core` (business logic), `HueWindows.Tests` (unit tests)
+- Separate projects: `HueCompanion` (UI), `HueCompanion.Core` (business logic), `HueCompanion.Tests` (unit tests)
 - Dependency injection configured in `App.xaml.cs` with service registration
 
-**Key Services Layer (`HueWindows.Core.Services`):**
+**Key Services Layer (`HueCompanion.Core.Services`):**
 - `HueBridgeService` - Hue API communication with event streaming
 - `BridgeDiscoveryService` - Bridge discovery via HTTP and mDNS
 - `MultiBridgeService` - Multi-bridge support wrapper
-- `SettingsService` - Settings persistence to JSON (LocalAppData\HueWindows\settings.json)
-- `SceneStorageService` - Scene storage (built-in: Assets\Scenes\, user: LocalAppData\HueWindows\Scenes\)
+- `SettingsService` - Settings persistence to JSON (LocalAppData\HueCompanion\settings.json)
+- `SceneStorageService` - Scene storage (built-in: Assets\Scenes\, user: LocalAppData\HueCompanion\Scenes\)
 - `AnimationService` - Scene playback management
 - `AnimationEngine` - Timeline-based light animation execution
 - `SystemTrayService` - Windows system tray integration (Win32 Shell_NotifyIcon)
 - `HotkeyService` - Global hotkey registration (Win32)
 
-**XAML/View Layer (`HueWindows`):**
+**XAML/View Layer (`HueCompanion`):**
 - Pages: DashboardPage, RoomDetailPage, LightDetailPage, SceneBuilderPage, ScenesPage, SettingsPage
 - Controls: RoomCard, LightCard (custom WinUI controls)
 - Styles: AppStyles.xaml with WinUI 3 resource overrides

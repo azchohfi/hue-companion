@@ -7,7 +7,7 @@
 **Overall:** MVVM (Model-View-ViewModel) with Dependency Injection and Service-Oriented Architecture
 
 **Key Characteristics:**
-- Clear separation between UI presentation (`HueWindows`), business logic (`HueWindows.Core`), and testing (`HueWindows.Tests`)
+- Clear separation between UI presentation (`HueCompanion`), business logic (`HueCompanion.Core`), and testing (`HueCompanion.Tests`)
 - WinUI 3 framework for Windows desktop UI with Mica backdrop and modern controls
 - CommunityToolkit.MVVM for observable properties, relay commands, and MVVM messaging
 - Multi-bridge support with aggregation layer (`IMultiBridgeService`) abstracting individual bridge connections
@@ -17,25 +17,25 @@
 
 ## Layers
 
-**Presentation Layer (HueWindows):**
+**Presentation Layer (HueCompanion):**
 - Purpose: WinUI 3 views, controls, page navigation, and user interaction handling
-- Location: `/c/Users/danie/Documents/Code/hue-windows/src/HueWindows/`
+- Location: `/c/Users/danie/Documents/Code/hue-companion/src/HueCompanion/`
 - Contains: XAML pages, code-behind views, converters, dialogs, controls, styles, navigation helpers
-- Depends on: HueWindows.Core services and models via dependency injection
+- Depends on: HueCompanion.Core services and models via dependency injection
 - Used by: Application entry point, end users interacting with UI
 
-**Core Business Logic Layer (HueWindows.Core):**
+**Core Business Logic Layer (HueCompanion.Core):**
 - Purpose: Domain models, service implementations, view models, and bridge communication
-- Location: `/c/Users/danie/Documents/Code/hue-windows/src/HueWindows.Core/`
+- Location: `/c/Users/danie/Documents/Code/hue-companion/src/HueCompanion.Core/`
 - Contains: Service interfaces, implementations, view models, models, animation engine, storage logic
 - Depends on: HueApi NuGet package, standard .NET libraries
 - Used by: Presentation layer services and view models
 
-**Testing Layer (HueWindows.Tests):**
+**Testing Layer (HueCompanion.Tests):**
 - Purpose: Unit tests for models and services
-- Location: `/c/Users/danie/Documents/Code/hue-windows/src/HueWindows.Tests/`
+- Location: `/c/Users/danie/Documents/Code/hue-companion/src/HueCompanion.Tests/`
 - Contains: Test fixtures, service mocks, model tests
-- Depends on: HueWindows.Core, xUnit testing framework
+- Depends on: HueCompanion.Core, xUnit testing framework
 
 ## Data Flow
 
@@ -84,8 +84,8 @@ IMultiBridgeService.GetAllRoomsAsync()
 
 - ViewModels hold observable state (ObservableProperty from MVVM Toolkit)
 - Services maintain transient state (current connection, animation sessions)
-- Settings persisted to `%LOCALAPPDATA%/HueWindows/` (AppSettings.json)
-- Scenes stored in `%LOCALAPPDATA%/HueWindows/Scenes/` (AnimatedSceneModel JSON)
+- Settings persisted to `%LOCALAPPDATA%/HueCompanion/` (AppSettings.json)
+- Scenes stored in `%LOCALAPPDATA%/HueCompanion/Scenes/` (AnimatedSceneModel JSON)
 - No in-app state persistence between sessions; services recreated on app launch
 
 ## Key Abstractions
@@ -123,12 +123,12 @@ IMultiBridgeService.GetAllRoomsAsync()
 ## Entry Points
 
 **Application Entry (App):**
-- Location: `src/HueWindows/App.xaml.cs`
+- Location: `src/HueCompanion/App.xaml.cs`
 - Triggers: Windows OS when .exe is launched or package activation
 - Responsibilities: Initialize dependency injection, parse command-line args, configure crash logging, create MainWindow, handle unhandled exceptions
 
 **Main Window:**
-- Location: `src/HueWindows/MainWindow.xaml.cs`
+- Location: `src/HueCompanion/MainWindow.xaml.cs`
 - Triggers: App.OnLaunched() creates and activates main window
 - Responsibilities: Set up navigation frame, load rooms/zones on demand, initialize hotkey/tray services, handle window visibility/minimize-to-tray, determine initial page (Setup vs Dashboard)
 
@@ -145,7 +145,7 @@ IMultiBridgeService.GetAllRoomsAsync()
 
 - Service methods return `Result<T>` or `Result` instead of throwing
 - Calling code checks `result.IsSuccess` and accesses `result.Value` or `result.Error`
-- Unhandled exceptions caught at app level, logged to `%LOCALAPPDATA%/HueWindows/crash.log`
+- Unhandled exceptions caught at app level, logged to `%LOCALAPPDATA%/HueCompanion/crash.log`
 - Network errors (HttpRequestException) caught in HueBridgeService, converted to Result.Failure
 - XAML binding errors logged via Debug output
 

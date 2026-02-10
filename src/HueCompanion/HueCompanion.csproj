@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>HueCompanion</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(Platform)'=='' or '$(Platform)'=='AnyCPU'">win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxBundle>Never</AppxBundle>
+    <PublishProfile Condition="'$(Platform)'!='' and '$(Platform)'!='AnyCPU'">win-$(Platform).pubxml</PublishProfile>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- Build type configuration -->
+  <PropertyGroup>
+    <BaseVersion>0.1.0</BaseVersion>
+    <ApplicationTitle Condition="'$(DevBuild)' == 'true'">Hue Companion (Dev)</ApplicationTitle>
+    <ApplicationTitle Condition="'$(DevBuild)' != 'true'">Hue Companion</ApplicationTitle>
+    <AssemblyTitle>$(ApplicationTitle)</AssemblyTitle>
+    <InformationalVersion Condition="'$(VersionSuffix)' != ''">$(BaseVersion)-$(VersionSuffix)</InformationalVersion>
+    <InformationalVersion Condition="'$(VersionSuffix)' == ''">$(BaseVersion)</InformationalVersion>
+  </PropertyGroup>
+
+  <!-- MSIX identity for dev builds (allows running alongside stable) -->
+  <PropertyGroup Condition="'$(DevBuild)' == 'true'">
+    <PackageId>HueCompanion.Dev</PackageId>
+    <AppxManifest>Package.Dev.appxmanifest</AppxManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7175" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
+    <PackageReference Include="HueApi" Version="3.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HueCompanion.Core\HueCompanion.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+</Project>

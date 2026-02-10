@@ -22,8 +22,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/Rendering/GradientTrackRenderer.cs
-    - src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs
+    - src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs
+    - src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs
 
 key-decisions:
   - "Use HueColor.ToRgb() as single source of truth for XY→RGB conversion"
@@ -64,8 +64,8 @@ Each task was committed atomically:
 3. **Task 3: Verify color consistency** - No code changes (verification only)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/Rendering/GradientTrackRenderer.cs` - Removed private HueColorToRgb() with Wide Gamut matrix, now uses canonical HueColor.ToRgb()
-- `src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs` - Removed private HueColorToRgb() with Wide Gamut matrix, now uses canonical HueColor.ToRgb()
+- `src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs` - Removed private HueColorToRgb() with Wide Gamut matrix, now uses canonical HueColor.ToRgb()
+- `src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs` - Removed private HueColorToRgb() with Wide Gamut matrix, now uses canonical HueColor.ToRgb()
 
 ## Decisions Made
 - **Use canonical color conversion:** Established HueColor.ToRgb() as single source of truth for all XY→RGB conversions in the codebase

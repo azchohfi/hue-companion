@@ -24,8 +24,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "36x36px minimum size for touch-friendly targets"
@@ -69,8 +69,8 @@ Each task was committed atomically:
 **Plan metadata:** (included in task commit)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/SceneBuilderPage.xaml` - Replaced ToggleSwitch with ToggleButton, added AutomationProperties
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - Removed orphaned SnapToggle_Toggled handler
+- `src/HueCompanion/Views/SceneBuilderPage.xaml` - Replaced ToggleSwitch with ToggleButton, added AutomationProperties
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - Removed orphaned SnapToggle_Toggled handler
 
 ## Decisions Made
 - 36x36px minimum size for touch-friendly targets matching WCAG 2.5.5 guidelines

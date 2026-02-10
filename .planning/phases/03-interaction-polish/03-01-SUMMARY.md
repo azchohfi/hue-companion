@@ -21,10 +21,10 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows/Views/Rendering/TimelineCanvasControl.cs
+    - src/HueCompanion/Views/Rendering/TimelineCanvasControl.cs
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "Reflection-based cursor helper instead of subclassing (CanvasControl is sealed)"
@@ -67,9 +67,9 @@ Each task was committed atomically:
 2. **Task 2: Update XAML and add hover state tracking** - `90eff3a` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/Rendering/TimelineCanvasControl.cs` - CanvasControlCursorHelper using reflection to access ProtectedCursor
-- `src/HueWindows/Views/SceneBuilderPage.xaml` - Added PointerMoved and PointerExited events
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - Hover tracking fields, handlers, and cursor management logic
+- `src/HueCompanion/Views/Rendering/TimelineCanvasControl.cs` - CanvasControlCursorHelper using reflection to access ProtectedCursor
+- `src/HueCompanion/Views/SceneBuilderPage.xaml` - Added PointerMoved and PointerExited events
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - Hover tracking fields, handlers, and cursor management logic
 
 ## Decisions Made
 
@@ -96,7 +96,7 @@ Each task was committed atomically:
 - **Found during:** Task 1 (TimelineCanvasControl creation)
 - **Issue:** Compiler error CS0509: cannot derive from sealed type 'CanvasControl'
 - **Fix:** Changed approach to static helper class using reflection to access ProtectedCursor
-- **Files modified:** src/HueWindows/Views/Rendering/TimelineCanvasControl.cs
+- **Files modified:** src/HueCompanion/Views/Rendering/TimelineCanvasControl.cs
 - **Verification:** Build succeeded, helper class compiles without errors
 - **Committed in:** 56ff244 (Task 1 commit)
 

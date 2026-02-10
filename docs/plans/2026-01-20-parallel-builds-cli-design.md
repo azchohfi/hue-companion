@@ -17,11 +17,11 @@ Both can run simultaneously with different MSIX identities.
 ## Build Architecture
 
 ```
-hue-windows/
+hue-companion/
 ├── src/                      # Source code (unchanged)
 ├── builds/
 │   └── stable/               # Stable build output (gitignored)
-│       ├── HueWindows.exe    # Self-contained publish
+│       ├── HueCompanion.exe    # Self-contained publish
 │       └── build-info.json   # Metadata about this cut
 ├── bin/                      # Dev build output (existing)
 ├── hue.cmd                   # CLI entry point
@@ -34,8 +34,8 @@ hue-windows/
 | Property | Dev Build | Stable Build |
 |----------|-----------|--------------|
 | Title | Hue Companion (Dev) | Hue Companion |
-| Package Name | HueWindows.Dev | HueWindows |
-| Output Path | `src/HueWindows/bin/...` | `builds/stable/` |
+| Package Name | HueCompanion.Dev | HueCompanion |
+| Output Path | `src/HueCompanion/bin/...` | `builds/stable/` |
 
 ### Versioning
 
@@ -90,17 +90,17 @@ Version displays in window title bar for easy identification.
 
 ### MSBuild Properties
 
-In `HueWindows.csproj`:
+In `HueCompanion.csproj`:
 
 ```xml
 <PropertyGroup Condition="'$(DevBuild)' == 'true'">
   <ApplicationTitle>Hue Companion (Dev)</ApplicationTitle>
-  <PackageName>HueWindows.Dev</PackageName>
+  <PackageName>HueCompanion.Dev</PackageName>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(DevBuild)' != 'true'">
   <ApplicationTitle>Hue Companion</ApplicationTitle>
-  <PackageName>HueWindows</PackageName>
+  <PackageName>HueCompanion</PackageName>
 </PropertyGroup>
 ```
 

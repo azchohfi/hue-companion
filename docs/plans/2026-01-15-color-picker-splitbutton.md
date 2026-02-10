@@ -13,8 +13,8 @@
 ## Task 1: Add SplitButton to RoomDetailPage Header
 
 **Files:**
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml:55-103`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml:55-103`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
 
 **Step 1: Update XAML - Remove flyout from icon, add SplitButton**
 
@@ -151,13 +151,13 @@ private void ColorSplitButton_Click(SplitButton sender, SplitButtonClickEventArg
 
 **Step 3: Build and verify**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj`
 Expected: Build succeeded with 0 errors
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows/Views/RoomDetailPage.xaml src/HueWindows/Views/RoomDetailPage.xaml.cs
+git add src/HueCompanion/Views/RoomDetailPage.xaml src/HueCompanion/Views/RoomDetailPage.xaml.cs
 git commit -m "feat(room): replace icon color picker with SplitButton"
 ```
 
@@ -166,7 +166,7 @@ git commit -m "feat(room): replace icon color picker with SplitButton"
 ## Task 2: Add SupportsColor Property to RoomDetailViewModel
 
 **Files:**
-- Modify: `src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs`
 
 **Step 1: Add SupportsColor property**
 
@@ -178,13 +178,13 @@ public bool SupportsColor => Lights.Any(l => l.SupportsColor);
 
 **Step 2: Build and verify**
 
-Run: `dotnet build src/HueWindows.Core/HueWindows.Core.csproj`
+Run: `dotnet build src/HueCompanion.Core/HueCompanion.Core.csproj`
 Expected: Build succeeded
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs
+git add src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs
 git commit -m "feat(room): add SupportsColor property to RoomDetailViewModel"
 ```
 
@@ -193,8 +193,8 @@ git commit -m "feat(room): add SupportsColor property to RoomDetailViewModel"
 ## Task 3: Add SplitButton to LightDetailPage Header
 
 **Files:**
-- Modify: `src/HueWindows/Views/LightDetailPage.xaml:44-87`
-- Modify: `src/HueWindows/Views/LightDetailPage.xaml.cs`
+- Modify: `src/HueCompanion/Views/LightDetailPage.xaml:44-87`
+- Modify: `src/HueCompanion/Views/LightDetailPage.xaml.cs`
 
 **Step 1: Update XAML - Remove flyout from icon, add SplitButton**
 
@@ -314,13 +314,13 @@ private void ColorSplitButton_Click(SplitButton sender, SplitButtonClickEventArg
 
 **Step 3: Build and verify**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj`
 Expected: Build succeeded
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows/Views/LightDetailPage.xaml src/HueWindows/Views/LightDetailPage.xaml.cs
+git add src/HueCompanion/Views/LightDetailPage.xaml src/HueCompanion/Views/LightDetailPage.xaml.cs
 git commit -m "feat(light): replace icon color picker with SplitButton"
 ```
 
@@ -329,10 +329,10 @@ git commit -m "feat(light): replace icon color picker with SplitButton"
 ## Task 4: Remove Color Picker from RoomCard and LightCard Icons
 
 **Files:**
-- Modify: `src/HueWindows/Controls/RoomCard.xaml`
-- Modify: `src/HueWindows/Controls/RoomCard.xaml.cs`
-- Modify: `src/HueWindows/Controls/LightCard.xaml`
-- Modify: `src/HueWindows/Controls/LightCard.xaml.cs`
+- Modify: `src/HueCompanion/Controls/RoomCard.xaml`
+- Modify: `src/HueCompanion/Controls/RoomCard.xaml.cs`
+- Modify: `src/HueCompanion/Controls/LightCard.xaml`
+- Modify: `src/HueCompanion/Controls/LightCard.xaml.cs`
 
 **Step 1: Clean up RoomCard**
 
@@ -357,14 +357,14 @@ In `LightCard.xaml.cs`:
 
 **Step 3: Build and verify**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj`
 Expected: Build succeeded
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows/Controls/RoomCard.xaml src/HueWindows/Controls/RoomCard.xaml.cs
-git add src/HueWindows/Controls/LightCard.xaml src/HueWindows/Controls/LightCard.xaml.cs
+git add src/HueCompanion/Controls/RoomCard.xaml src/HueCompanion/Controls/RoomCard.xaml.cs
+git add src/HueCompanion/Controls/LightCard.xaml src/HueCompanion/Controls/LightCard.xaml.cs
 git commit -m "refactor: remove icon-tap color pickers from cards"
 ```
 
@@ -373,7 +373,7 @@ git commit -m "refactor: remove icon-tap color pickers from cards"
 ## Task 5: Style the SplitButton for Premium Look
 
 **Files:**
-- Modify: `src/HueWindows/Styles/AppStyles.xaml`
+- Modify: `src/HueCompanion/Styles/AppStyles.xaml`
 
 **Step 1: Add ColorSplitButtonStyle**
 
@@ -401,14 +401,14 @@ Style="{StaticResource ColorSplitButtonStyle}"
 
 **Step 3: Build and verify**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj`
 Expected: Build succeeded
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows/Styles/AppStyles.xaml
-git add src/HueWindows/Views/RoomDetailPage.xaml src/HueWindows/Views/LightDetailPage.xaml
+git add src/HueCompanion/Styles/AppStyles.xaml
+git add src/HueCompanion/Views/RoomDetailPage.xaml src/HueCompanion/Views/LightDetailPage.xaml
 git commit -m "style: add premium ColorSplitButtonStyle"
 ```
 
@@ -418,7 +418,7 @@ git commit -m "style: add premium ColorSplitButtonStyle"
 
 **Step 1: Run the app**
 
-Run: `dotnet run --project src/HueWindows/HueWindows.csproj`
+Run: `dotnet run --project src/HueCompanion/HueCompanion.csproj`
 
 **Step 2: Test scenarios**
 

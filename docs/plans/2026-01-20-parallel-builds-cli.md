@@ -13,7 +13,7 @@
 ## Task 1: Add Build Configuration Properties
 
 **Files:**
-- Modify: `src/HueWindows/HueWindows.csproj`
+- Modify: `src/HueCompanion/HueCompanion.csproj`
 
 **Step 1: Add conditional properties for dev vs stable builds**
 
@@ -31,19 +31,19 @@ Add after line 21 (`<Version>0.1.0</Version>`):
 
   <!-- MSIX identity for dev builds (allows running alongside stable) -->
   <PropertyGroup Condition="'$(DevBuild)' == 'true'">
-    <PackageId>HueWindows.Dev</PackageId>
+    <PackageId>HueCompanion.Dev</PackageId>
   </PropertyGroup>
 ```
 
 **Step 2: Build to verify no errors**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64`
 Expected: Build succeeds
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows/HueWindows.csproj
+git add src/HueCompanion/HueCompanion.csproj
 git commit -m "feat: add build configuration for dev vs stable"
 ```
 
@@ -52,12 +52,12 @@ git commit -m "feat: add build configuration for dev vs stable"
 ## Task 2: Create Dev Package Manifest
 
 **Files:**
-- Create: `src/HueWindows/Package.Dev.appxmanifest`
-- Modify: `src/HueWindows/HueWindows.csproj`
+- Create: `src/HueCompanion/Package.Dev.appxmanifest`
+- Modify: `src/HueCompanion/HueCompanion.csproj`
 
 **Step 1: Create dev manifest with different identity**
 
-Create `src/HueWindows/Package.Dev.appxmanifest`:
+Create `src/HueCompanion/Package.Dev.appxmanifest`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -69,8 +69,8 @@ Create `src/HueWindows/Package.Dev.appxmanifest`:
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="HueWindows.Dev"
-    Publisher="CN=HueWindows"
+    Name="HueCompanion.Dev"
+    Publisher="CN=HueCompanion"
     Version="0.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="B2C3D4E5-F6A7-8901-BCDE-F12345678901" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
@@ -119,7 +119,7 @@ Create `src/HueWindows/Package.Dev.appxmanifest`:
 
 **Step 2: Add manifest selection to csproj**
 
-Add after the dev build PropertyGroup in `HueWindows.csproj`:
+Add after the dev build PropertyGroup in `HueCompanion.csproj`:
 
 ```xml
   <!-- Select manifest based on build type -->
@@ -130,13 +130,13 @@ Add after the dev build PropertyGroup in `HueWindows.csproj`:
 
 **Step 3: Build dev version to verify**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64 -p:DevBuild=true`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64 -p:DevBuild=true`
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows/Package.Dev.appxmanifest src/HueWindows/HueWindows.csproj
+git add src/HueCompanion/Package.Dev.appxmanifest src/HueCompanion/HueCompanion.csproj
 git commit -m "feat: add separate MSIX identity for dev builds"
 ```
 
@@ -145,8 +145,8 @@ git commit -m "feat: add separate MSIX identity for dev builds"
 ## Task 3: Display Version in Title Bar
 
 **Files:**
-- Modify: `src/HueWindows/MainWindow.xaml`
-- Modify: `src/HueWindows/MainWindow.xaml.cs`
+- Modify: `src/HueCompanion/MainWindow.xaml`
+- Modify: `src/HueCompanion/MainWindow.xaml.cs`
 
 **Step 1: Make title bar text dynamic**
 
@@ -199,7 +199,7 @@ In `MainWindow.xaml.cs`, add after `SetupTitleBar();` (around line 87):
 
 **Step 4: Add assembly title attribute to csproj**
 
-In `HueWindows.csproj`, add to the build configuration PropertyGroup:
+In `HueCompanion.csproj`, add to the build configuration PropertyGroup:
 
 ```xml
     <AssemblyTitle>$(ApplicationTitle)</AssemblyTitle>
@@ -207,13 +207,13 @@ In `HueWindows.csproj`, add to the build configuration PropertyGroup:
 
 **Step 5: Build and verify title shows**
 
-Run: `dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64 -p:DevBuild=true -p:VersionSuffix=dev+abc123`
+Run: `dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64 -p:DevBuild=true -p:VersionSuffix=dev+abc123`
 Launch the exe and verify title shows "Hue Companion (Dev) - 0.1.0-dev+abc123"
 
 **Step 6: Commit**
 
 ```bash
-git add src/HueWindows/MainWindow.xaml src/HueWindows/MainWindow.xaml.cs src/HueWindows/HueWindows.csproj
+git add src/HueCompanion/MainWindow.xaml src/HueCompanion/MainWindow.xaml.cs src/HueCompanion/HueCompanion.csproj
 git commit -m "feat: display version and build type in title bar"
 ```
 
@@ -285,10 +285,10 @@ $ErrorActionPreference = "Stop"
 
 # Paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$DevExePath = Join-Path $ProjectRoot "src\HueWindows\bin\x64\Debug\net8.0-windows10.0.22621.0\HueWindows.exe"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$DevExePath = Join-Path $ProjectRoot "src\HueCompanion\bin\x64\Debug\net8.0-windows10.0.22621.0\HueCompanion.exe"
 $StablePath = Join-Path $ProjectRoot "builds\stable"
-$StableExePath = Join-Path $StablePath "HueWindows.exe"
+$StableExePath = Join-Path $StablePath "HueCompanion.exe"
 $BuildInfoPath = Join-Path $StablePath "build-info.json"
 
 function Get-GitShortHash {
@@ -310,7 +310,7 @@ function Get-BaseVersion {
 }
 
 function Get-HueProcesses {
-    $processes = Get-Process -Name "HueWindows" -ErrorAction SilentlyContinue
+    $processes = Get-Process -Name "HueCompanion" -ErrorAction SilentlyContinue
     $results = @()
     foreach ($proc in $processes) {
         $path = $proc.Path

@@ -29,9 +29,9 @@ score: 4/4 must-haves verified
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `src/HueWindows/Views/Rendering/GradientTrackRenderer.cs` | Gradient strip rendering for timeline tracks | VERIFIED | 334 lines (exceeds 150 minimum), substantive implementation with `Draw()`, `DrawGradientSegment()`, `CreateEasedGradientStops()`, `DrawDepthEffect()` |
-| `src/HueWindows/Views/Rendering/TimelineRenderer.cs` | Orchestration including gradient layer | VERIFIED | Contains `_gradientRenderer` field (line 34), instantiation (line 48), and Layer 2.5 draw call (lines 105-112) |
-| `src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs` | Keyframe rendering with contrast outlines | VERIFIED | Contains `GetBrightness()` method (line 83), `contrastColor` selection (lines 60-63), contrast outline drawing (line 66) |
+| `src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs` | Gradient strip rendering for timeline tracks | VERIFIED | 334 lines (exceeds 150 minimum), substantive implementation with `Draw()`, `DrawGradientSegment()`, `CreateEasedGradientStops()`, `DrawDepthEffect()` |
+| `src/HueCompanion/Views/Rendering/TimelineRenderer.cs` | Orchestration including gradient layer | VERIFIED | Contains `_gradientRenderer` field (line 34), instantiation (line 48), and Layer 2.5 draw call (lines 105-112) |
+| `src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs` | Keyframe rendering with contrast outlines | VERIFIED | Contains `GetBrightness()` method (line 83), `contrastColor` selection (lines 60-63), contrast outline drawing (line 66) |
 
 ### Key Link Verification
 

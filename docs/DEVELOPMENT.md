@@ -1,6 +1,6 @@
 # Development Workflow
 
-This document describes the complete versioning, testing, and release flow for HueWindows.
+This document describes the complete versioning, testing, and release flow for HueCompanion.
 
 ## Overview
 
@@ -25,23 +25,23 @@ This document describes the complete versioning, testing, and release flow for H
 
 ```bash
 # Build (default platform)
-dotnet build src/HueWindows/HueWindows.csproj
+dotnet build src/HueCompanion/HueCompanion.csproj
 
 # Build for specific architecture
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=ARM64
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=ARM64
 
 # Run the app
-dotnet run --project src/HueWindows/HueWindows.csproj
+dotnet run --project src/HueCompanion/HueCompanion.csproj
 ```
 
 ### Project Structure
 
 ```
 src/
-├── HueWindows/           # WinUI 3 App (views, controls, styles)
-├── HueWindows.Core/      # Business logic (models, viewmodels, services)
-└── HueWindows.Tests/     # Unit tests (xUnit + FluentAssertions)
+├── HueCompanion/           # WinUI 3 App (views, controls, styles)
+├── HueCompanion.Core/      # Business logic (models, viewmodels, services)
+└── HueCompanion.Tests/     # Unit tests (xUnit + FluentAssertions)
 ```
 
 ## 2. Testing
@@ -50,16 +50,16 @@ src/
 
 ```bash
 # Run all tests
-dotnet test src/HueWindows.Tests
+dotnet test src/HueCompanion.Tests
 
 # Run with verbose output
-dotnet test src/HueWindows.Tests -v normal
+dotnet test src/HueCompanion.Tests -v normal
 
 # Run specific test class
-dotnet test src/HueWindows.Tests --filter "FullyQualifiedName~HueColorTests"
+dotnet test src/HueCompanion.Tests --filter "FullyQualifiedName~HueColorTests"
 
 # Run with code coverage
-dotnet test src/HueWindows.Tests --collect:"XPlat Code Coverage" --results-directory ./TestResults
+dotnet test src/HueCompanion.Tests --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
 ### Test Categories
@@ -80,7 +80,7 @@ dotnet test src/HueWindows.Tests --collect:"XPlat Code Coverage" --results-direc
 
 After running tests with coverage, reports are in `TestResults/*/coverage.cobertura.xml`.
 
-View coverage in CI via Codecov: https://codecov.io/gh/ddrayne/hue-windows
+View coverage in CI via Codecov: https://codecov.io/gh/ddrayne/hue-companion
 
 ## 3. Continuous Integration
 
@@ -143,8 +143,8 @@ Version is maintained in two locations:
 
 | File | Format | Example |
 |------|--------|---------|
-| `src/HueWindows/HueWindows.csproj` | `<Version>X.Y.Z</Version>` | `<Version>1.0.0</Version>` |
-| `src/HueWindows/Package.appxmanifest` | `Version="X.Y.Z.0"` | `Version="1.0.0.0"` |
+| `src/HueCompanion/HueCompanion.csproj` | `<Version>X.Y.Z</Version>` | `<Version>1.0.0</Version>` |
+| `src/HueCompanion/Package.appxmanifest` | `Version="X.Y.Z.0"` | `Version="1.0.0.0"` |
 
 ### Version Bump Script
 
@@ -214,7 +214,7 @@ Tag pushed (v1.2.3)
 ```powershell
 # 1. Ensure clean state
 git status
-dotnet test src/HueWindows.Tests
+dotnet test src/HueCompanion.Tests
 
 # 2. Bump version
 .\tools\Bump-Version.ps1 -Type minor
@@ -225,7 +225,7 @@ git push origin main --tags
 
 ### Release Checklist
 
-- [ ] All tests pass locally (`dotnet test src/HueWindows.Tests`)
+- [ ] All tests pass locally (`dotnet test src/HueCompanion.Tests`)
 - [ ] Working directory is clean (`git status`)
 - [ ] Version bump executed (`.\tools\Bump-Version.ps1`)
 - [ ] Tag pushed to origin
@@ -235,9 +235,9 @@ git push origin main --tags
 ### Monitoring Releases
 
 After pushing a tag:
-1. Go to https://github.com/ddrayne/hue-windows/actions
+1. Go to https://github.com/ddrayne/hue-companion/actions
 2. Watch the "Release" workflow
-3. Once complete, check https://github.com/ddrayne/hue-windows/releases
+3. Once complete, check https://github.com/ddrayne/hue-companion/releases
 
 ### Failed Release Recovery
 
@@ -409,7 +409,7 @@ For local testing with signed MSIX packages:
 .\tools\Create-SelfSignedCert.ps1 -OutputPath .\dev-cert.pfx
 
 # Build with signing (if needed)
-dotnet publish src/HueWindows/HueWindows.csproj `
+dotnet publish src/HueCompanion/HueCompanion.csproj `
   -p:Platform=x64 `
   -p:AppxPackageSigningEnabled=true `
   -p:PackageCertificateThumbprint=<thumbprint>
@@ -441,13 +441,13 @@ To create a release:
 Downloaded releases include both ZIP and MSIX formats:
 
 ```
-HueWindows-{version}-{platform}.zip     # Portable (extract and run)
-├── HueWindows.exe
-├── HueWindows.dll
+HueCompanion-{version}-{platform}.zip     # Portable (extract and run)
+├── HueCompanion.exe
+├── HueCompanion.dll
 ├── *.dll
 └── Assets/
 
-HueWindows-{version}-{platform}.msix    # Installable package
+HueCompanion-{version}-{platform}.msix    # Installable package
 ```
 
 ## 10. Microsoft Store Deployment

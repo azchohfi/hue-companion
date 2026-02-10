@@ -49,7 +49,7 @@ The established libraries/tools for this domain:
 ## Architecture Patterns
 
 ### Existing Debounce Pattern (Production-Tested)
-**Location:** `src/HueWindows/Views/LightDetailPage.xaml.cs`
+**Location:** `src/HueCompanion/Views/LightDetailPage.xaml.cs`
 
 The codebase already has a proven 150ms debounce pattern:
 
@@ -204,7 +204,7 @@ Verified patterns from existing codebase and official sources:
 
 ### Slider Debouncing (From LightDetailPage)
 ```csharp
-// Source: src/HueWindows/Views/LightDetailPage.xaml.cs (lines 350-372)
+// Source: src/HueCompanion/Views/LightDetailPage.xaml.cs (lines 350-372)
 private DispatcherTimer? _brightnessDebounceTimer;
 private double _pendingBrightness;
 
@@ -333,10 +333,10 @@ Things that couldn't be fully resolved:
 
 ### Primary (HIGH confidence)
 - **Existing Codebase:**
-  - `src/HueWindows/Views/LightDetailPage.xaml.cs` - Production-tested 150ms debounce pattern (lines 350-419)
-  - `src/HueWindows/Views/SceneBuilderPage.xaml` - Current control layout (lines 586-604)
-  - `src/HueWindows/Controls/ColorPickerFlyout.xaml` - Current compact ColorPicker configuration
-  - `src/HueWindows/Styles/AppStyles.xaml` - CompactToggleSwitchStyle pattern (lines 184-189)
+  - `src/HueCompanion/Views/LightDetailPage.xaml.cs` - Production-tested 150ms debounce pattern (lines 350-419)
+  - `src/HueCompanion/Views/SceneBuilderPage.xaml` - Current control layout (lines 586-604)
+  - `src/HueCompanion/Controls/ColorPickerFlyout.xaml` - Current compact ColorPicker configuration
+  - `src/HueCompanion/Styles/AppStyles.xaml` - CompactToggleSwitchStyle pattern (lines 184-189)
 
 - **Microsoft Official Documentation:**
   - [Keyboard Accessibility - Microsoft Learn](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/keyboard-accessibility) - AutomationProperties.AcceleratorKey pattern

@@ -8,7 +8,7 @@
 
 **Tech Stack:** GitHub Actions, PowerShell, MSIX signing, GitHub Releases API
 
-**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-windows/issues/5) - Phase 3
+**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-companion/issues/5) - Phase 3
 
 ---
 
@@ -50,7 +50,7 @@ jobs:
       run: dotnet restore
 
     - name: Run tests
-      run: dotnet test src/HueWindows.Tests --configuration Release --verbosity normal
+      run: dotnet test src/HueCompanion.Tests --configuration Release --verbosity normal
 
   # Job 2: Build release packages
   build:
@@ -83,7 +83,7 @@ jobs:
 
     - name: Build MSIX (${{ matrix.platform }})
       run: |
-        dotnet publish src/HueWindows/HueWindows.csproj `
+        dotnet publish src/HueCompanion/HueCompanion.csproj `
           --configuration Release `
           -p:Platform=${{ matrix.platform }} `
           -p:Version=${{ steps.version.outputs.VERSION }} `
@@ -92,7 +92,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: hue-windows-${{ matrix.platform }}-${{ steps.version.outputs.VERSION }}
+        name: hue-companion-${{ matrix.platform }}-${{ steps.version.outputs.VERSION }}
         path: ./publish/${{ matrix.platform }}/
         retention-days: 90
 
@@ -116,24 +116,24 @@ jobs:
     - name: Download x64 artifacts
       uses: actions/download-artifact@v4
       with:
-        name: hue-windows-x64-${{ steps.version.outputs.VERSION }}
+        name: hue-companion-x64-${{ steps.version.outputs.VERSION }}
         path: ./artifacts/x64
 
     - name: Download ARM64 artifacts
       uses: actions/download-artifact@v4
       with:
-        name: hue-windows-ARM64-${{ steps.version.outputs.VERSION }}
+        name: hue-companion-ARM64-${{ steps.version.outputs.VERSION }}
         path: ./artifacts/ARM64
 
     - name: Create release archive (x64)
       run: |
         cd artifacts/x64
-        zip -r ../../HueWindows-${{ steps.version.outputs.VERSION }}-x64.zip .
+        zip -r ../../HueCompanion-${{ steps.version.outputs.VERSION }}-x64.zip .
 
     - name: Create release archive (ARM64)
       run: |
         cd artifacts/ARM64
-        zip -r ../../HueWindows-${{ steps.version.outputs.VERSION }}-ARM64.zip .
+        zip -r ../../HueCompanion-${{ steps.version.outputs.VERSION }}-ARM64.zip .
 
     - name: Generate release notes
       id: notes
@@ -143,8 +143,8 @@ jobs:
         echo "Release v${{ steps.version.outputs.VERSION }}" >> release-notes.md
         echo "" >> release-notes.md
         echo "### Downloads" >> release-notes.md
-        echo "- **x64**: HueWindows-${{ steps.version.outputs.VERSION }}-x64.zip" >> release-notes.md
-        echo "- **ARM64**: HueWindows-${{ steps.version.outputs.VERSION }}-ARM64.zip" >> release-notes.md
+        echo "- **x64**: HueCompanion-${{ steps.version.outputs.VERSION }}-x64.zip" >> release-notes.md
+        echo "- **ARM64**: HueCompanion-${{ steps.version.outputs.VERSION }}-ARM64.zip" >> release-notes.md
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
@@ -154,8 +154,8 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          HueWindows-${{ steps.version.outputs.VERSION }}-x64.zip
-          HueWindows-${{ steps.version.outputs.VERSION }}-ARM64.zip
+          HueCompanion-${{ steps.version.outputs.VERSION }}-x64.zip
+          HueCompanion-${{ steps.version.outputs.VERSION }}-ARM64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -227,7 +227,7 @@ Create a script that documents what's needed for Store deployment:
 ```powershell
 <#
 .SYNOPSIS
-    Deploys HueWindows to the Microsoft Store (placeholder).
+    Deploys HueCompanion to the Microsoft Store (placeholder).
 
 .DESCRIPTION
     This script will deploy the application to the Microsoft Store

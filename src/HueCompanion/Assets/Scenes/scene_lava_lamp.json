@@ -1,0 +1,67 @@
+{
+  "id": "lava_lamp",
+  "name": "Lava Lamp",
+  "description": "Slow morphing warm red and orange tones",
+  "category": "Ambient",
+  "previewColor": {
+    "x": 0.60,
+    "y": 0.35
+  },
+  "paletteColors": [
+    { "x": 0.65, "y": 0.32 },
+    { "x": 0.58, "y": 0.38 },
+    { "x": 0.62, "y": 0.34 },
+    { "x": 0.55, "y": 0.40 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "lava_morph",
+      "name": "Lava Morph",
+      "type": "keyframe",
+      "lightAssignment": "random",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.55,
+          "color": { "x": 0.65, "y": 0.32 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 5,
+          "brightness": 0.65,
+          "color": { "x": 0.58, "y": 0.38 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 10,
+          "brightness": 0.50,
+          "color": { "x": 0.62, "y": 0.34 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 15,
+          "brightness": 0.60,
+          "color": { "x": 0.55, "y": 0.40 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 20,
+          "brightness": 0.55,
+          "color": { "x": 0.65, "y": 0.32 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 20,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

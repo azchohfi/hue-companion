@@ -8,7 +8,7 @@
 
 **Tech Stack:** PowerShell (test harness), ImageMagick (image comparison), GitHub Actions (CI), existing MCP screenshot tools
 
-**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-windows/issues/5) - Phase 4-5
+**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-companion/issues/5) - Phase 4-5
 
 ---
 
@@ -58,8 +58,8 @@ $ErrorActionPreference = "Stop"
 
 # Project paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$ExePath = Join-Path $ProjectRoot "src\HueWindows\bin\x64\Debug\net8.0-windows10.0.22621.0\HueWindows.exe"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$ExePath = Join-Path $ProjectRoot "src\HueCompanion\bin\x64\Debug\net8.0-windows10.0.22621.0\HueCompanion.exe"
 
 # Test configuration
 $WaitSeconds = 5
@@ -83,7 +83,7 @@ function Write-TestStatus {
 
 # Step 1: Build (unless skipped)
 Write-Host ""
-Write-Host "=== HueWindows UI Tests ===" -ForegroundColor Cyan
+Write-Host "=== HueCompanion UI Tests ===" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not $SkipBuild) {
@@ -499,7 +499,7 @@ Add a new job after `build-and-test`:
       run: dotnet restore
 
     - name: Build for UI tests
-      run: dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+      run: dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
 
     - name: Run UI tests
       run: |
@@ -562,7 +562,7 @@ Add after the existing test job:
     - name: Restore and build
       run: |
         dotnet restore
-        dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+        dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
 
     - name: Capture UI screenshots
       run: |
@@ -741,19 +741,19 @@ After completing all tasks:
 ## Task 8: Add Human-Readable Deep Linking
 
 **Files:**
-- Modify: `src/HueWindows/Helpers/CommandLineArgs.cs`
-- Modify: `src/HueWindows/Helpers/CommandLineParser.cs`
-- Modify: `src/HueWindows/Helpers/NavigationTarget.cs`
-- Modify: `src/HueWindows/MainWindow.xaml.cs`
+- Modify: `src/HueCompanion/Helpers/CommandLineArgs.cs`
+- Modify: `src/HueCompanion/Helpers/CommandLineParser.cs`
+- Modify: `src/HueCompanion/Helpers/NavigationTarget.cs`
+- Modify: `src/HueCompanion/MainWindow.xaml.cs`
 
 **Goal:** Enable navigation by human-readable names (e.g., `--name bathroom` instead of `--id <guid>`).
 
 **Step 1: Update CommandLineArgs to support name parameter**
 
-Modify `src/HueWindows/Helpers/CommandLineArgs.cs`:
+Modify `src/HueCompanion/Helpers/CommandLineArgs.cs`:
 
 ```csharp
-namespace HueWindows.Helpers;
+namespace HueCompanion.Helpers;
 
 /// <summary>
 /// Represents parsed command-line arguments for deep linking.
@@ -800,7 +800,7 @@ public record CommandLineArgs
 
 **Step 2: Update CommandLineParser to parse --name**
 
-Modify `src/HueWindows/Helpers/CommandLineParser.cs` to add name parsing:
+Modify `src/HueCompanion/Helpers/CommandLineParser.cs` to add name parsing:
 
 ```csharp
 // Add in the Parse method, after the --id parsing:
@@ -836,14 +836,14 @@ return new CommandLineArgs
 
 **Step 3: Update NavigationTarget to resolve names**
 
-Add async resolution in `src/HueWindows/Helpers/NavigationTarget.cs`:
+Add async resolution in `src/HueCompanion/Helpers/NavigationTarget.cs`:
 
 ```csharp
-using HueWindows.Core.Models;
-using HueWindows.Core.Services.Interfaces;
-using HueWindows.Views;
+using HueCompanion.Core.Models;
+using HueCompanion.Core.Services.Interfaces;
+using HueCompanion.Views;
 
-namespace HueWindows.Helpers;
+namespace HueCompanion.Helpers;
 
 public record NavigationTarget
 {
@@ -961,7 +961,7 @@ public record NavigationTarget
 
 **Step 4: Update MainWindow to use async resolution**
 
-Modify `src/HueWindows/MainWindow.xaml.cs` in `NavigateToInitialPage`:
+Modify `src/HueCompanion/MainWindow.xaml.cs` in `NavigateToInitialPage`:
 
 ```csharp
 private async void NavigateToInitialPage()
@@ -994,10 +994,10 @@ private async void NavigateToInitialPage()
 Add to README.md Command-Line section:
 ```markdown
 # Navigate by name (human-readable)
-HueWindows.exe --page room --name bathroom
-HueWindows.exe --page room --name "living room"
-HueWindows.exe --page zone --name upstairs
-HueWindows.exe --page light --name "desk lamp"
+HueCompanion.exe --page room --name bathroom
+HueCompanion.exe --page room --name "living room"
+HueCompanion.exe --page zone --name upstairs
+HueCompanion.exe --page light --name "desk lamp"
 
 # Names are case-insensitive and support various formats:
 # bathroom, Bathroom, BATHROOM → all match "Bathroom"
@@ -1007,10 +1007,10 @@ HueWindows.exe --page light --name "desk lamp"
 **Step 6: Commit**
 
 ```bash
-git add src/HueWindows/Helpers/CommandLineArgs.cs \
-        src/HueWindows/Helpers/CommandLineParser.cs \
-        src/HueWindows/Helpers/NavigationTarget.cs \
-        src/HueWindows/MainWindow.xaml.cs \
+git add src/HueCompanion/Helpers/CommandLineArgs.cs \
+        src/HueCompanion/Helpers/CommandLineParser.cs \
+        src/HueCompanion/Helpers/NavigationTarget.cs \
+        src/HueCompanion/MainWindow.xaml.cs \
         README.md
 git commit -m "feat: add human-readable name support for deep linking navigation"
 ```
@@ -1032,7 +1032,7 @@ Create `tools/Launch-App.ps1`:
 ```powershell
 <#
 .SYNOPSIS
-    Launches the HueWindows app for interactive testing.
+    Launches the HueCompanion app for interactive testing.
 
 .DESCRIPTION
     Builds (optional) and launches the app. Unlike the screenshot capture script,
@@ -1078,11 +1078,11 @@ $ErrorActionPreference = "Stop"
 
 # Project paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$ExePath = Join-Path $ProjectRoot "src\HueWindows\bin\x64\Debug\net8.0-windows10.0.22621.0\HueWindows.exe"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$ExePath = Join-Path $ProjectRoot "src\HueCompanion\bin\x64\Debug\net8.0-windows10.0.22621.0\HueCompanion.exe"
 
 Write-Host ""
-Write-Host "=== HueWindows Launch ===" -ForegroundColor Cyan
+Write-Host "=== HueCompanion Launch ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Step 1: Build (unless skipped)
@@ -1144,7 +1144,7 @@ Update `tools/screenshot-mcp/server.js` capture_screenshot description:
 ```javascript
 {
     name: 'capture_screenshot',
-    description: 'Build and launch the HueWindows app, capture a screenshot, and close the app. Use for automated testing. For interactive testing without auto-close, use Launch-App.ps1.',
+    description: 'Build and launch the HueCompanion app, capture a screenshot, and close the app. Use for automated testing. For interactive testing without auto-close, use Launch-App.ps1.',
     // ... rest of schema
 }
 ```
@@ -1256,7 +1256,7 @@ After completing all tasks:
 
 **Files:**
 - Modify: `.github/workflows/release.yml`
-- Modify: `src/HueWindows/HueWindows.csproj`
+- Modify: `src/HueCompanion/HueCompanion.csproj`
 - Create: `tools/Create-SelfSignedCert.ps1` (for local testing)
 
 **Goal:** Generate proper MSIX installers instead of zip files for releases.
@@ -1265,7 +1265,7 @@ After completing all tasks:
 
 **Step 1: Update csproj for proper MSIX output**
 
-Verify/add these properties in `src/HueWindows/HueWindows.csproj`:
+Verify/add these properties in `src/HueCompanion/HueCompanion.csproj`:
 
 ```xml
 <PropertyGroup>
@@ -1293,7 +1293,7 @@ Create `tools/Create-SelfSignedCert.ps1`:
     The certificate is stored in the current user's certificate store.
 
 .PARAMETER Subject
-    Certificate subject (default: CN=HueWindows-Dev).
+    Certificate subject (default: CN=HueCompanion-Dev).
 
 .PARAMETER OutputPath
     Path to export the .pfx file (optional).
@@ -1311,7 +1311,7 @@ Create `tools/Create-SelfSignedCert.ps1`:
 #>
 
 param(
-    [string]$Subject = "CN=HueWindows-Dev",
+    [string]$Subject = "CN=HueCompanion-Dev",
     [string]$OutputPath,
     [string]$Password = "dev-password"
 )
@@ -1336,7 +1336,7 @@ else {
         -Type CodeSigningCert `
         -Subject $Subject `
         -KeyUsage DigitalSignature `
-        -FriendlyName "HueWindows Development Signing Certificate" `
+        -FriendlyName "HueCompanion Development Signing Certificate" `
         -CertStoreLocation Cert:\CurrentUser\My `
         -NotAfter (Get-Date).AddYears(5)
 
@@ -1398,7 +1398,7 @@ Modify `.github/workflows/release.yml` build job:
       shell: pwsh
       run: |
         # Build the MSIX package
-        dotnet publish src/HueWindows/HueWindows.csproj `
+        dotnet publish src/HueCompanion/HueCompanion.csproj `
           --configuration Release `
           -p:Platform=${{ matrix.platform }} `
           -p:Version=${{ steps.version.outputs.VERSION }} `
@@ -1414,13 +1414,13 @@ Modify `.github/workflows/release.yml` build job:
 
         # Zip the publish output
         Compress-Archive -Path "./publish/$platform/*" `
-          -DestinationPath "./HueWindows-$version-$platform.zip"
+          -DestinationPath "./HueCompanion-$version-$platform.zip"
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: hue-windows-${{ matrix.platform }}-${{ steps.version.outputs.VERSION }}
-        path: ./HueWindows-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}.zip
+        name: hue-companion-${{ matrix.platform }}-${{ steps.version.outputs.VERSION }}
+        path: ./HueCompanion-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}.zip
         retention-days: 90
 ```
 
@@ -1448,13 +1448,13 @@ Update the release job in `.github/workflows/release.yml`:
     - name: Download x64 artifact
       uses: actions/download-artifact@v4
       with:
-        name: hue-windows-x64-${{ steps.version.outputs.VERSION }}
+        name: hue-companion-x64-${{ steps.version.outputs.VERSION }}
         path: ./artifacts
 
     - name: Download ARM64 artifact
       uses: actions/download-artifact@v4
       with:
-        name: hue-windows-ARM64-${{ steps.version.outputs.VERSION }}
+        name: hue-companion-ARM64-${{ steps.version.outputs.VERSION }}
         path: ./artifacts
 
     - name: Generate release notes
@@ -1465,22 +1465,22 @@ Update the release job in `.github/workflows/release.yml`:
         ### Option 1: Download and Extract
         1. Download the zip file for your platform (x64 for most PCs, ARM64 for ARM devices)
         2. Extract to a folder
-        3. Run `HueWindows.exe`
+        3. Run `HueCompanion.exe`
 
         ### Option 2: Developer Mode (for unsigned MSIX)
         1. Enable Developer Mode in Windows Settings
         2. Extract the zip and run the app
 
         ## Downloads
-        - **x64 (Intel/AMD)**: HueWindows-${{ steps.version.outputs.VERSION }}-x64.zip
-        - **ARM64**: HueWindows-${{ steps.version.outputs.VERSION }}-ARM64.zip
+        - **x64 (Intel/AMD)**: HueCompanion-${{ steps.version.outputs.VERSION }}-x64.zip
+        - **ARM64**: HueCompanion-${{ steps.version.outputs.VERSION }}-ARM64.zip
 
         ## Notes
         - Requires Windows 10 version 1809 or later
         - Windows 11 recommended for full visual experience
         - First run will require Hue Bridge pairing
 
-        **Full Changelog**: https://github.com/ddrayne/hue-windows/compare/${{ github.event.before }}...v${{ steps.version.outputs.VERSION }}
+        **Full Changelog**: https://github.com/ddrayne/hue-companion/compare/${{ github.event.before }}...v${{ steps.version.outputs.VERSION }}
         EOF
 
     - name: Create GitHub Release
@@ -1491,8 +1491,8 @@ Update the release job in `.github/workflows/release.yml`:
         draft: false
         prerelease: false
         files: |
-          ./artifacts/HueWindows-${{ steps.version.outputs.VERSION }}-x64.zip
-          ./artifacts/HueWindows-${{ steps.version.outputs.VERSION }}-ARM64.zip
+          ./artifacts/HueCompanion-${{ steps.version.outputs.VERSION }}-x64.zip
+          ./artifacts/HueCompanion-${{ steps.version.outputs.VERSION }}-ARM64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -1513,7 +1513,7 @@ For local testing with MSIX packages:
 .\tools\Create-SelfSignedCert.ps1 -OutputPath .\dev-cert.pfx
 
 # Build with signing
-dotnet publish src/HueWindows/HueWindows.csproj `
+dotnet publish src/HueCompanion/HueCompanion.csproj `
   -p:Platform=x64 `
   -p:AppxPackageSigningEnabled=true `
   -p:PackageCertificateThumbprint=<thumbprint>
@@ -1532,7 +1532,7 @@ Store the certificate as GitHub secret `SIGNING_CERT_BASE64` and password as `SI
 
 ```bash
 git add .github/workflows/release.yml \
-        src/HueWindows/HueWindows.csproj \
+        src/HueCompanion/HueCompanion.csproj \
         tools/Create-SelfSignedCert.ps1 \
         docs/DEVELOPMENT.md
 git commit -m "feat: improve release workflow with better MSIX support"
