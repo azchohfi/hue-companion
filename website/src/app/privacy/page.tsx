@@ -1,12 +1,13 @@
 import { Footer } from "@/components/Footer";
 import { Metadata } from "next";
+import { canonicalUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-    title: "Privacy Policy - Hue Companion for Windows",
+    title: "Privacy Policy",
     description: "Privacy policy for Hue Companion for Windows. We do not collect, store, or transmit any personal data.",
     alternates: {
-        canonical: "https://hue-companion.apps.drayne.xyz/privacy",
-    }
+        canonical: canonicalUrl("/privacy"),
+    },
 };
 
 export default function PrivacyPage() {

@@ -1,48 +1,118 @@
 import { Footer } from "@/components/Footer";
 import { Metadata } from "next";
+import {
+    SITE_URL,
+    sharedOpenGraph,
+    sharedTwitter,
+    softwareApplicationJsonLd,
+    breadcrumbJsonLd,
+    canonicalUrl,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
-    title: "About Hue Companion for Windows - The Native Philips Hue Client",
-    description: "Technical specifications, FAQ, and definitive information about Hue Companion for Windows 10 and 11.",
+    title: "About",
+    description: "Technical specifications, FAQ, and everything you need to know about Hue Companion for Windows 10 and 11. Free native Philips Hue controller with Scene Builder, global hotkeys, and AI integration.",
+    openGraph: {
+        ...sharedOpenGraph,
+        title: "About Hue Companion for Windows",
+        description: "Technical specifications, FAQ, and everything you need to know about Hue Companion — the free native Philips Hue controller for Windows.",
+        url: canonicalUrl("/about"),
+    },
+    twitter: {
+        ...sharedTwitter,
+        title: "About Hue Companion for Windows",
+        description: "Technical specifications, FAQ, and everything you need to know about Hue Companion — the free native Philips Hue controller for Windows.",
+    },
     alternates: {
-        canonical: "https://huewindows.app/about",
-    }
+        canonical: canonicalUrl("/about"),
+    },
+};
+
+const faqItems = [
+    {
+        question: "What is Hue Companion?",
+        answer: "Hue Companion is a free, native Windows desktop application for controlling Philips Hue smart lights. Built with WinUI 3 (the same framework as Windows 11 system apps), it offers fast startup under half a second, low memory usage around 40MB, and deep Windows integration including global keyboard shortcuts, system tray support, and native dark and light themes.",
+    },
+    {
+        question: "How does Hue Companion compare to other Hue apps for Windows?",
+        answer: "Unlike Electron-based alternatives, Hue Companion is built natively with WinUI 3 and C#. This means it uses approximately 40MB of RAM compared to 400MB or more for Electron apps, starts in under half a second, and integrates with Windows features like Mica and Acrylic materials, system tray, and global hotkeys. It also includes unique features like a DAW-style Scene Builder and AI integration via MCP.",
+    },
+    {
+        question: "Is Hue Companion free?",
+        answer: "Yes, Hue Companion is completely free. All features including the Scene Builder, native effects, multi-bridge support, global hotkeys, AI integration, and custom dashboard are included at no cost.",
+    },
+    {
+        question: "Does Hue Companion work with Windows 10?",
+        answer: "Yes, Hue Companion supports Windows 10 version 1809 and newer, as well as all versions of Windows 11. It is available for both x64 (Intel/AMD) and ARM64 processors.",
+    },
+    {
+        question: "What are the system requirements for Hue Companion?",
+        answer: "Hue Companion requires Windows 10 version 1809 or later, or any version of Windows 11. You also need a Philips Hue Bridge (v2) connected to your local network. The installer is approximately 65MB and the app uses about 40MB of RAM while running.",
+    },
+    {
+        question: "Is a Philips Hue Bridge required?",
+        answer: "Yes, a Philips Hue Bridge (v2) connected to your local network is required. Bluetooth-only Hue bulbs are not currently supported. The app communicates directly with the bridge using the Hue CLIP v2 API.",
+    },
+    {
+        question: "Can I use multiple Hue Bridges?",
+        answer: "Yes, Hue Companion supports connecting to multiple Hue Bridges simultaneously. All rooms, zones, and lights from every bridge appear together in one unified interface.",
+    },
+    {
+        question: "What is the Scene Builder in Hue Companion?",
+        answer: "The Scene Builder is a DAW-style timeline editor for creating animated lighting scenes. You can place keyframes on per-light tracks to define exact colors and brightness at specific times, add event triggers like lightning flashes, sparkles, or candle flickers, and preview animations on your real lights in real-time. Scenes are saved locally and can be replayed anytime.",
+    },
+    {
+        question: "What is the MCP server in Hue Companion?",
+        answer: "Hue Companion includes a built-in MCP (Model Context Protocol) server that lets AI assistants like Claude Desktop, Claude Code, and VS Code Copilot control your Philips Hue lights using natural language. It is the easiest way to control your Hue lights via MCP on Windows. You can say things like \"set the bedroom to a warm sunset\" or \"create a relaxing animation\" and the AI will control your lights through Hue Companion. Setup takes just a few clicks from the Settings page.",
+    },
+    {
+        question: "What native Hue effects does Hue Companion support?",
+        answer: "Hue Companion supports all 10 built-in Hue effects powered by the bridge's native engine: Fire, Candle, Sparkle, Glisten, Opal, Prism, Underwater, Cosmos, Sunbeam, and Enchant. Each effect can be adjusted for speed and brightness, and applied to individual lights, rooms, or zones.",
+    },
+    {
+        question: "Does Hue Companion collect any data or require an account?",
+        answer: "No. Hue Companion does not collect, store, or transmit any personal data. It communicates only with Philips Hue Bridges on your local network. There are no accounts, no analytics, no telemetry, and no cloud features. All settings and custom scenes are stored locally on your device.",
+    },
+    {
+        question: "Can I control my lights with keyboard shortcuts?",
+        answer: "Yes. Hue Companion supports global keyboard shortcuts that work system-wide, even when the app is minimized or running in the system tray. You can map any scene activation, room toggle, or brightness adjustment to a custom key combination for instant control from anywhere on your desktop.",
+    },
+];
+
+const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+        },
+    })),
 };
 
 export default function AboutPage() {
-    const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Hue Companion for Windows",
-        "operatingSystem": "Windows 10, Windows 11",
-        "applicationCategory": "UtilitiesApplication",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-        },
-        "featureList": [
-            "Native WinUI 3 Performance",
-            "Global Keyboard Shortcuts",
-            "Multi-Bridge Support",
-            "Zone & Room Control",
-            "Native Hue Effects",
-            "Animated Scene Builder",
-            "Custom Dashboard",
-            "System Tray Support"
-        ],
-        "author": {
-            "@type": "Person",
-            "name": "Daniel Drayne"
-        },
-        "description": "A native, high-performance Philips Hue controller for Windows built with WinUI 3."
-    };
-
     return (
         <main className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-purple-900/50">
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(
+                        breadcrumbJsonLd([
+                            { name: "Home", url: SITE_URL },
+                            { name: "About", url: canonicalUrl("/about") },
+                        ])
+                    ),
+                }}
             />
 
             <div className="max-w-3xl mx-auto px-6 pt-32 pb-20">
@@ -97,22 +167,12 @@ export default function AboutPage() {
                     <section className="mb-16">
                         <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
                         <div className="space-y-8">
-                            <div>
-                                <h3 className="text-lg font-bold text-white mb-2">Is Hue Companion free?</h3>
-                                <p className="text-zinc-400">Yes, Hue Companion is completely free. All features including the Scene Builder, native effects, multi-bridge support, and custom dashboard are included.</p>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white mb-2">Does it work with Windows 10?</h3>
-                                <p className="text-zinc-400">Yes, supports Windows 10 version 1809 and newer, as well as all versions of Windows 11.</p>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white mb-2">Is a Hue Bridge required?</h3>
-                                <p className="text-zinc-400">Yes, a Philips Hue Bridge (v2) is required. Bluetooth-only bulbs are not currently supported.</p>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white mb-2">Can I use multiple Hue Bridges?</h3>
-                                <p className="text-zinc-400">Yes, Hue Companion supports connecting to multiple Hue Bridges at the same time. All rooms and zones from every bridge appear in one unified interface.</p>
-                            </div>
+                            {faqItems.map((item) => (
+                                <div key={item.question}>
+                                    <h3 className="text-lg font-bold text-white mb-2">{item.question}</h3>
+                                    <p className="text-zinc-400">{item.answer}</p>
+                                </div>
+                            ))}
                         </div>
                     </section>
 
@@ -130,12 +190,28 @@ export default function AboutPage() {
                                         <td className="px-6 py-4 text-zinc-400">C# / .NET 8</td>
                                     </tr>
                                     <tr>
+                                        <th className="px-6 py-4 font-medium text-zinc-300">Memory Usage</th>
+                                        <td className="px-6 py-4 text-zinc-400">~40 MB</td>
+                                    </tr>
+                                    <tr>
+                                        <th className="px-6 py-4 font-medium text-zinc-300">Startup Time</th>
+                                        <td className="px-6 py-4 text-zinc-400">&lt;0.5 seconds</td>
+                                    </tr>
+                                    <tr>
                                         <th className="px-6 py-4 font-medium text-zinc-300">Installer Size</th>
                                         <td className="px-6 py-4 text-zinc-400">~65 MB</td>
                                     </tr>
                                     <tr>
                                         <th className="px-6 py-4 font-medium text-zinc-300">Supported OS</th>
                                         <td className="px-6 py-4 text-zinc-400">Windows 10 (1809+), Windows 11</td>
+                                    </tr>
+                                    <tr>
+                                        <th className="px-6 py-4 font-medium text-zinc-300">Architectures</th>
+                                        <td className="px-6 py-4 text-zinc-400">x64, ARM64</td>
+                                    </tr>
+                                    <tr>
+                                        <th className="px-6 py-4 font-medium text-zinc-300">Price</th>
+                                        <td className="px-6 py-4 text-zinc-400">Free</td>
                                     </tr>
                                 </tbody>
                             </table>

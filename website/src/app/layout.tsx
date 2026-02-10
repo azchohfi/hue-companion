@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Navbar } from "@/components/Navbar";
+import {
+    SITE_URL,
+    SITE_NAME,
+    SITE_DESCRIPTION,
+    AUTHOR_NAME,
+    sharedOpenGraph,
+    sharedTwitter,
+} from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,11 +25,29 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Hue Companion for Windows",
-  description: "The most advanced Philips Hue controller for Windows. Native, fast, and beautiful.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  authors: [{ name: AUTHOR_NAME }],
+  creator: AUTHOR_NAME,
+  openGraph: {
+    ...sharedOpenGraph,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    ...sharedTwitter,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
 };
-
-import { Navbar } from "@/components/Navbar";
 
 export default function RootLayout({
   children,
