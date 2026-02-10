@@ -243,8 +243,8 @@ public class AnimationEngineTests : IDisposable
         var capturedColors = new List<HueColor>();
         var capturedBrightness = new List<double>();
         _bridgeMock.Setup(b => b.SetLightColorAndBrightnessAsync(
-                _lights[0], It.IsAny<HueColor>(), It.IsAny<double>()))
-            .Callback<Guid, HueColor, double>((_, color, brightness) =>
+                _lights[0], It.IsAny<HueColor>(), It.IsAny<double>(), It.IsAny<int?>()))
+            .Callback<Guid, HueColor, double, int?>((_, color, brightness, _) =>
             {
                 capturedColors.Add(color);
                 capturedBrightness.Add(brightness);

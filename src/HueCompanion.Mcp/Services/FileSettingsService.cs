@@ -44,7 +44,7 @@ public class FileSettingsService : ISettingsService
                     return;
                 }
             }
-            catch { /* fall through */ }
+            catch (JsonException) { /* malformed JSON, fall through */ }
         }
 
         // Fall back to settings.json
@@ -60,7 +60,7 @@ public class FileSettingsService : ISettingsService
                     return;
                 }
             }
-            catch { /* fall through */ }
+            catch (JsonException) { /* malformed JSON, fall through */ }
         }
 
         Settings = new AppSettings();

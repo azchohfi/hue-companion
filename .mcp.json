@@ -3,6 +3,10 @@
     "hue-screenshots": {
       "command": "node",
       "args": ["tools/screenshot-mcp/server.js"]
+    },
+    "hue": {
+      "command": "dotnet",
+      "args": ["run", "--project", "src/HueCompanion.Mcp"]
     }
   }
 }

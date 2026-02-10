@@ -89,7 +89,7 @@ public class SceneTools
 
         var result = await _animationService.StartSceneAsync(found.Id, targetRoom.Id, targetRoom.BridgeId);
         if (!result.IsSuccess)
-            return JsonSerializer.Serialize(new { error = result.ErrorMessage }, JsonOpts);
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
 
         return JsonSerializer.Serialize(new { success = true, scene = found.Name, room = targetRoom.Name }, JsonOpts);
     }
@@ -155,7 +155,7 @@ public class SceneTools
 
         var result = await _sceneStorage.SaveSceneAsync(scene);
         if (!result.IsSuccess)
-            return JsonSerializer.Serialize(new { error = result.ErrorMessage }, JsonOpts);
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
 
         return JsonSerializer.Serialize(new { success = true, id = scene.Id, name = scene.Name }, JsonOpts);
     }
@@ -180,7 +180,7 @@ public class SceneTools
 
         var result = await _sceneStorage.DeleteSceneAsync(found.Id);
         if (!result.IsSuccess)
-            return JsonSerializer.Serialize(new { error = result.ErrorMessage }, JsonOpts);
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
 
         return JsonSerializer.Serialize(new { success = true, deleted = found.Name }, JsonOpts);
     }

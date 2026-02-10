@@ -104,9 +104,6 @@ public class LightTools
         if (on.HasValue)
             await bridge.SetLightOnAsync(l.Id, on.Value, transition);
 
-        if (brightness.HasValue)
-            await bridge.SetLightBrightnessAsync(l.Id, Math.Clamp(brightness.Value / 100.0, 0, 1), transition);
-
         if (color != null)
         {
             var parsed = ColorParser.Parse(color);
@@ -117,6 +114,10 @@ public class LightTools
                 else
                     await bridge.SetLightColorAsync(l.Id, parsed, transition);
             }
+        }
+        else if (brightness.HasValue)
+        {
+            await bridge.SetLightBrightnessAsync(l.Id, Math.Clamp(brightness.Value / 100.0, 0, 1), transition);
         }
 
         if (colorTemperatureMirek.HasValue)

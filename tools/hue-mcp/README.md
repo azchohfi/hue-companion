@@ -5,7 +5,7 @@ An MCP (Model Context Protocol) server that exposes Philips Hue light control vi
 ## Features
 
 - **Light Control**: Set individual lights or entire rooms — brightness, color (hex/RGB/named), color temperature
-- **Scene Management**: Create, activate, edit, and delete scenes (compatible with HueWindows app scenes)
+- **Scene Management**: Create, activate, edit, and delete scenes (compatible with Hue Companion app scenes)
 - **Animated Scenes**: Create keyframe-based animations with per-light tracks
 - **Event Effects**: Lightning flash, sparkle, candle flicker effects
 - **Multi-Bridge**: Supports multiple Hue bridges simultaneously
@@ -40,7 +40,7 @@ An MCP (Model Context Protocol) server that exposes Philips Hue light control vi
 
 ### Bridge Configuration
 
-The MCP server reads bridge credentials from `%LOCALAPPDATA%/HueWindows/bridges.json`:
+The MCP server reads bridge credentials from `%LOCALAPPDATA%/HueCompanion/bridges.json`:
 
 ```json
 [
@@ -53,7 +53,7 @@ The MCP server reads bridge credentials from `%LOCALAPPDATA%/HueWindows/bridges.
 ]
 ```
 
-If you've already configured bridges in the HueWindows app, the server will also read from `%LOCALAPPDATA%/HueWindows/settings.json` as a fallback.
+If you've already configured bridges in the Hue Companion app, the server will also read from `%LOCALAPPDATA%/HueCompanion/settings.json` as a fallback.
 
 ### Building
 
@@ -128,4 +128,4 @@ The server accepts colors in several formats:
 
 ## Scene Compatibility
 
-Scenes are stored as JSON in `%LOCALAPPDATA%/HueWindows/Scenes/` and are fully compatible with the HueWindows desktop app's Scene Builder.
+Scenes are stored as JSON in `%LOCALAPPDATA%/HueCompanion/Scenes/` and are fully compatible with the Hue Companion desktop app's Scene Builder.

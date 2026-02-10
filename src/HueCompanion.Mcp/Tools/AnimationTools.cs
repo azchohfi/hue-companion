@@ -22,10 +22,9 @@ public class AnimationTools
         _multiBridge = multiBridge;
     }
 
-    [McpServerTool(Name = "hue_create_animated_scene"), Description("Create an animated scene with keyframe-based animations. Each track is for one light with keyframes at specific times.")]
+    [McpServerTool(Name = "hue_create_animated_scene"), Description("Create an animated scene with keyframe-based animations. Each track is for one light with keyframes at specific times. Use hue_play_animation to play it in a specific room.")]
     public async Task<string> CreateAnimatedScene(
         [Description("Scene name")] string name,
-        [Description("Target room name")] string room,
         [Description("JSON array of tracks: [{\"light\":\"name\",\"keyframes\":[{\"time_sec\":0,\"brightness\":80,\"color\":\"#FF0000\",\"easing\":\"linear\"}]}]")] string tracks,
         [Description("Total animation duration in seconds")] double durationSec = 30,
         [Description("Whether to loop the animation")] bool loop = true,
@@ -85,7 +84,7 @@ public class AnimationTools
 
         var result = await _sceneStorage.SaveSceneAsync(scene);
         if (!result.IsSuccess)
-            return JsonSerializer.Serialize(new { error = result.ErrorMessage }, JsonOpts);
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
 
         return JsonSerializer.Serialize(new
         {
@@ -124,17 +123,16 @@ public class AnimationTools
 
         var result = await _animationService.StartSceneAsync(found.Id, targetRoom.Id, targetRoom.BridgeId);
         if (!result.IsSuccess)
-            return JsonSerializer.Serialize(new { error = result.ErrorMessage }, JsonOpts);
+            return JsonSerializer.Serialize(new { error = result.Error }, JsonOpts);
 
         return JsonSerializer.Serialize(new { success = true, scene = found.Name, room = targetRoom.Name, playing = true }, JsonOpts);
     }
 
-    [McpServerTool(Name = "hue_stop_animation"), Description("Stop all currently playing animations.")]
-    public async Task<string> StopAnimation(
-        [Description("Whether to restore lights to their previous state before the animation started")] bool restore_previous = false)
+    [McpServerTool(Name = "hue_stop_animation"), Description("Stop all currently playing animations. Lights will remain in their last animated state.")]
+    public async Task<string> StopAnimation()
     {
         await _animationService.StopAllScenesAsync();
-        return JsonSerializer.Serialize(new { success = true, stoppedAll = true, restoredPrevious = restore_previous }, JsonOpts);
+        return JsonSerializer.Serialize(new { success = true, stoppedAll = true }, JsonOpts);
     }
 
     [McpServerTool(Name = "hue_edit_scene"), Description("Edit an existing scene. Accepts high-level edits like transitions, keyframe changes, and effect additions.")]
@@ -295,7 +293,7 @@ public class AnimationTools
         {
             var saveResult = await _sceneStorage.SaveSceneAsync(found);
             if (!saveResult.IsSuccess)
-                return JsonSerializer.Serialize(new { error = saveResult.ErrorMessage }, JsonOpts);
+                return JsonSerializer.Serialize(new { error = saveResult.Error }, JsonOpts);
         }
 
         return JsonSerializer.Serialize(new
