@@ -22,10 +22,10 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs
-    - src/HueWindows/Views/Rendering/PlayheadRenderer.cs
-    - src/HueWindows/Views/Rendering/TimelineRenderer.cs
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs
+    - src/HueCompanion/Views/Rendering/PlayheadRenderer.cs
+    - src/HueCompanion/Views/Rendering/TimelineRenderer.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "Use Win2D ShadowEffect for GPU-accelerated glow rendering"
@@ -71,10 +71,10 @@ Each task was committed atomically:
 3. **Task 3: Wire hover state through TimelineRenderer and SceneBuilderPage** - `4cdb491` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs` - Glow rendering with ShadowEffect, DrawKeyframeWithGlow helper
-- `src/HueWindows/Views/Rendering/PlayheadRenderer.cs` - Hover thickness parameter, dynamic line width
-- `src/HueWindows/Views/Rendering/TimelineRenderer.cs` - TimelineRenderContext extended with hover parameters
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - GetRenderContext wires hover state to renderers
+- `src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs` - Glow rendering with ShadowEffect, DrawKeyframeWithGlow helper
+- `src/HueCompanion/Views/Rendering/PlayheadRenderer.cs` - Hover thickness parameter, dynamic line width
+- `src/HueCompanion/Views/Rendering/TimelineRenderer.cs` - TimelineRenderContext extended with hover parameters
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - GetRenderContext wires hover state to renderers
 
 ## Decisions Made
 

@@ -48,7 +48,7 @@
 **Order:**
 1. System namespaces: `using System;`, `using System.Collections.ObjectModel;`
 2. Third-party packages: `using CommunityToolkit.Mvvm.Input;`, `using HueApi;`
-3. Project namespaces: `using HueWindows.Core.Models;`, `using HueWindows.Core.Services;`
+3. Project namespaces: `using HueCompanion.Core.Models;`, `using HueCompanion.Core.Services;`
 4. Blank line between groups
 
 **Path Aliases:**
@@ -58,7 +58,7 @@
 ## Error Handling
 
 **Patterns:**
-- Result pattern for operations that can fail: `Result<T>` and `Result` types in `src/HueWindows.Core/Models/Result.cs`
+- Result pattern for operations that can fail: `Result<T>` and `Result` types in `src/HueCompanion.Core/Models/Result.cs`
 - Success checks using implicit bool conversion: `if (result)` or `if (result.IsSuccess)`
 - Explicit `Result.Success(value)` and `Result.Failure(error)` factory methods
 - Exception handling in service methods catches specific exception types first:
@@ -66,7 +66,7 @@
   - `ObjectDisposedException` for disposed resources in `HueBridgeService.cs:83`
   - Generic `Exception` as fallback catch-all
 - Operations that fail gracefully return `Result.Failure(string error)` with descriptive messages
-- See `src/HueWindows.Core/Services/SettingsService.cs:46` - corrupted files fall back to defaults rather than throwing
+- See `src/HueCompanion.Core/Services/SettingsService.cs:46` - corrupted files fall back to defaults rather than throwing
 
 **Examples:**
 ```csharp
@@ -118,7 +118,7 @@ public async Task<Result> ConnectAsync(string ipAddress, string appKey)
 - Uses C# XML documentation standard: `/// <summary>`, `/// <param>`, `/// <returns>`, `/// <remarks>`
 - All public APIs documented with summary tags
 - Parameter documentation for complex methods
-- Example from `src/HueWindows.Core/Models/HueColor.cs:3-4`:
+- Example from `src/HueCompanion.Core/Models/HueColor.cs:3-4`:
 ```csharp
 /// <summary>
 /// Represents a color for Hue lights, using CIE xy color space.
@@ -132,7 +132,7 @@ public class HueColor
 
 **Parameters:**
 - Null checks on constructor parameters using `?? throw new ArgumentNullException(nameof(param))`
-- See `src/HueWindows.Core/Services/AnimationEngine.cs:18-26`:
+- See `src/HueCompanion.Core/Services/AnimationEngine.cs:18-26`:
 ```csharp
 public AnimationEngine(
     IHueBridgeService bridgeService,
@@ -171,7 +171,7 @@ public AnimationEngine(
 - Commands use `[RelayCommand]` attribute on async/sync methods
 - Dependency injection through constructor
 
-**Example from `src/HueWindows.Core/ViewModels/DashboardViewModel.cs:16-40`:**
+**Example from `src/HueCompanion.Core/ViewModels/DashboardViewModel.cs:16-40`:**
 ```csharp
 public partial class DashboardViewModel : ObservableObject
 {

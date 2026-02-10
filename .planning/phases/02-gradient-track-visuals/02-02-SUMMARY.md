@@ -26,13 +26,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/Rendering/TimelineRenderer.cs
-    - src/HueWindows/Views/Rendering/KeyframeLayerRenderer.cs
-    - src/HueWindows/Views/Rendering/GradientTrackRenderer.cs
-    - src/HueWindows/Views/Rendering/TimeRulerRenderer.cs
-    - src/HueWindows/Views/Rendering/RenderCache.cs
-    - src/HueWindows/Views/Rendering/HitTestHelper.cs
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/Rendering/TimelineRenderer.cs
+    - src/HueCompanion/Views/Rendering/KeyframeLayerRenderer.cs
+    - src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs
+    - src/HueCompanion/Views/Rendering/TimeRulerRenderer.cs
+    - src/HueCompanion/Views/Rendering/RenderCache.cs
+    - src/HueCompanion/Views/Rendering/HitTestHelper.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "4px corner radius for subtle rounding (not pill shape)"

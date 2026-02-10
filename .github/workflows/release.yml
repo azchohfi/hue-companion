@@ -30,7 +30,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        dotnet test src/HueWindows.Tests `
+        dotnet test src/HueCompanion.Tests `
           --no-build `
           --configuration Release `
           --verbosity normal `
@@ -71,7 +71,7 @@ jobs:
 
     - name: Publish ${{ matrix.platform }}
       run: |
-        dotnet publish src/HueWindows/HueWindows.csproj `
+        dotnet publish src/HueCompanion/HueCompanion.csproj `
           --configuration Release `
           -p:Platform=${{ matrix.platform }} `
           -p:Version=${{ steps.version.outputs.version }} `
@@ -80,13 +80,13 @@ jobs:
     - name: Create zip archive
       shell: pwsh
       run: |
-        Compress-Archive -Path ./publish/${{ matrix.platform }}/* -DestinationPath ./HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
+        Compress-Archive -Path ./publish/${{ matrix.platform }}/* -DestinationPath ./HueCompanion-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
 
     - name: Build MSIX package
       shell: pwsh
       run: |
         # Build MSIX for Store submission
-        msbuild src/HueWindows/HueWindows.csproj `
+        msbuild src/HueCompanion/HueCompanion.csproj `
           /p:Configuration=Release `
           /p:Platform=${{ matrix.platform }} `
           /p:Version=${{ steps.version.outputs.version }} `
@@ -102,7 +102,7 @@ jobs:
       run: |
         $msix = Get-ChildItem -Path ./packages -Filter "*.msix" -Recurse | Select-Object -First 1
         if ($msix) {
-          $newName = "HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.msix"
+          $newName = "HueCompanion-${{ steps.version.outputs.version }}-${{ matrix.platform }}.msix"
           $newPath = "./packages/$newName"
           Copy-Item $msix.FullName $newPath
           echo "msix_path=$newPath" >> $env:GITHUB_OUTPUT
@@ -115,14 +115,14 @@ jobs:
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
       with:
-        name: HueWindows-${{ matrix.platform }}-zip
-        path: ./HueWindows-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
+        name: HueCompanion-${{ matrix.platform }}-zip
+        path: ./HueCompanion-${{ steps.version.outputs.version }}-${{ matrix.platform }}.zip
         retention-days: 1
 
     - name: Upload MSIX artifact
       uses: actions/upload-artifact@v4
       with:
-        name: HueWindows-${{ matrix.platform }}-msix
+        name: HueCompanion-${{ matrix.platform }}-msix
         path: ${{ steps.msix.outputs.msix_path }}
         retention-days: 1
 
@@ -137,25 +137,25 @@ jobs:
     - name: Download x64 ZIP artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-x64-zip
+        name: HueCompanion-x64-zip
         path: ./artifacts
 
     - name: Download ARM64 ZIP artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-ARM64-zip
+        name: HueCompanion-ARM64-zip
         path: ./artifacts
 
     - name: Download x64 MSIX artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-x64-msix
+        name: HueCompanion-x64-msix
         path: ./artifacts
 
     - name: Download ARM64 MSIX artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-ARM64-msix
+        name: HueCompanion-ARM64-msix
         path: ./artifacts
 
     - name: Extract version from tag
@@ -174,10 +174,10 @@ jobs:
 
         ### Option 2: Download ZIP (Portable)
         1. Download the zip file for your platform:
-           - **x64 (Intel/AMD)**: `HueWindows-${{ steps.version.outputs.version }}-x64.zip`
-           - **ARM64**: `HueWindows-${{ steps.version.outputs.version }}-ARM64.zip`
+           - **x64 (Intel/AMD)**: `HueCompanion-${{ steps.version.outputs.version }}-x64.zip`
+           - **ARM64**: `HueCompanion-${{ steps.version.outputs.version }}-ARM64.zip`
         2. Extract to a folder of your choice
-        3. Run `HueWindows.exe`
+        3. Run `HueCompanion.exe`
 
         ### Option 3: MSIX Package (Developer Mode)
         1. Enable Developer Mode in Windows Settings > Privacy & Security > For developers
@@ -197,7 +197,7 @@ jobs:
 
         ---
 
-        **Full Changelog**: https://github.com/ddrayne/hue-windows/compare/${{ github.event.before }}...v${{ steps.version.outputs.version }}
+        **Full Changelog**: https://github.com/ddrayne/hue-companion/compare/${{ github.event.before }}...v${{ steps.version.outputs.version }}
         EOF
 
     - name: Create GitHub Release
@@ -208,10 +208,10 @@ jobs:
         prerelease: ${{ contains(github.ref_name, '-') }}
         body_path: release-notes.md
         files: |
-          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-x64.zip
-          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-ARM64.zip
-          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-x64.msix
-          ./artifacts/HueWindows-${{ steps.version.outputs.version }}-ARM64.msix
+          ./artifacts/HueCompanion-${{ steps.version.outputs.version }}-x64.zip
+          ./artifacts/HueCompanion-${{ steps.version.outputs.version }}-ARM64.zip
+          ./artifacts/HueCompanion-${{ steps.version.outputs.version }}-x64.msix
+          ./artifacts/HueCompanion-${{ steps.version.outputs.version }}-ARM64.msix
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -225,13 +225,13 @@ jobs:
     - name: Download x64 MSIX artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-x64-msix
+        name: HueCompanion-x64-msix
         path: ./packages
 
     - name: Download ARM64 MSIX artifact
       uses: actions/download-artifact@v4
       with:
-        name: HueWindows-ARM64-msix
+        name: HueCompanion-ARM64-msix
         path: ./packages
 
     - name: Extract version from tag

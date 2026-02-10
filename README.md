@@ -1,8 +1,8 @@
 # Hue Companion for Windows
 
-![Build Status](https://github.com/ddrayne/hue-windows/workflows/PR%20Validation/badge.svg)
-![Main CI](https://github.com/ddrayne/hue-windows/workflows/Main%20CI/badge.svg)
-[![codecov](https://codecov.io/gh/ddrayne/hue-windows/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-windows)
+![Build Status](https://github.com/ddrayne/hue-companion/workflows/PR%20Validation/badge.svg)
+![Main CI](https://github.com/ddrayne/hue-companion/workflows/Main%20CI/badge.svg)
+[![codecov](https://codecov.io/gh/ddrayne/hue-companion/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-companion)
 
 A modern Windows 11 app for controlling Philips Hue smart lights, built with WinUI 3 and Fluent Design.
 
@@ -49,22 +49,22 @@ Launch the app directly to specific pages using command-line arguments. Useful f
 
 ```bash
 # Navigate to specific pages
-HueWindows.exe --page dashboard
-HueWindows.exe --page settings
+HueCompanion.exe --page dashboard
+HueCompanion.exe --page settings
 
 # Navigate by human-readable name (recommended)
-HueWindows.exe --page room --name bathroom
-HueWindows.exe --page room --name "living room"
-HueWindows.exe --page zone --name upstairs
-HueWindows.exe --page light --name "desk lamp"
+HueCompanion.exe --page room --name bathroom
+HueCompanion.exe --page room --name "living room"
+HueCompanion.exe --page zone --name upstairs
+HueCompanion.exe --page light --name "desk lamp"
 
 # Navigate by ID (for automation with known GUIDs)
-HueWindows.exe --page room --id "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-HueWindows.exe --page light --id "12345678-90ab-cdef-1234-567890abcdef"
+HueCompanion.exe --page room --id "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+HueCompanion.exe --page light --id "12345678-90ab-cdef-1234-567890abcdef"
 
 # Screenshot mode (auto-close after delay)
-HueWindows.exe --page dashboard --screenshot
-HueWindows.exe --page room --name bathroom --screenshot --delay 8000
+HueCompanion.exe --page dashboard --screenshot
+HueCompanion.exe --page room --name bathroom --screenshot --delay 8000
 ```
 
 ### Name Matching
@@ -96,6 +96,16 @@ Names are matched case-insensitively with flexible formatting:
 | `--id <guid>` | | GUID for pages that require it |
 | `--screenshot` | `-s` | Auto-close app after delay |
 | `--delay <ms>` | | Delay before auto-close (default: 5000ms) |
+
+## Upgrading from HueWindows
+
+This project was renamed from **HueWindows** to **HueCompanion**. If you were using the previous version, you'll need to rename your data folder:
+
+```
+ren "%LOCALAPPDATA%\HueWindows" "HueCompanion"
+```
+
+This preserves your settings, scenes, and bridge configurations.
 
 ## Requirements
 
@@ -153,20 +163,20 @@ For detailed CI/CD documentation including test coverage, versioning, and troubl
 
 ```bash
 # Restore and build
-dotnet build src/HueWindows/HueWindows.csproj
+dotnet build src/HueCompanion/HueCompanion.csproj
 
 # Run the app
-dotnet run --project src/HueWindows/HueWindows.csproj
+dotnet run --project src/HueCompanion/HueCompanion.csproj
 ```
 
 ### Build for Specific Architecture
 
 ```bash
 # x64
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
 
 # ARM64
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=ARM64
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=ARM64
 ```
 
 ## Versioning
@@ -199,9 +209,9 @@ git push origin main --tags
 ## Project Structure
 
 ```
-hue-windows/
+hue-companion/
 ├── src/
-│   ├── HueWindows/                 # WinUI 3 App (MSIX packaged)
+│   ├── HueCompanion/                 # WinUI 3 App (MSIX packaged)
 │   │   ├── Views/                  # XAML pages
 │   │   ├── Controls/               # Custom controls (RoomCard)
 │   │   ├── Styles/                 # Global styles and theme overrides
@@ -209,12 +219,12 @@ hue-windows/
 │   │   ├── Helpers/                # Navigation and utilities
 │   │   └── Assets/                 # App icons and images
 │   │
-│   ├── HueWindows.Core/            # Business logic library
+│   ├── HueCompanion.Core/            # Business logic library
 │   │   ├── Models/                 # Data models
 │   │   ├── ViewModels/             # MVVM ViewModels
 │   │   └── Services/               # Hue API and settings services
 │   │
-│   └── HueWindows.Tests/           # Unit tests
+│   └── HueCompanion.Tests/           # Unit tests
 │
 ├── tools/                          # Development tooling
 │   ├── Capture-AppScreenshot.ps1   # Screenshot capture script

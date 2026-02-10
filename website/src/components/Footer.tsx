@@ -14,7 +14,7 @@ export function Footer() {
                 <div className="flex gap-6 text-zinc-400">
                     <a href="#" className="hover:text-white transition-colors">Privacy</a>
                     <a href="#" className="hover:text-white transition-colors">Terms</a>
-                    <a href="https://github.com/ddrayne/hue-windows" className="hover:text-white transition-colors">GitHub</a>
+                    <a href="https://github.com/ddrayne/hue-companion" className="hover:text-white transition-colors">GitHub</a>
                 </div>
             </div>
         </footer>

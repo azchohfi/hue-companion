@@ -23,7 +23,7 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows/Views/Rendering/GradientTrackRenderer.cs
+    - src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs
   modified: []
 
 key-decisions:
@@ -67,7 +67,7 @@ Each task was committed atomically:
 1. **Task 1: Create GradientTrackRenderer class** - `1ccd9b2` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/Rendering/GradientTrackRenderer.cs` - Gradient strip rendering for timeline tracks (270 lines)
+- `src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs` - Gradient strip rendering for timeline tracks (270 lines)
 
 ## Decisions Made
 - **15 gradient stops** - Provides smooth visual appearance without excessive GPU overhead (research recommended 15-20)

@@ -43,7 +43,7 @@ private void RenderTimeline() {
 | CanvasLinearGradientBrush | Built-in | Track color strips | Hardware-accelerated gradient fills |
 | CanvasGeometryRealization | Built-in | Cached track/clip geometry | Reusable geometry without retessellation |
 
-**Note:** You already have `Microsoft.Graphics.Win2D` version 1.3.0 in your project (line 49 of HueWindows.csproj). No new dependencies needed.
+**Note:** You already have `Microsoft.Graphics.Win2D` version 1.3.0 in your project (line 49 of HueCompanion.csproj). No new dependencies needed.
 
 ### Architecture Pattern: Hybrid XAML + Win2D
 

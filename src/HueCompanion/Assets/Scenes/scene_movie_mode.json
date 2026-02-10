@@ -1,0 +1,36 @@
+{
+  "id": "movie_mode",
+  "name": "Movie Mode",
+  "description": "Dim warm bias perfect for watching films without eye strain",
+  "category": "Entertainment",
+  "previewColor": {
+    "x": 0.48,
+    "y": 0.41
+  },
+  "paletteColors": [
+    { "x": 0.48, "y": 0.41 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "movie_static",
+      "name": "Movie Static",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.15,
+          "colorTemperature": 400,
+          "isOn": true,
+          "transitionStyle": "linear"
+        }
+      ],
+      "durationSeconds": 1,
+      "repeatMode": "once",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

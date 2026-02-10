@@ -47,8 +47,8 @@ $ErrorActionPreference = "Stop"
 
 # Project paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$ExePath = Join-Path $ProjectRoot "src\HueWindows\bin\x64\Debug\net8.0-windows10.0.22621.0\HueWindows.exe"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$ExePath = Join-Path $ProjectRoot "src\HueCompanion\bin\x64\Debug\net8.0-windows10.0.22621.0\HueCompanion.exe"
 $ScreenshotsDir = Join-Path $ProjectRoot "screenshots"
 
 # Add required assemblies for screenshot capture

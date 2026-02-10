@@ -25,7 +25,7 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows.Core/Models/ColorGamut.cs
+    - src/HueCompanion.Core/Models/ColorGamut.cs
   modified: []
 
 key-decisions:
@@ -69,7 +69,7 @@ Each task was committed atomically:
 3. **Task 3: Add max saturation per hue calculation** - `af97c93` (feat)
 
 ## Files Created/Modified
-- `src/HueWindows.Core/Models/ColorGamut.cs` - Gamut triangle math for Hue color constraints (253 lines)
+- `src/HueCompanion.Core/Models/ColorGamut.cs` - Gamut triangle math for Hue color constraints (253 lines)
   - Contains() - Point-in-triangle test using cross products
   - Clip() - Projects out-of-gamut points to nearest edge
   - GetMaxSaturationForHue() - Calculates achievable saturation per hue angle

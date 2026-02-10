@@ -1,0 +1,30 @@
+{
+  "id": "sparkle",
+  "name": "Sparkle",
+  "description": "Twinkling sparkle effect for a magical atmosphere",
+  "category": "Party",
+  "previewColor": {
+    "x": 0.32,
+    "y": 0.33
+  },
+  "paletteColors": [
+    { "x": 0.31, "y": 0.32 },
+    { "x": 0.33, "y": 0.34 },
+    { "x": 0.30, "y": 0.31 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "sparkle_effect",
+      "name": "sparkle",
+      "type": "nativeEffect",
+      "lightAssignment": "all",
+      "keyframes": [],
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

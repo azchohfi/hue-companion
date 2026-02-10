@@ -1,0 +1,36 @@
+{
+  "id": "deep_focus",
+  "name": "Deep Focus",
+  "description": "Bright cool white light optimized for concentration and productivity",
+  "category": "Focus",
+  "previewColor": {
+    "x": 0.31,
+    "y": 0.33
+  },
+  "paletteColors": [
+    { "x": 0.31, "y": 0.33 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "focus_static",
+      "name": "Focus Static",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 1.0,
+          "colorTemperature": 250,
+          "isOn": true,
+          "transitionStyle": "linear"
+        }
+      ],
+      "durationSeconds": 1,
+      "repeatMode": "once",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

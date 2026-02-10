@@ -29,8 +29,8 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 decisions:
   - id: invalidation-rendering
@@ -79,8 +79,8 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- **src/HueWindows/Views/SceneBuilderPage.xaml** - Added Win2D namespace, replaced Canvas with CanvasControl
-- **src/HueWindows/Views/SceneBuilderPage.xaml.cs** - Win2D event handlers, removed XAML shape rendering code
+- **src/HueCompanion/Views/SceneBuilderPage.xaml** - Added Win2D namespace, replaced Canvas with CanvasControl
+- **src/HueCompanion/Views/SceneBuilderPage.xaml.cs** - Win2D event handlers, removed XAML shape rendering code
 
 ### Detailed Changes
 

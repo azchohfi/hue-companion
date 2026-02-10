@@ -5,9 +5,9 @@
 ## Directory Layout
 
 ```
-hue-windows/
+hue-companion/
 ├── src/                                    # Source code root
-│   ├── HueWindows/                         # WinUI 3 presentation layer
+│   ├── HueCompanion/                         # WinUI 3 presentation layer
 │   │   ├── App.xaml                        # Application root XAML
 │   │   ├── App.xaml.cs                     # DI container setup, crash logging
 │   │   ├── MainWindow.xaml(.cs)            # Navigation shell, hotkey/tray services
@@ -21,7 +21,7 @@ hue-windows/
 │   │   ├── Utilities/                      # Generic utilities
 │   │   └── Assets/                         # Images, app icon, embedded scenes
 │   │
-│   ├── HueWindows.Core/                    # Business logic layer (platform-agnostic)
+│   ├── HueCompanion.Core/                    # Business logic layer (platform-agnostic)
 │   │   ├── Services/                       # Bridge communication, storage, animation
 │   │   │   ├── Interfaces/                 # Service contracts
 │   │   │   ├── HueBridgeService.cs         # Single bridge API wrapper
@@ -54,7 +54,7 @@ hue-windows/
 │   │   │
 │   │   └── Events/                         # Custom event types
 │   │
-│   └── HueWindows.Tests/                   # xUnit test suite
+│   └── HueCompanion.Tests/                   # xUnit test suite
 │       ├── Services/                       # Service unit tests
 │       └── Models/                         # Model unit tests
 │
@@ -64,23 +64,23 @@ hue-windows/
 │   └── codebase/                           # Architecture reference docs
 ├── CLAUDE.md                               # Developer instructions
 ├── README.md                               # Project overview
-├── HueWindows.sln                          # Visual Studio solution
+├── HueCompanion.sln                          # Visual Studio solution
 └── Directory.Build.props                   # MSBuild properties
 ```
 
 ## Directory Purposes
 
-**HueWindows (Presentation Layer):**
+**HueCompanion (Presentation Layer):**
 - Purpose: WinUI 3 UI components, page navigation, user interaction
 - Contains: XAML views, code-behind, converters, styles, UI-specific services
 - Key files: `App.xaml.cs` (DI setup), `MainWindow.xaml.cs` (shell), Views/*.xaml
 
-**HueWindows.Core (Business Logic Layer):**
+**HueCompanion.Core (Business Logic Layer):**
 - Purpose: Domain logic, bridge communication, data models, view models
 - Contains: Service implementations, interfaces, models, viewmodels, animation engine
 - Key files: `Services/HueBridgeService.cs` (API wrapper), `Services/MultiBridgeService.cs` (aggregation), `Services/AnimationEngine.cs` (60fps animation)
 
-**HueWindows.Tests (Testing):**
+**HueCompanion.Tests (Testing):**
 - Purpose: Unit test coverage for core business logic
 - Contains: xUnit test cases for services and models
 - Key files: Test fixtures, mock implementations
@@ -88,7 +88,7 @@ hue-windows/
 **Views/**
 - Purpose: Page definitions for navigation destinations
 - Contains: XAML markup (layout) + code-behind (event handlers)
-- Pattern: Each View has corresponding ViewModel in HueWindows.Core/ViewModels
+- Pattern: Each View has corresponding ViewModel in HueCompanion.Core/ViewModels
 - Files: `DashboardPage.xaml`, `RoomDetailPage.xaml`, `LightDetailPage.xaml`, `ScenesPage.xaml`, `SceneBuilderPage.xaml`, `SettingsPage.xaml`, `SetupPage.xaml`
 
 **Controls/**
@@ -116,19 +116,19 @@ hue-windows/
 - Contains: Navigation service, command-line parsing, dispatcher marshaling
 - Files: `NavigationService.cs`, `CommandLineParser.cs`, `DispatcherHelper.cs`, `NavigationTag.cs`
 
-**Services/** (HueWindows.Core)
+**Services/** (HueCompanion.Core)
 - Purpose: Core business logic
 - Contains: Bridge API wrapper, animation engine, scene storage, settings persistence
 - Interfaces: `Interfaces/I*.cs` (IHueBridgeService, IMultiBridgeService, IAnimationService, ISettingsService, etc.)
 - Implementations: `*.cs` files for each interface
 
-**ViewModels/** (HueWindows.Core)
+**ViewModels/** (HueCompanion.Core)
 - Purpose: MVVM state and commands for each page
 - Contains: ObservableProperty state, RelayCommand handlers, service orchestration
 - Pattern: Inherit from ObservableObject (MVVM Toolkit), one ViewModel per page/major feature
 - Files: `DashboardViewModel.cs`, `RoomDetailViewModel.cs`, `LightDetailViewModel.cs`, `SceneBuilderViewModel.cs`
 
-**Models/** (HueWindows.Core)
+**Models/** (HueCompanion.Core)
 - Purpose: Domain entities and value objects
 - Contains: Light, Room, Scene definitions; animation keyframes; configuration models
 - Files: `RoomModel.cs`, `LightModel.cs`, `SceneModel.cs`, `AnimatedSceneModel.cs`, `AnimationDefinition.cs`, `HueColor.cs`, `Result.cs`, `AppSettings.cs`
@@ -136,33 +136,33 @@ hue-windows/
 ## Key File Locations
 
 **Entry Points:**
-- `src/HueWindows/App.xaml.cs`: Application initialization, DI setup, crash logging
-- `src/HueWindows/MainWindow.xaml.cs`: Window shell, navigation, hotkey/tray integration
-- `HueWindows.sln`: Solution file, references all three projects
+- `src/HueCompanion/App.xaml.cs`: Application initialization, DI setup, crash logging
+- `src/HueCompanion/MainWindow.xaml.cs`: Window shell, navigation, hotkey/tray integration
+- `HueCompanion.sln`: Solution file, references all three projects
 
 **Configuration:**
-- `src/HueWindows/Constants/AppConstants.cs`: UI animation durations, layout sizes, icon glyphs
-- `src/HueWindows.Core/Models/AppSettings.cs`: Settings object schema
+- `src/HueCompanion/Constants/AppConstants.cs`: UI animation durations, layout sizes, icon glyphs
+- `src/HueCompanion.Core/Models/AppSettings.cs`: Settings object schema
 - `Directory.Build.props`: MSBuild version and platform configuration
 
 **Core Logic:**
-- `src/HueWindows.Core/Services/HueBridgeService.cs`: Single bridge HueApi wrapper
-- `src/HueWindows.Core/Services/MultiBridgeService.cs`: Multi-bridge orchestration
-- `src/HueWindows.Core/Services/AnimationEngine.cs`: 60fps animation executor
-- `src/HueWindows.Core/Services/SceneStorageService.cs`: JSON scene persistence
-- `src/HueWindows.Core/Services/SettingsService.cs`: AppSettings JSON storage
+- `src/HueCompanion.Core/Services/HueBridgeService.cs`: Single bridge HueApi wrapper
+- `src/HueCompanion.Core/Services/MultiBridgeService.cs`: Multi-bridge orchestration
+- `src/HueCompanion.Core/Services/AnimationEngine.cs`: 60fps animation executor
+- `src/HueCompanion.Core/Services/SceneStorageService.cs`: JSON scene persistence
+- `src/HueCompanion.Core/Services/SettingsService.cs`: AppSettings JSON storage
 
 **View Layer:**
-- `src/HueWindows/MainWindow.xaml`: Navigation shell XAML
-- `src/HueWindows/Views/DashboardPage.xaml`: Home page with room/zone cards
-- `src/HueWindows/Views/RoomDetailPage.xaml`: Room control + scene playback
-- `src/HueWindows/Views/LightDetailPage.xaml`: Individual light control
-- `src/HueWindows/Views/SceneBuilderPage.xaml`: Timeline editor UI
-- `src/HueWindows/Styles/AppStyles.xaml`: Global theme resources
+- `src/HueCompanion/MainWindow.xaml`: Navigation shell XAML
+- `src/HueCompanion/Views/DashboardPage.xaml`: Home page with room/zone cards
+- `src/HueCompanion/Views/RoomDetailPage.xaml`: Room control + scene playback
+- `src/HueCompanion/Views/LightDetailPage.xaml`: Individual light control
+- `src/HueCompanion/Views/SceneBuilderPage.xaml`: Timeline editor UI
+- `src/HueCompanion/Styles/AppStyles.xaml`: Global theme resources
 
 **Testing:**
-- `src/HueWindows.Tests/Services/`: Service unit tests
-- `src/HueWindows.Tests/Models/`: Model unit tests
+- `src/HueCompanion.Tests/Services/`: Service unit tests
+- `src/HueCompanion.Tests/Models/`: Model unit tests
 
 ## Naming Conventions
 
@@ -180,9 +180,9 @@ hue-windows/
 - Platform-specific: Grouped by concern, not platform (all Views in single Views/ folder, not separated by platform)
 
 **Namespaces:**
-- Global namespace prefix: `HueWindows` or `HueWindows.Core`
-- Layers: `HueWindows.Core.Services.Interfaces`, `HueWindows.Core.ViewModels`, `HueWindows.Core.Models`
-- Features: `HueWindows.Helpers`, `HueWindows.Services`, `HueWindows.Converters`, `HueWindows.Constants`
+- Global namespace prefix: `HueCompanion` or `HueCompanion.Core`
+- Layers: `HueCompanion.Core.Services.Interfaces`, `HueCompanion.Core.ViewModels`, `HueCompanion.Core.Models`
+- Features: `HueCompanion.Helpers`, `HueCompanion.Services`, `HueCompanion.Converters`, `HueCompanion.Constants`
 
 **C# Code:**
 - Classes/Methods: PascalCase
@@ -195,65 +195,65 @@ hue-windows/
 ## Where to Add New Code
 
 **New Page/Feature:**
-- XAML View: `src/HueWindows/Views/[FeatureName]Page.xaml`
-- Code-behind: `src/HueWindows/Views/[FeatureName]Page.xaml.cs`
-- ViewModel: `src/HueWindows.Core/ViewModels/[FeatureName]ViewModel.cs`
+- XAML View: `src/HueCompanion/Views/[FeatureName]Page.xaml`
+- Code-behind: `src/HueCompanion/Views/[FeatureName]Page.xaml.cs`
+- ViewModel: `src/HueCompanion.Core/ViewModels/[FeatureName]ViewModel.cs`
 - Register ViewModel in DI: `App.xaml.cs` ConfigureServices() with `services.AddTransient<[FeatureName]ViewModel>()`
 - Add navigation route: `MainWindow.xaml.cs` NavView_ItemInvoked() switch statement
 
 **New Control:**
-- XAML Control: `src/HueWindows/Controls/[ControlName].xaml`
-- Code-behind: `src/HueWindows/Controls/[ControlName].xaml.cs`
+- XAML Control: `src/HueCompanion/Controls/[ControlName].xaml`
+- Code-behind: `src/HueCompanion/Controls/[ControlName].xaml.cs`
 - Register if reusable: Include in Views folder or document in CLAUDE.md
 
 **New Service:**
-- Interface: `src/HueWindows.Core/Services/Interfaces/I[ServiceName].cs`
-- Implementation: `src/HueWindows.Core/Services/[ServiceName].cs`
+- Interface: `src/HueCompanion.Core/Services/Interfaces/I[ServiceName].cs`
+- Implementation: `src/HueCompanion.Core/Services/[ServiceName].cs`
 - Register in DI: `App.xaml.cs` ConfigureServices() with appropriate lifetime (Singleton for stateful, Transient for stateless)
 - Document in CLAUDE.md service architecture section
 
 **New Model:**
-- Definition: `src/HueWindows.Core/Models/[ModelName].cs`
+- Definition: `src/HueCompanion.Core/Models/[ModelName].cs`
 - Use: Reference in services and viewmodels
 - Persist if needed: Add to SceneStorageService or SettingsService JSON handling
 
 **New Utility/Helper:**
-- Presentation helpers: `src/HueWindows/Helpers/[HelperName].cs`
-- Shared utilities: `src/HueWindows/Utilities/[UtilityName].cs`
-- Converters: `src/HueWindows/Converters/[Conversion]Converter.cs`
+- Presentation helpers: `src/HueCompanion/Helpers/[HelperName].cs`
+- Shared utilities: `src/HueCompanion/Utilities/[UtilityName].cs`
+- Converters: `src/HueCompanion/Converters/[Conversion]Converter.cs`
 
 **Tests:**
-- Service tests: `src/HueWindows.Tests/Services/[ServiceName]Tests.cs`
-- Model tests: `src/HueWindows.Tests/Models/[ModelName]Tests.cs`
-- Fixtures: `src/HueWindows.Tests/[FeatureName]Fixtures.cs`
+- Service tests: `src/HueCompanion.Tests/Services/[ServiceName]Tests.cs`
+- Model tests: `src/HueCompanion.Tests/Models/[ModelName]Tests.cs`
+- Fixtures: `src/HueCompanion.Tests/[FeatureName]Fixtures.cs`
 
 ## Special Directories
 
-**Assets/ (src/HueWindows/Assets/)**
+**Assets/ (src/HueCompanion/Assets/)**
 - Purpose: Application resources (icons, images, embedded scene templates)
 - Generated: No
 - Committed: Yes
 - Contents: `app.ico`, `Scenes/` (built-in animated scenes), PNG/image files
 
-**Assets/Scenes/ (src/HueWindows/Assets/Scenes/)**
+**Assets/Scenes/ (src/HueCompanion/Assets/Scenes/)**
 - Purpose: Embedded JSON scene templates (built-in scenes)
 - Format: AnimatedSceneModel JSON structure
 - Committed: Yes, as template seed data
 - Usage: Loaded by AnimationService on application start
 
-**(HueWindows.Core) bin/ and obj/**
+**(HueCompanion.Core) bin/ and obj/**
 - Purpose: Build output and intermediate files
 - Generated: Yes
 - Committed: No (.gitignored)
 - Pattern: Organized by configuration (Debug, Release) and platform (x64, ARM64)
 
-**(HueWindows) bin/ and obj/**
+**(HueCompanion) bin/ and obj/**
 - Purpose: Build output for presentation layer
 - Generated: Yes
 - Committed: No (.gitignored)
 - Pattern: WinUI specific: net8.0-windows10.0.22621.0 directory
 
-**%LOCALAPPDATA%/HueWindows/ (Runtime)**
+**%LOCALAPPDATA%/HueCompanion/ (Runtime)**
 - Purpose: Application data directory (settings, scenes, logs)
 - Structure:
   - `AppSettings.json`: Serialized AppSettings object

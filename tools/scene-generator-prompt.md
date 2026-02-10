@@ -1,6 +1,6 @@
-# HueWindows Scene Generator
+# HueCompanion Scene Generator
 
-Generate animated scene JSON files for the HueWindows application from natural language descriptions.
+Generate animated scene JSON files for the HueCompanion application from natural language descriptions.
 
 ## Your Task
 
@@ -24,7 +24,7 @@ Given a description of a lighting scene, generate a valid JSON file that conform
   "targetId": string?,           // Optional: specific room/zone ID
   "targetLights": string[]?,     // Optional: specific light IDs
   "animations": AnimationDefinition[],  // One or more animations
-  "author": string,       // "HueWindows" for built-in scenes
+  "author": string,       // "HueCompanion" for built-in scenes
   "version": string       // Semantic version, e.g., "1.0"
 }
 ```
@@ -226,7 +226,7 @@ Built-in Hue effects. Use `name` field for effect type:
       "priority": 1
     }
   ],
-  "author": "HueWindows",
+  "author": "HueCompanion",
   "version": "1.0"
 }
 ```
@@ -297,7 +297,7 @@ Built-in Hue effects. Use `name` field for effect type:
       "priority": 2
     }
   ],
-  "author": "HueWindows",
+  "author": "HueCompanion",
   "version": "1.0"
 }
 ```
@@ -329,7 +329,7 @@ Built-in Hue effects. Use `name` field for effect type:
       "priority": 1
     }
   ],
-  "author": "HueWindows",
+  "author": "HueCompanion",
   "version": "1.0"
 }
 ```
@@ -343,7 +343,7 @@ Built-in Hue effects. Use `name` field for effect type:
 3. Ensure all required fields are present
 4. Validate that keyframes are in ascending time order
 5. Ensure colors are within valid CIE xy ranges (0.0-1.0)
-6. Set `author` to "HueWindows" and `version` to "1.0"
+6. Set `author` to "HueCompanion" and `version` to "1.0"
 
 ---
 

@@ -13,7 +13,7 @@
 ## Task 1: Add Missing Effects to HueBridgeService
 
 **Files:**
-- Modify: `src/HueWindows.Core/Services/HueBridgeService.cs:607-617`
+- Modify: `src/HueCompanion.Core/Services/HueBridgeService.cs:607-617`
 
 **Step 1: Add the 4 missing effect mappings**
 
@@ -44,7 +44,7 @@ Check that `HueApi.Models.Effect` enum includes these values. If not, we may nee
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Core/Services/HueBridgeService.cs
+git add src/HueCompanion.Core/Services/HueBridgeService.cs
 git commit -m "feat(effects): add underwater, cosmos, sunbeam, enchant effects"
 ```
 
@@ -53,8 +53,8 @@ git commit -m "feat(effects): add underwater, cosmos, sunbeam, enchant effects"
 ## Task 2: Extend ApplyEffectAsync with Speed and Brightness
 
 **Files:**
-- Modify: `src/HueWindows.Core/Services/Interfaces/IHueBridgeService.cs:151`
-- Modify: `src/HueWindows.Core/Services/HueBridgeService.cs:602-624`
+- Modify: `src/HueCompanion.Core/Services/Interfaces/IHueBridgeService.cs:151`
+- Modify: `src/HueCompanion.Core/Services/HueBridgeService.cs:602-624`
 
 **Step 1: Update interface signature**
 
@@ -116,8 +116,8 @@ public async Task ApplyEffectAsync(Guid lightId, string effect, double? speed = 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Core/Services/Interfaces/IHueBridgeService.cs
-git add src/HueWindows.Core/Services/HueBridgeService.cs
+git add src/HueCompanion.Core/Services/Interfaces/IHueBridgeService.cs
+git add src/HueCompanion.Core/Services/HueBridgeService.cs
 git commit -m "feat(effects): extend ApplyEffectAsync with speed and brightness params"
 ```
 
@@ -126,12 +126,12 @@ git commit -m "feat(effects): extend ApplyEffectAsync with speed and brightness 
 ## Task 3: Create NativeEffectInfo Model
 
 **Files:**
-- Create: `src/HueWindows.Core/Models/NativeEffectInfo.cs`
+- Create: `src/HueCompanion.Core/Models/NativeEffectInfo.cs`
 
 **Step 1: Create the model**
 
 ```csharp
-namespace HueWindows.Core.Models;
+namespace HueCompanion.Core.Models;
 
 /// <summary>
 /// Information about a native Hue effect.
@@ -190,7 +190,7 @@ public class NativeEffectInfo
 **Step 2: Commit**
 
 ```bash
-git add src/HueWindows.Core/Models/NativeEffectInfo.cs
+git add src/HueCompanion.Core/Models/NativeEffectInfo.cs
 git commit -m "feat(effects): add NativeEffectInfo model with effect catalog"
 ```
 
@@ -199,18 +199,18 @@ git commit -m "feat(effects): add NativeEffectInfo model with effect catalog"
 ## Task 4: Create NativeEffectFlyout Control
 
 **Files:**
-- Create: `src/HueWindows/Controls/NativeEffectFlyout.xaml`
-- Create: `src/HueWindows/Controls/NativeEffectFlyout.xaml.cs`
+- Create: `src/HueCompanion/Controls/NativeEffectFlyout.xaml`
+- Create: `src/HueCompanion/Controls/NativeEffectFlyout.xaml.cs`
 
 **Step 1: Create the XAML**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <UserControl
-    x:Class="HueWindows.Controls.NativeEffectFlyout"
+    x:Class="HueCompanion.Controls.NativeEffectFlyout"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:HueWindows.Controls"
+    xmlns:local="using:HueCompanion.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -304,10 +304,10 @@ git commit -m "feat(effects): add NativeEffectInfo model with effect catalog"
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
-using HueWindows.Constants;
-using HueWindows.Core.Models;
+using HueCompanion.Constants;
+using HueCompanion.Core.Models;
 
-namespace HueWindows.Controls;
+namespace HueCompanion.Controls;
 
 /// <summary>
 /// Flyout control for configuring and applying native Hue effects.
@@ -448,8 +448,8 @@ public class NativeEffectApplyEventArgs : EventArgs
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows/Controls/NativeEffectFlyout.xaml
-git add src/HueWindows/Controls/NativeEffectFlyout.xaml.cs
+git add src/HueCompanion/Controls/NativeEffectFlyout.xaml
+git add src/HueCompanion/Controls/NativeEffectFlyout.xaml.cs
 git commit -m "feat(effects): add NativeEffectFlyout control"
 ```
 
@@ -458,9 +458,9 @@ git commit -m "feat(effects): add NativeEffectFlyout control"
 ## Task 5: Add Native Effects to RoomDetailPage
 
 **Files:**
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml:229-291`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
-- Modify: `src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml:229-291`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs`
 
 **Step 1: Add NativeEffects property to ViewModel**
 
@@ -591,7 +591,7 @@ public async Task ApplyEffectToLightAsync(Guid lightId, string effect, double sp
 
 **Step 6: Add using directive and models namespace to XAML**
 
-Ensure `xmlns:models="using:HueWindows.Core.Models"` is present.
+Ensure `xmlns:models="using:HueCompanion.Core.Models"` is present.
 
 **Step 7: Add flyout presenter style to page resources**
 
@@ -608,10 +608,10 @@ Ensure `xmlns:models="using:HueWindows.Core.Models"` is present.
 **Step 8: Commit**
 
 ```bash
-git add src/HueWindows/Views/RoomDetailPage.xaml
-git add src/HueWindows/Views/RoomDetailPage.xaml.cs
-git add src/HueWindows.Core/ViewModels/RoomDetailViewModel.cs
-git add src/HueWindows/Styles/AppStyles.xaml
+git add src/HueCompanion/Views/RoomDetailPage.xaml
+git add src/HueCompanion/Views/RoomDetailPage.xaml.cs
+git add src/HueCompanion.Core/ViewModels/RoomDetailViewModel.cs
+git add src/HueCompanion/Styles/AppStyles.xaml
 git commit -m "feat(effects): add Hue Effects section to Room Detail page"
 ```
 
@@ -620,9 +620,9 @@ git commit -m "feat(effects): add Hue Effects section to Room Detail page"
 ## Task 6: Add Hue Effects Section to ScenesPage
 
 **Files:**
-- Modify: `src/HueWindows/Views/ScenesPage.xaml:156-204`
-- Modify: `src/HueWindows/Views/ScenesPage.xaml.cs`
-- Modify: `src/HueWindows.Core/ViewModels/ScenesPageViewModel.cs`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml:156-204`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml.cs`
+- Modify: `src/HueCompanion.Core/ViewModels/ScenesPageViewModel.cs`
 
 **Step 1: Add NativeEffects property to ViewModel**
 
@@ -747,9 +747,9 @@ public async Task ApplyEffectToRoomAsync(string effect, double speed, double bri
 **Step 5: Commit**
 
 ```bash
-git add src/HueWindows/Views/ScenesPage.xaml
-git add src/HueWindows/Views/ScenesPage.xaml.cs
-git add src/HueWindows.Core/ViewModels/ScenesPageViewModel.cs
+git add src/HueCompanion/Views/ScenesPage.xaml
+git add src/HueCompanion/Views/ScenesPage.xaml.cs
+git add src/HueCompanion.Core/ViewModels/ScenesPageViewModel.cs
 git commit -m "feat(effects): add Hue Effects section to Scenes page"
 ```
 
@@ -758,17 +758,17 @@ git commit -m "feat(effects): add Hue Effects section to Scenes page"
 ## Task 7: Implement Save as Scene Dialog
 
 **Files:**
-- Create: `src/HueWindows/Dialogs/SaveEffectDialog.xaml`
-- Create: `src/HueWindows/Dialogs/SaveEffectDialog.xaml.cs`
-- Modify: `src/HueWindows/Views/RoomDetailPage.xaml.cs`
-- Modify: `src/HueWindows/Views/ScenesPage.xaml.cs`
+- Create: `src/HueCompanion/Dialogs/SaveEffectDialog.xaml`
+- Create: `src/HueCompanion/Dialogs/SaveEffectDialog.xaml.cs`
+- Modify: `src/HueCompanion/Views/RoomDetailPage.xaml.cs`
+- Modify: `src/HueCompanion/Views/ScenesPage.xaml.cs`
 
 **Step 1: Create the dialog XAML**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <ContentDialog
-    x:Class="HueWindows.Dialogs.SaveEffectDialog"
+    x:Class="HueCompanion.Dialogs.SaveEffectDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Save Effect as Scene"
@@ -803,9 +803,9 @@ git commit -m "feat(effects): add Hue Effects section to Scenes page"
 
 ```csharp
 using Microsoft.UI.Xaml.Controls;
-using HueWindows.Core.Models;
+using HueCompanion.Core.Models;
 
-namespace HueWindows.Dialogs;
+namespace HueCompanion.Dialogs;
 
 public sealed partial class SaveEffectDialog : ContentDialog
 {
@@ -895,10 +895,10 @@ public async Task SaveUserSceneAsync(AnimatedSceneModel scene)
 **Step 5: Commit**
 
 ```bash
-git add src/HueWindows/Dialogs/SaveEffectDialog.xaml
-git add src/HueWindows/Dialogs/SaveEffectDialog.xaml.cs
-git add src/HueWindows/Views/RoomDetailPage.xaml.cs
-git add src/HueWindows/Views/ScenesPage.xaml.cs
+git add src/HueCompanion/Dialogs/SaveEffectDialog.xaml
+git add src/HueCompanion/Dialogs/SaveEffectDialog.xaml.cs
+git add src/HueCompanion/Views/RoomDetailPage.xaml.cs
+git add src/HueCompanion/Views/ScenesPage.xaml.cs
 git commit -m "feat(effects): add Save Effect as Scene dialog"
 ```
 
@@ -909,7 +909,7 @@ git commit -m "feat(effects): add Save Effect as Scene dialog"
 **Step 1: Build the solution**
 
 ```bash
-dotnet build src/HueWindows/HueWindows.csproj
+dotnet build src/HueCompanion/HueCompanion.csproj
 ```
 
 Expected: Build succeeds with 0 errors.
@@ -917,7 +917,7 @@ Expected: Build succeeds with 0 errors.
 **Step 2: Run and test**
 
 ```bash
-dotnet run --project src/HueWindows/HueWindows.csproj
+dotnet run --project src/HueCompanion/HueCompanion.csproj
 ```
 
 Test checklist:

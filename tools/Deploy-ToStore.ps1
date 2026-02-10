@@ -30,7 +30,7 @@
     4. Configure app in Partner Center with correct package identity
 
 .EXAMPLE
-    .\Deploy-ToStore.ps1 -PackagePath ".\publish\HueWindows.msix"
+    .\Deploy-ToStore.ps1 -PackagePath ".\publish\HueCompanion.msix"
     # Deploys the specified package to the Store
 #>
 
@@ -64,7 +64,7 @@ Write-Host "   - Go to Account settings > User management"
 Write-Host "   - Add the Azure AD application with Developer permissions"
 Write-Host ""
 Write-Host "3. Add GitHub Secrets:" -ForegroundColor Cyan
-Write-Host "   https://github.com/ddrayne/hue-windows/settings/secrets/actions" -ForegroundColor Gray
+Write-Host "   https://github.com/ddrayne/hue-companion/settings/secrets/actions" -ForegroundColor Gray
 Write-Host "   - STORE_TENANT_ID: Your Azure AD tenant ID"
 Write-Host "   - STORE_CLIENT_ID: Your app's client ID"
 Write-Host "   - STORE_CLIENT_SECRET: Your app's client secret"

@@ -45,8 +45,8 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `src/HueWindows/Views/SceneBuilderPage.xaml.cs` | Debounced slider and color picker handlers | VERIFIED | 1669 lines, contains `_brightnessDebounceTimer` and `_colorDebounceTimer` |
-| `src/HueWindows/Views/SceneBuilderPage.xaml` | Compact ToggleButton controls with accessibility | VERIFIED | 616 lines, 2 ToggleButtons with AutomationProperties |
+| `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` | Debounced slider and color picker handlers | VERIFIED | 1669 lines, contains `_brightnessDebounceTimer` and `_colorDebounceTimer` |
+| `src/HueCompanion/Views/SceneBuilderPage.xaml` | Compact ToggleButton controls with accessibility | VERIFIED | 616 lines, 2 ToggleButtons with AutomationProperties |
 
 ### Key Link Verification
 

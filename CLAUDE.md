@@ -19,8 +19,8 @@
 .\hue kill stable      # Kill stable instances only
 
 # Direct dotnet commands (if needed)
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64
-dotnet build src/HueWindows/HueWindows.csproj -p:Platform=x64 -p:DevBuild=true
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64
+dotnet build src/HueCompanion/HueCompanion.csproj -p:Platform=x64 -p:DevBuild=true
 ```
 
 Dev builds display "Hue Companion (Dev)" in title bar with git hash version.
@@ -33,9 +33,9 @@ Both can run simultaneously (separate MSIX identities).
 
 ```
 src/
-├── HueWindows/              # WinUI 3 App (views, controls, styles)
-├── HueWindows.Core/         # Business logic (models, viewmodels, services)
-└── HueWindows.Tests/        # Unit tests
+├── HueCompanion/              # WinUI 3 App (views, controls, styles)
+├── HueCompanion.Core/         # Business logic (models, viewmodels, services)
+└── HueCompanion.Tests/        # Unit tests
 ```
 
 ## Key Files
@@ -217,7 +217,7 @@ SceneBuilderPage.xaml.cs          # UI rendering, input handling
 
 ### Save Format
 
-Scenes save as `AnimatedSceneModel` JSON in `%LOCALAPPDATA%/HueWindows/Scenes/`:
+Scenes save as `AnimatedSceneModel` JSON in `%LOCALAPPDATA%/HueCompanion/Scenes/`:
 
 ```json
 {

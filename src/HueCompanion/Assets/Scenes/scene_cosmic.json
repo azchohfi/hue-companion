@@ -1,0 +1,31 @@
+{
+  "id": "cosmic",
+  "name": "Cosmic",
+  "description": "Space galaxy color drift using native cosmos effect",
+  "category": "Ambient",
+  "previewColor": {
+    "x": 0.25,
+    "y": 0.15
+  },
+  "paletteColors": [
+    { "x": 0.22, "y": 0.12 },
+    { "x": 0.28, "y": 0.18 },
+    { "x": 0.35, "y": 0.22 },
+    { "x": 0.18, "y": 0.08 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "cosmos_effect",
+      "name": "cosmos",
+      "type": "nativeEffect",
+      "lightAssignment": "all",
+      "keyframes": [],
+      "durationSeconds": 0,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

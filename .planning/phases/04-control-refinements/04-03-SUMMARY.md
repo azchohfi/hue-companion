@@ -23,7 +23,7 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 key-decisions:
   - "Remove debounce for color picker to enable real-time preview (brightness keeps debounce)"
@@ -63,7 +63,7 @@ Each task was committed atomically:
 1. **Task 1: Remove color picker debounce timer** - `6dfbc10` (fix)
 
 ## Files Created/Modified
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - Removed debounce from KeyframeColorPicker_ColorChanged, added direct async API call
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - Removed debounce from KeyframeColorPicker_ColorChanged, added direct async API call
 
 ## Decisions Made
 - Removed debounce from color picker only - brightness slider retains 150ms debounce

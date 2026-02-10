@@ -1,4 +1,4 @@
-# Full Code Review — HueWindows
+# Full Code Review — HueCompanion
 
 **Date:** 2026-02-07
 
@@ -23,7 +23,7 @@
 | 10 | **TimeRulerRenderer native resource leak** — `CanvasTextFormat` (DirectWrite wrapper) created but never disposed. `TimelineRenderer.Dispose()` doesn't clean it up. | `TimeRulerRenderer.cs`, `TimelineRenderer.cs:203-211` |
 | 11 | **Hardcoded dark-theme colors in flyouts** — ColorPickerFlyout and NativeEffectFlyout hardcode dark gradients and `Foreground="White"`, broken in light theme. | `ColorPickerFlyout.xaml:17-22`, `NativeEffectFlyout.xaml:17-22` |
 | 12 | **Tests don't test production code** — `SceneStorageServiceTests` and `SettingsServiceTests` use `new` keyword hiding to reimplement all logic. Changes to production code won't be caught. | `SceneStorageServiceTests.cs:395-535`, `SettingsServiceTests.cs:136-186` |
-| 13 | **Extremely low test coverage** — Only 4 test files covering models + 2 services. 0 VM tests, 0 tests for AnimationEngine, ColorConverter, MultiBridgeService, HueBridgeService. Moq is installed but unused. | `HueWindows.Tests/` |
+| 13 | **Extremely low test coverage** — Only 4 test files covering models + 2 services. 0 VM tests, 0 tests for AnimationEngine, ColorConverter, MultiBridgeService, HueBridgeService. Moq is installed but unused. | `HueCompanion.Tests/` |
 | 14 | **`async void` without error handling** — `OnLaunched`, `NavigateToInitialPage`, `NavView_PaneOpened`, `OnSceneActivated`, `OnPinnedItemsChanged` are all async void with no try-catch. | Multiple files |
 
 ## MINOR (18 issues)
@@ -54,7 +54,7 @@
 | # | Issue | Location |
 |---|-------|----------|
 | 33 | Unused dead code: `_lastPlayheadUpdate`, `PlayheadUpdateThrottleMs` in SceneBuilderViewModel | `SceneBuilderViewModel.cs:106-107` |
-| 34 | Unused NuGet package: `HueApi.ColorConverters` | `HueWindows.Core.csproj` |
+| 34 | Unused NuGet package: `HueApi.ColorConverters` | `HueCompanion.Core.csproj` |
 | 35 | `LightColors` property allocates new list on every access (called 3+ times in quick succession) | `DashboardViewModel.cs:247-261` |
 | 36 | `NativeEffectInfo.All` uses same icon glyph for all 10 effects | `NativeEffectInfo.cs:41-53` |
 | 37 | Build artifacts (`*.binlog`, `*.log`, `nul`) not in `.gitignore` | `.gitignore` |

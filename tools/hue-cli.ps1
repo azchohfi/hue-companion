@@ -31,10 +31,10 @@ $ErrorActionPreference = "Stop"
 
 # Paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$DevExePath = Join-Path $ProjectRoot "src\HueWindows\bin\x64\Debug\net8.0-windows10.0.22621.0\HueWindows.exe"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$DevExePath = Join-Path $ProjectRoot "src\HueCompanion\bin\x64\Debug\net8.0-windows10.0.22621.0\HueCompanion.exe"
 $StablePath = Join-Path $ProjectRoot "builds\stable"
-$StableExePath = Join-Path $StablePath "HueWindows.exe"
+$StableExePath = Join-Path $StablePath "HueCompanion.exe"
 $BuildInfoPath = Join-Path $StablePath "build-info.json"
 
 function Get-GitShortHash {
@@ -56,7 +56,7 @@ function Get-BaseVersion {
 }
 
 function Get-HueProcesses {
-    $processes = Get-Process -Name "HueWindows" -ErrorAction SilentlyContinue
+    $processes = Get-Process -Name "HueCompanion" -ErrorAction SilentlyContinue
     $results = @()
     foreach ($proc in $processes) {
         $path = $proc.Path

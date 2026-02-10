@@ -60,7 +60,7 @@
 **Concept:** Pin animated scenes to rooms for quick access.
 
 **Storage:**
-- `%LocalAppData%/HueWindows/room-scene-assignments.json`
+- `%LocalAppData%/HueCompanion/room-scene-assignments.json`
 - Maps `roomId` → list of `animatedSceneId`s
 
 **UI - Assigning:**
@@ -129,7 +129,7 @@
 1. Generate via `tools/scene-generator-prompt.md`
 2. Save to `tools/generated/`
 3. Test on hardware, tweak
-4. Move to `src/HueWindows/Assets/Scenes/`
+4. Move to `src/HueCompanion/Assets/Scenes/`
 
 **Naming:** `scene_<snake_case>.json`
 

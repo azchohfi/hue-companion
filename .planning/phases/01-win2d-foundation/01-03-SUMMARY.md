@@ -27,9 +27,9 @@ tech-stack:
 
 key-files:
   created:
-    - src/HueWindows/Views/Rendering/HitTestHelper.cs
+    - src/HueCompanion/Views/Rendering/HitTestHelper.cs
   modified:
-    - src/HueWindows/Views/SceneBuilderPage.xaml.cs
+    - src/HueCompanion/Views/SceneBuilderPage.xaml.cs
 
 decisions:
   - "Removed XAML shape-based event handlers in favor of unified hit testing"
@@ -69,13 +69,13 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- **src/HueWindows/Views/Rendering/HitTestHelper.cs** - Geometry-based hit testing for timeline elements
+- **src/HueCompanion/Views/Rendering/HitTestHelper.cs** - Geometry-based hit testing for timeline elements
   - `HitTestResult` record with element type and associated data
   - `HitTest()` method tests elements in visual order
   - Circle hit testing for keyframes (8px radius, 10px when selected)
   - 12px-wide playhead hit area for easier dragging
 
-- **src/HueWindows/Views/SceneBuilderPage.xaml.cs** - Updated pointer event handlers
+- **src/HueCompanion/Views/SceneBuilderPage.xaml.cs** - Updated pointer event handlers
   - Replaced old `TimelineCanvas_PointerPressed` with hit testing logic
   - Added `StartPlayheadDrag`, `TimelineCanvas_PlayheadDrag`, `TimelineCanvas_PlayheadDragEnd`
   - Added `HandleKeyframeClick` with right-click delete and multi-select

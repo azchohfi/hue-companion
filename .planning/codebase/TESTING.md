@@ -6,23 +6,23 @@
 
 **Runner:**
 - xUnit 2.9.2
-- Config: `src/HueWindows.Tests/HueWindows.Tests.csproj`
+- Config: `src/HueCompanion.Tests/HueCompanion.Tests.csproj`
 
 **Assertion Library:**
 - FluentAssertions 6.12.2
 
 **Run Commands:**
 ```bash
-dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj           # Run all tests
-dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj --watch   # Watch mode
-dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj /p:CollectCoverage=true  # Coverage
+dotnet test src/HueCompanion.Tests/HueCompanion.Tests.csproj           # Run all tests
+dotnet test src/HueCompanion.Tests/HueCompanion.Tests.csproj --watch   # Watch mode
+dotnet test src/HueCompanion.Tests/HueCompanion.Tests.csproj /p:CollectCoverage=true  # Coverage
 ```
 
 ## Test File Organization
 
 **Location:**
-- Co-located in separate `HueWindows.Tests` project following source structure
-- Tests mirror source namespace structure: `HueWindows.Tests.Models`, `HueWindows.Tests.Services`
+- Co-located in separate `HueCompanion.Tests` project following source structure
+- Tests mirror source namespace structure: `HueCompanion.Tests.Models`, `HueCompanion.Tests.Services`
 
 **Naming:**
 - Test classes: `[ClassName]Tests` (e.g., `HueColorTests`, `ResultTests`, `SceneStorageServiceTests`)
@@ -31,7 +31,7 @@ dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj /p:CollectCoverage=true
 
 **Structure:**
 ```
-src/HueWindows.Tests/
+src/HueCompanion.Tests/
 ├── Models/
 │   ├── HueColorTests.cs
 │   └── ResultTests.cs
@@ -44,8 +44,8 @@ src/HueWindows.Tests/
 
 **Suite Organization:**
 ```csharp
-// From src/HueWindows.Tests/Models/ResultTests.cs
-namespace HueWindows.Tests.Models;
+// From src/HueCompanion.Tests/Models/ResultTests.cs
+namespace HueCompanion.Tests.Models;
 
 public class ResultTests
 {
@@ -85,7 +85,7 @@ public class ResultTests
 
 **Arrange-Act-Assert (AAA):**
 ```csharp
-// From src/HueWindows.Tests/Models/HueColorTests.cs:33-42
+// From src/HueCompanion.Tests/Models/HueColorTests.cs:33-42
 [Fact]
 public void White_ReturnsD65WhitePoint()
 {
@@ -104,7 +104,7 @@ public void White_ReturnsD65WhitePoint()
 
 **Patterns:**
 - Create testable versions of services by subclassing and overriding protected/public methods
-- Example from `src/HueWindows.Tests/Services/SceneStorageServiceTests.cs:395-404`:
+- Example from `src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs:395-404`:
 ```csharp
 private class SceneStorageServiceTestable : SceneStorageService
 {
@@ -141,7 +141,7 @@ private class SceneStorageServiceTestable : SceneStorageService
 **Test Data:**
 Factory methods create test data with defaults:
 ```csharp
-// From src/HueWindows.Tests/Services/SceneStorageServiceTests.cs:350-361
+// From src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs:350-361
 private static AnimatedSceneModel CreateValidScene(string id, string name)
 {
     return new AnimatedSceneModel
@@ -174,7 +174,7 @@ private static AnimationDefinition CreateValidKeyframeAnimation(string id)
 
 **Location:**
 - Helper methods as private static in test class (`CreateValidScene`, `CreateValidKeyframeAnimation`)
-- Temp directories created per-test using unique GUID: `Path.Combine(Path.GetTempPath(), $"HueWindowsSceneTest_{Guid.NewGuid()}")`
+- Temp directories created per-test using unique GUID: `Path.Combine(Path.GetTempPath(), $"HueCompanionSceneTest_{Guid.NewGuid()}")`
 
 ## Coverage
 
@@ -182,7 +182,7 @@ private static AnimationDefinition CreateValidKeyframeAnimation(string id)
 
 **View Coverage:**
 ```bash
-dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+dotnet test src/HueCompanion.Tests/HueCompanion.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 ```
 
 ## Test Types
@@ -207,7 +207,7 @@ dotnet test src/HueWindows.Tests/HueWindows.Tests.csproj /p:CollectCoverage=true
 
 **Async Testing:**
 ```csharp
-// From src/HueWindows.Tests/Services/SceneStorageServiceTests.cs:30-43
+// From src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs:30-43
 [Fact]
 public async Task SaveSceneAsync_CreatesJsonFile()
 {
@@ -226,7 +226,7 @@ public async Task SaveSceneAsync_CreatesJsonFile()
 
 **Error Testing:**
 ```csharp
-// From src/HueWindows.Tests/Services/SceneStorageServiceTests.cs:80-91
+// From src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs:80-91
 [Fact]
 public async Task LoadSceneAsync_WithNonExistentFile_ReturnsFailure()
 {
@@ -244,7 +244,7 @@ public async Task LoadSceneAsync_WithNonExistentFile_ReturnsFailure()
 
 **Theory Testing (Parameterized):**
 ```csharp
-// From src/HueWindows.Tests/Models/HueColorTests.cs:55-81
+// From src/HueCompanion.Tests/Models/HueColorTests.cs:55-81
 [Theory]
 [InlineData(255, 0, 0)]   // Red
 [InlineData(0, 255, 0)]   // Green
@@ -259,11 +259,11 @@ public void FromRgb_RoundTripsApproximately(byte r, byte g, byte b)
 
 **Approximate/Tolerance Assertions:**
 ```csharp
-// From src/HueWindows.Tests/Models/HueColorTests.cs:40-41
+// From src/HueCompanion.Tests/Models/HueColorTests.cs:40-41
 white.X.Should().BeApproximately(0.3127, 0.0001);
 white.Y.Should().BeApproximately(0.3290, 0.0001);
 
-// From src/HueWindows.Tests/Models/HueColorTests.cs:77-79
+// From src/HueCompanion.Tests/Models/HueColorTests.cs:77-79
 resultR.Should().BeCloseTo(r, 30); // Allow 30 unit tolerance for conversion
 resultG.Should().BeCloseTo(g, 30);
 resultB.Should().BeCloseTo(b, 30);
@@ -271,7 +271,7 @@ resultB.Should().BeCloseTo(b, 30);
 
 **Test Cleanup:**
 ```csharp
-// From src/HueWindows.Tests/Services/SceneStorageServiceTests.cs:8-28
+// From src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs:8-28
 public class SceneStorageServiceTests : IDisposable
 {
     private readonly string _testDirectory;
@@ -279,7 +279,7 @@ public class SceneStorageServiceTests : IDisposable
 
     public SceneStorageServiceTests()
     {
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueWindowsSceneTest_{Guid.NewGuid()}");
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueCompanionSceneTest_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDirectory);
         _service = new SceneStorageServiceTestable(_testDirectory);
     }
@@ -296,7 +296,7 @@ public class SceneStorageServiceTests : IDisposable
 
 ## Package Configuration
 
-Dependencies in `src/HueWindows.Tests/HueWindows.Tests.csproj`:
+Dependencies in `src/HueCompanion.Tests/HueCompanion.Tests.csproj`:
 - `Microsoft.NET.Test.Sdk` 17.12.0 - Test runner infrastructure
 - `xunit` 2.9.2 - Test framework
 - `xunit.runner.visualstudio` 3.0.0 - Visual Studio integration

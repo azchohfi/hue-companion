@@ -8,7 +8,7 @@
 
 **Tech Stack:** PowerShell, Git, Semantic Versioning
 
-**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-windows/issues/5) - Phase 2
+**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-companion/issues/5) - Phase 2
 
 ---
 
@@ -24,7 +24,7 @@ Create `tools/Bump-Version.ps1`:
 ```powershell
 <#
 .SYNOPSIS
-    Bumps the version number for HueWindows application.
+    Bumps the version number for HueCompanion application.
 
 .DESCRIPTION
     Reads the current version from git tags (or defaults to 1.0.0),
@@ -58,8 +58,8 @@ $ErrorActionPreference = 'Stop'
 
 # File paths
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $RepoRoot 'src\HueWindows\HueWindows.csproj'
-$ManifestPath = Join-Path $RepoRoot 'src\HueWindows\Package.appxmanifest'
+$CsprojPath = Join-Path $RepoRoot 'src\HueCompanion\HueCompanion.csproj'
+$ManifestPath = Join-Path $RepoRoot 'src\HueCompanion\Package.appxmanifest'
 
 function Get-CurrentVersion {
     # Try to get version from latest git tag
@@ -151,7 +151,7 @@ function Update-ManifestVersion {
 }
 
 # Main execution
-Write-Host "`n=== HueWindows Version Bump ===" -ForegroundColor Cyan
+Write-Host "`n=== HueCompanion Version Bump ===" -ForegroundColor Cyan
 
 # Get current version
 $currentVersion = Get-CurrentVersion
@@ -224,11 +224,11 @@ git commit -m "chore: add version bump script for release automation"
 ## Task 2: Add Version Property to .csproj
 
 **Files:**
-- Modify: `src/HueWindows/HueWindows.csproj`
+- Modify: `src/HueCompanion/HueCompanion.csproj`
 
 **Step 1: Add Version element**
 
-Add `<Version>1.0.0</Version>` to the first PropertyGroup in `src/HueWindows/HueWindows.csproj`:
+Add `<Version>1.0.0</Version>` to the first PropertyGroup in `src/HueCompanion/HueCompanion.csproj`:
 
 ```xml
 <PropertyGroup>
@@ -242,7 +242,7 @@ Add `<Version>1.0.0</Version>` to the first PropertyGroup in `src/HueWindows/Hue
 **Step 2: Commit**
 
 ```bash
-git add src/HueWindows/HueWindows.csproj
+git add src/HueCompanion/HueCompanion.csproj
 git commit -m "chore: add explicit Version property to csproj"
 ```
 
@@ -284,8 +284,8 @@ This project uses [Semantic Versioning](https://semver.org/) (SemVer):
 ### Version Locations
 
 Version is maintained in two files:
-- `src/HueWindows/HueWindows.csproj` - `<Version>X.Y.Z</Version>`
-- `src/HueWindows/Package.appxmanifest` - `<Identity Version="X.Y.Z.0"/>`
+- `src/HueCompanion/HueCompanion.csproj` - `<Version>X.Y.Z</Version>`
+- `src/HueCompanion/Package.appxmanifest` - `<Identity Version="X.Y.Z.0"/>`
 
 ### Bumping Version
 

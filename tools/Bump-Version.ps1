@@ -49,8 +49,8 @@ $ErrorActionPreference = "Stop"
 
 # Project paths
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$CsprojPath = Join-Path $ProjectRoot "src\HueWindows\HueWindows.csproj"
-$ManifestPath = Join-Path $ProjectRoot "src\HueWindows\Package.appxmanifest"
+$CsprojPath = Join-Path $ProjectRoot "src\HueCompanion\HueCompanion.csproj"
+$ManifestPath = Join-Path $ProjectRoot "src\HueCompanion\Package.appxmanifest"
 
 function Get-CurrentVersion {
     <#
@@ -290,7 +290,7 @@ else {
     }
     else {
         Write-Host "Release workflow should now be running at:" -ForegroundColor Cyan
-        Write-Host "  https://github.com/ddrayne/hue-windows/actions" -ForegroundColor Yellow
+        Write-Host "  https://github.com/ddrayne/hue-companion/actions" -ForegroundColor Yellow
     }
 }
 Write-Host ""

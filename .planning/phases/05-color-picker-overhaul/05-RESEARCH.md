@@ -394,9 +394,9 @@ private void UpdateSidePanelPosition()
 
 ### Primary (HIGH confidence)
 - `.planning/research/HUE-COLORS.md` - Gamut algorithms, conversion formulas, gamut coordinates
-- `src/HueWindows.Core/Models/HueColor.cs` - Canonical color conversion implementation
-- `src/HueWindows/Views/SceneBuilderPage.xaml.cs` - Current color picker integration
-- `src/HueWindows/Views/Rendering/GradientTrackRenderer.cs` - Current gradient rendering
+- `src/HueCompanion.Core/Models/HueColor.cs` - Canonical color conversion implementation
+- `src/HueCompanion/Views/SceneBuilderPage.xaml.cs` - Current color picker integration
+- `src/HueCompanion/Views/Rendering/GradientTrackRenderer.cs` - Current gradient rendering
 
 ### Secondary (MEDIUM confidence)
 - [Win2D HueToRgbEffect](https://microsoft.github.io/Win2D/WinUI3/html/T_Microsoft_Graphics_Canvas_Effects_HueToRgbEffect.htm) - GPU HSV conversion

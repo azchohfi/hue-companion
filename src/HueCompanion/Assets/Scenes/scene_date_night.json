@@ -1,0 +1,67 @@
+{
+  "id": "date_night",
+  "name": "Date Night",
+  "description": "Soft romantic pink and purple rotation",
+  "category": "Ambient",
+  "previewColor": {
+    "x": 0.38,
+    "y": 0.22
+  },
+  "paletteColors": [
+    { "x": 0.42, "y": 0.25 },
+    { "x": 0.35, "y": 0.18 },
+    { "x": 0.38, "y": 0.22 },
+    { "x": 0.45, "y": 0.28 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "romantic_rotation",
+      "name": "Romantic Rotation",
+      "type": "keyframe",
+      "lightAssignment": "random",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.40,
+          "color": { "x": 0.42, "y": 0.25 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 6,
+          "brightness": 0.45,
+          "color": { "x": 0.35, "y": 0.18 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 12,
+          "brightness": 0.38,
+          "color": { "x": 0.38, "y": 0.22 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 18,
+          "brightness": 0.42,
+          "color": { "x": 0.45, "y": 0.28 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 24,
+          "brightness": 0.40,
+          "color": { "x": 0.42, "y": 0.25 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 24,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}

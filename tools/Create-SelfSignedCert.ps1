@@ -7,7 +7,7 @@
     The certificate is stored in the current user's certificate store.
 
 .PARAMETER Subject
-    Certificate subject (default: CN=HueWindows-Dev).
+    Certificate subject (default: CN=HueCompanion-Dev).
 
 .PARAMETER OutputPath
     Path to export the .pfx file (optional).
@@ -25,7 +25,7 @@
 #>
 
 param(
-    [string]$Subject = "CN=HueWindows-Dev",
+    [string]$Subject = "CN=HueCompanion-Dev",
     [string]$OutputPath,
     [string]$Password = "dev-password"
 )

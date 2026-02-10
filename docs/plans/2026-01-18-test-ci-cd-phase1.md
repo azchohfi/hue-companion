@@ -8,18 +8,18 @@
 
 **Tech Stack:** xUnit, Moq, FluentAssertions, Coverlet, GitHub Actions, Codecov
 
-**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-windows/issues/5)
+**Reference:** [GitHub Issue #5](https://github.com/ddrayne/hue-companion/issues/5)
 
 ---
 
 ## Task 1: Add FluentAssertions and Coverlet to Test Project
 
 **Files:**
-- Modify: `src/HueWindows.Tests/HueWindows.Tests.csproj`
+- Modify: `src/HueCompanion.Tests/HueCompanion.Tests.csproj`
 
 **Step 1: Update test project dependencies**
 
-Edit `src/HueWindows.Tests/HueWindows.Tests.csproj` to add FluentAssertions and Coverlet:
+Edit `src/HueCompanion.Tests/HueCompanion.Tests.csproj` to add FluentAssertions and Coverlet:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -45,20 +45,20 @@ Edit `src/HueWindows.Tests/HueWindows.Tests.csproj` to add FluentAssertions and 
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HueWindows.Core\HueWindows.Core.csproj" />
+    <ProjectReference Include="..\HueCompanion.Core\HueCompanion.Core.csproj" />
   </ItemGroup>
 </Project>
 ```
 
 **Step 2: Restore packages**
 
-Run: `dotnet restore src/HueWindows.Tests/HueWindows.Tests.csproj`
+Run: `dotnet restore src/HueCompanion.Tests/HueCompanion.Tests.csproj`
 Expected: Packages restored successfully
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Tests/HueWindows.Tests.csproj
+git add src/HueCompanion.Tests/HueCompanion.Tests.csproj
 git commit -m "chore: add FluentAssertions and Coverlet to test project"
 ```
 
@@ -67,18 +67,18 @@ git commit -m "chore: add FluentAssertions and Coverlet to test project"
 ## Task 2: Create HueColor Unit Tests
 
 **Files:**
-- Create: `src/HueWindows.Tests/Models/HueColorTests.cs`
-- Test: `src/HueWindows.Core/Models/HueColor.cs`
+- Create: `src/HueCompanion.Tests/Models/HueColorTests.cs`
+- Test: `src/HueCompanion.Core/Models/HueColor.cs`
 
 **Step 1: Create test file with first failing test**
 
-Create `src/HueWindows.Tests/Models/HueColorTests.cs`:
+Create `src/HueCompanion.Tests/Models/HueColorTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using HueWindows.Core.Models;
+using HueCompanion.Core.Models;
 
-namespace HueWindows.Tests.Models;
+namespace HueCompanion.Tests.Models;
 
 public class HueColorTests
 {
@@ -236,13 +236,13 @@ public class HueColorTests
 
 **Step 2: Run tests to verify they pass**
 
-Run: `dotnet test src/HueWindows.Tests --filter "FullyQualifiedName~HueColorTests" -v normal`
+Run: `dotnet test src/HueCompanion.Tests --filter "FullyQualifiedName~HueColorTests" -v normal`
 Expected: All tests pass (these test existing implementation)
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Tests/Models/HueColorTests.cs
+git add src/HueCompanion.Tests/Models/HueColorTests.cs
 git commit -m "test: add HueColor unit tests for color space conversions"
 ```
 
@@ -251,18 +251,18 @@ git commit -m "test: add HueColor unit tests for color space conversions"
 ## Task 3: Create Result<T> Unit Tests
 
 **Files:**
-- Create: `src/HueWindows.Tests/Models/ResultTests.cs`
-- Test: `src/HueWindows.Core/Models/Result.cs`
+- Create: `src/HueCompanion.Tests/Models/ResultTests.cs`
+- Test: `src/HueCompanion.Core/Models/Result.cs`
 
 **Step 1: Create test file**
 
-Create `src/HueWindows.Tests/Models/ResultTests.cs`:
+Create `src/HueCompanion.Tests/Models/ResultTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using HueWindows.Core.Models;
+using HueCompanion.Core.Models;
 
-namespace HueWindows.Tests.Models;
+namespace HueCompanion.Tests.Models;
 
 public class ResultTests
 {
@@ -400,13 +400,13 @@ public class ResultTests
 
 **Step 2: Run tests**
 
-Run: `dotnet test src/HueWindows.Tests --filter "FullyQualifiedName~ResultTests" -v normal`
+Run: `dotnet test src/HueCompanion.Tests --filter "FullyQualifiedName~ResultTests" -v normal`
 Expected: All tests pass
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Tests/Models/ResultTests.cs
+git add src/HueCompanion.Tests/Models/ResultTests.cs
 git commit -m "test: add Result<T> unit tests for success/failure handling"
 ```
 
@@ -415,19 +415,19 @@ git commit -m "test: add Result<T> unit tests for success/failure handling"
 ## Task 4: Create SettingsService Unit Tests
 
 **Files:**
-- Create: `src/HueWindows.Tests/Services/SettingsServiceTests.cs`
-- Test: `src/HueWindows.Core/Services/SettingsService.cs`
+- Create: `src/HueCompanion.Tests/Services/SettingsServiceTests.cs`
+- Test: `src/HueCompanion.Core/Services/SettingsService.cs`
 
 **Step 1: Create test file with tests**
 
-Create `src/HueWindows.Tests/Services/SettingsServiceTests.cs`:
+Create `src/HueCompanion.Tests/Services/SettingsServiceTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using HueWindows.Core.Models;
-using HueWindows.Core.Services;
+using HueCompanion.Core.Models;
+using HueCompanion.Core.Services;
 
-namespace HueWindows.Tests.Services;
+namespace HueCompanion.Tests.Services;
 
 public class SettingsServiceTests : IDisposable
 {
@@ -437,7 +437,7 @@ public class SettingsServiceTests : IDisposable
     public SettingsServiceTests()
     {
         // Use a unique temp directory for each test
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueWindowsTest_{Guid.NewGuid()}");
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueCompanionTest_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDirectory);
         _service = new SettingsServiceTestable(_testDirectory);
     }
@@ -604,13 +604,13 @@ public class SettingsServiceTests : IDisposable
 
 **Step 2: Run tests**
 
-Run: `dotnet test src/HueWindows.Tests --filter "FullyQualifiedName~SettingsServiceTests" -v normal`
+Run: `dotnet test src/HueCompanion.Tests --filter "FullyQualifiedName~SettingsServiceTests" -v normal`
 Expected: All tests pass
 
 **Step 3: Commit**
 
 ```bash
-git add src/HueWindows.Tests/Services/SettingsServiceTests.cs
+git add src/HueCompanion.Tests/Services/SettingsServiceTests.cs
 git commit -m "test: add SettingsService unit tests for persistence"
 ```
 
@@ -619,8 +619,8 @@ git commit -m "test: add SettingsService unit tests for persistence"
 ## Task 5: Create SceneStorageService Unit Tests
 
 **Files:**
-- Create: `src/HueWindows.Tests/Services/SceneStorageServiceTests.cs`
-- Test: `src/HueWindows.Core/Services/SceneStorageService.cs`
+- Create: `src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs`
+- Test: `src/HueCompanion.Core/Services/SceneStorageService.cs`
 
 **Step 1: Read SceneStorageService to understand the interface**
 
@@ -628,14 +628,14 @@ First, review the service implementation to understand what to test.
 
 **Step 2: Create test file**
 
-Create `src/HueWindows.Tests/Services/SceneStorageServiceTests.cs`:
+Create `src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using HueWindows.Core.Models;
-using HueWindows.Core.Services;
+using HueCompanion.Core.Models;
+using HueCompanion.Core.Services;
 
-namespace HueWindows.Tests.Services;
+namespace HueCompanion.Tests.Services;
 
 public class SceneStorageServiceTests : IDisposable
 {
@@ -644,7 +644,7 @@ public class SceneStorageServiceTests : IDisposable
 
     public SceneStorageServiceTests()
     {
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueWindowsScenesTest_{Guid.NewGuid()}");
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"HueCompanionScenesTest_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDirectory);
         _service = new SceneStorageServiceTestable(_testDirectory);
     }
@@ -826,13 +826,13 @@ public class SceneStorageServiceTests : IDisposable
 
 **Step 3: Run tests**
 
-Run: `dotnet test src/HueWindows.Tests --filter "FullyQualifiedName~SceneStorageServiceTests" -v normal`
+Run: `dotnet test src/HueCompanion.Tests --filter "FullyQualifiedName~SceneStorageServiceTests" -v normal`
 Expected: All tests pass
 
 **Step 4: Commit**
 
 ```bash
-git add src/HueWindows.Tests/Services/SceneStorageServiceTests.cs
+git add src/HueCompanion.Tests/Services/SceneStorageServiceTests.cs
 git commit -m "test: add SceneStorageService unit tests for JSON persistence"
 ```
 
@@ -842,12 +842,12 @@ git commit -m "test: add SceneStorageService unit tests for JSON persistence"
 
 **Step 1: Run all tests**
 
-Run: `dotnet test src/HueWindows.Tests -v normal`
+Run: `dotnet test src/HueCompanion.Tests -v normal`
 Expected: All tests pass
 
 **Step 2: Run tests with coverage**
 
-Run: `dotnet test src/HueWindows.Tests --collect:"XPlat Code Coverage" --results-directory ./TestResults`
+Run: `dotnet test src/HueCompanion.Tests --collect:"XPlat Code Coverage" --results-directory ./TestResults`
 Expected: Coverage report generated in `TestResults/` folder
 
 **Step 3: Commit test results configuration**
@@ -905,7 +905,7 @@ jobs:
 
     - name: Run unit tests with coverage
       run: |
-        dotnet test src/HueWindows.Tests `
+        dotnet test src/HueCompanion.Tests `
           --no-build `
           --configuration Release `
           --verbosity normal `
@@ -926,7 +926,7 @@ jobs:
       with:
         files: ./TestResults/**/coverage.cobertura.xml
         flags: unittests
-        name: codecov-hue-windows
+        name: codecov-hue-companion
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -974,14 +974,14 @@ jobs:
       run: dotnet restore
 
     - name: Build (x64)
-      run: dotnet build src/HueWindows/HueWindows.csproj --configuration Release -p:Platform=x64
+      run: dotnet build src/HueCompanion/HueCompanion.csproj --configuration Release -p:Platform=x64
 
     - name: Build (ARM64)
-      run: dotnet build src/HueWindows/HueWindows.csproj --configuration Release -p:Platform=ARM64
+      run: dotnet build src/HueCompanion/HueCompanion.csproj --configuration Release -p:Platform=ARM64
 
     - name: Run unit tests with coverage
       run: |
-        dotnet test src/HueWindows.Tests `
+        dotnet test src/HueCompanion.Tests `
           --configuration Release `
           --verbosity normal `
           --collect:"XPlat Code Coverage" `
@@ -1001,7 +1001,7 @@ jobs:
       with:
         files: ./TestResults/**/coverage.cobertura.xml
         flags: unittests
-        name: codecov-hue-windows
+        name: codecov-hue-companion
         fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -1024,7 +1024,7 @@ jobs:
 
     - name: Build MSIX (x64)
       run: |
-        dotnet publish src/HueWindows/HueWindows.csproj `
+        dotnet publish src/HueCompanion/HueCompanion.csproj `
           --configuration Release `
           -p:Platform=x64 `
           --output ./publish/x64
@@ -1032,7 +1032,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: hue-windows-x64
+        name: hue-companion-x64
         path: ./publish/x64/
         retention-days: 7
 ```
@@ -1056,9 +1056,9 @@ git commit -m "ci: add main branch CI workflow with multi-platform build"
 Add these badges at the top of `README.md` (after the title):
 
 ```markdown
-![Build Status](https://github.com/ddrayne/hue-windows/workflows/PR%20Validation/badge.svg)
-![Main CI](https://github.com/ddrayne/hue-windows/workflows/Main%20CI/badge.svg)
-[![codecov](https://codecov.io/gh/ddrayne/hue-windows/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-windows)
+![Build Status](https://github.com/ddrayne/hue-companion/workflows/PR%20Validation/badge.svg)
+![Main CI](https://github.com/ddrayne/hue-companion/workflows/Main%20CI/badge.svg)
+[![codecov](https://codecov.io/gh/ddrayne/hue-companion/branch/main/graph/badge.svg)](https://codecov.io/gh/ddrayne/hue-companion)
 ```
 
 **Step 2: Commit**

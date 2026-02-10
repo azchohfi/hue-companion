@@ -91,8 +91,8 @@ Add Store publishing step after GitHub Release creation:
     client-secret: ${{ secrets.STORE_CLIENT_SECRET }}
     product-id: ${{ secrets.STORE_PRODUCT_ID }}
     package-path: |
-      ./artifacts/HueWindows-*-x64.msix
-      ./artifacts/HueWindows-*-ARM64.msix
+      ./artifacts/HueCompanion-*-x64.msix
+      ./artifacts/HueCompanion-*-ARM64.msix
 ```
 
 **Note:** Uses repository variable `STORE_ENABLED` as a feature flag. This allows disabling Store deployment without removing secrets.
@@ -106,7 +106,7 @@ Currently the release workflow creates ZIP files. For Store submission, we need 
 ```yaml
 - name: Create MSIX package
   run: |
-    dotnet publish src/HueWindows/HueWindows.csproj `
+    dotnet publish src/HueCompanion/HueCompanion.csproj `
       --configuration Release `
       -p:Platform=${{ matrix.platform }} `
       -p:GenerateAppxPackageOnBuild=true `

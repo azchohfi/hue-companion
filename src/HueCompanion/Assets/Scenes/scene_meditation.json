@@ -1,0 +1,66 @@
+{
+  "id": "meditation",
+  "name": "Meditation",
+  "description": "Calm, peaceful transitions for mindfulness and relaxation",
+  "category": "Relaxation",
+  "previewColor": {
+    "x": 0.30,
+    "y": 0.28
+  },
+  "paletteColors": [
+    { "x": 0.30, "y": 0.28 },
+    { "x": 0.35, "y": 0.35 },
+    { "x": 0.28, "y": 0.25 }
+  ],
+  "defaultTargeting": "room",
+  "animations": [
+    {
+      "id": "breath_cycle",
+      "name": "Breath Cycle",
+      "type": "keyframe",
+      "lightAssignment": "all",
+      "keyframes": [
+        {
+          "timeSeconds": 0,
+          "brightness": 0.20,
+          "color": { "x": 0.30, "y": 0.28 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 4,
+          "brightness": 0.35,
+          "color": { "x": 0.35, "y": 0.35 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 8,
+          "brightness": 0.25,
+          "color": { "x": 0.32, "y": 0.30 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 12,
+          "brightness": 0.30,
+          "color": { "x": 0.28, "y": 0.25 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        },
+        {
+          "timeSeconds": 16,
+          "brightness": 0.20,
+          "color": { "x": 0.30, "y": 0.28 },
+          "isOn": true,
+          "transitionStyle": "easeInOut"
+        }
+      ],
+      "durationSeconds": 16,
+      "repeatMode": "loop",
+      "priority": 1
+    }
+  ],
+  "author": "HueCompanion",
+  "version": "1.0"
+}
