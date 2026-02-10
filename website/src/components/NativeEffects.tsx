@@ -7,6 +7,8 @@ const effects = [
     { name: "Fire", color: "from-orange-600 to-red-700", delay: 0 },
     { name: "Candle", color: "from-amber-500 to-orange-600", delay: 0.8 },
     { name: "Sparkle", color: "from-yellow-300 to-amber-500", delay: 0.3 },
+    { name: "Glisten", color: "from-slate-300 to-zinc-400", delay: 0.9 },
+    { name: "Opal", color: "from-rose-300 to-sky-300", delay: 0.1 },
     { name: "Prism", color: "from-violet-500 to-pink-500", delay: 0.5 },
     { name: "Underwater", color: "from-cyan-500 to-blue-700", delay: 0.2 },
     { name: "Cosmos", color: "from-indigo-600 to-purple-800", delay: 0.7 },
@@ -47,7 +49,7 @@ export function NativeEffects() {
                 </motion.p>
 
                 {/* Effects Grid */}
-                <div className="w-full max-w-2xl grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="w-full max-w-3xl grid grid-cols-2 md:grid-cols-5 gap-3">
                     {effects.map((effect, i) => (
                         <motion.div
                             key={effect.name}

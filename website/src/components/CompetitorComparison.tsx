@@ -11,6 +11,7 @@ const features = [
     { name: "Native Hue Effects", hueWindows: true, others: "limited" },
     { name: "Scene Builder", hueWindows: true, others: false },
     { name: "Custom Dashboard", hueWindows: true, others: false },
+    { name: "AI Integration (MCP)", hueWindows: true, others: false },
     { name: "RAM Usage", hueWindows: "~40MB", others: "400MB+" },
     { name: "Startup Time", hueWindows: "0.3s", others: "5s+" },
 ];

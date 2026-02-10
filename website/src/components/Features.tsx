@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Layers, Zap, Monitor, Palette, Flame, Grid3X3, Keyboard, MonitorDown } from "lucide-react";
+import { Layers, Zap, Monitor, Palette, Flame, Grid3X3, Keyboard, MonitorDown, Bot } from "lucide-react";
 
 const features = [
     {
@@ -43,6 +43,11 @@ const features = [
         icon: <Zap className="w-6 h-6" />,
         title: "Multi-Bridge",
         description: "Connect multiple Hue Bridges simultaneously. All your rooms and zones from every bridge in one app.",
+    },
+    {
+        icon: <Bot className="w-6 h-6" />,
+        title: "AI Integration",
+        description: "Connect to Claude, VS Code Copilot, and other AI assistants via MCP. Control your lights with natural language.",
     },
 ];
 

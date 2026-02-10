@@ -1,35 +1,32 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-
 const screenshots = [
-    "/screenshots/shot1.png",
-    "/screenshots/shot2.png",
-    "/screenshots/shot3.png",
-    "/screenshots/shot4.png",
+    { src: "/screenshots/dashboard-dark.png", alt: "Hue Companion dashboard with pinned rooms" },
+    { src: "/screenshots/home-light.png", alt: "Home page showing all rooms in light mode" },
+    { src: "/screenshots/room-lights-dark.png", alt: "Room detail with individual light controls" },
+    { src: "/screenshots/room-detail-light.png", alt: "Room detail in light mode" },
+    { src: "/screenshots/scene-builder-dark.png", alt: "Scene Builder with multi-track timeline" },
+    { src: "/screenshots/effects-dark.png", alt: "Native Hue effects grid" },
+    { src: "/screenshots/settings-dark.png", alt: "Settings with global hotkey configuration" },
+    { src: "/screenshots/scene-builder-light.png", alt: "Scene Builder in light mode" },
 ];
 
 export function Showcase() {
-    const [offset, setOffset] = useState(0);
-
-    // Auto-scroll logic could go here, or just use CSS animation
-
     return (
         <section className="py-24 bg-black overflow-hidden relative">
             <div className="container px-4 md:px-6 mb-12 relative z-10">
                 <h2 className="text-3xl md:text-5xl font-bold text-center mb-6">Designed for Windows 11.</h2>
                 <p className="text-zinc-400 text-center max-w-2xl mx-auto mb-12">
-                    Every pixel is crafted to look and feel native, while providing features the official app lacks.
+                    Every pixel is crafted to look and feel native. Dark and light themes included.
                 </p>
             </div>
 
             <div className="flex gap-8 animate-scroll whitespace-nowrap px-4 w-max">
                 {/* Double the array for infinite scroll effect */}
-                {[...screenshots, ...screenshots].map((src, i) => (
+                {[...screenshots, ...screenshots].map((shot, i) => (
                     <div key={i} className="inline-block w-[600px] rounded-xl overflow-hidden shadow-2xl border border-white/10 relative group">
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                        <img src={src} alt="App Screenshot" className="w-full h-auto object-cover" />
+                        <img src={shot.src} alt={shot.alt} className="w-full h-auto object-cover" />
                     </div>
                 ))}
             </div>

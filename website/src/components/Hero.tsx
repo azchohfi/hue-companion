@@ -89,7 +89,7 @@ export function Hero() {
                     transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
                     className="mt-20 w-full max-w-5xl rounded-xl overflow-hidden glass-panel p-2 transform-3d perspective-1000"
                 >
-                    <img src="/hero-image.png" alt="Hue Windows Interface" className="rounded-lg shadow-2xl w-full" />
+                    <img src="/screenshots/home-dark.png" alt="Hue Companion — Home page showing rooms with live light status" className="rounded-lg shadow-2xl w-full" />
                 </motion.div>
             </div>
         </section>

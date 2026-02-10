@@ -14,35 +14,19 @@ export function CreativeNative() {
 
             <div className="relative w-full max-w-4xl perspective-1000 px-4">
                 <motion.div
-                    initial={{ rotateX: 20, rotateY: -20, opacity: 0 }}
-                    whileInView={{ rotateX: 0, rotateY: 0, opacity: 1 }}
+                    initial={{ rotateX: 10, opacity: 0 }}
+                    whileInView={{ rotateX: 0, opacity: 1 }}
                     transition={{ duration: 1.2, type: "spring" }}
-                    className="relative aspect-video bg-zinc-900/80 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                    className="relative"
                 >
-                    {/* Fake Window Controls */}
-                    <div className="h-8 bg-zinc-900/50 border-b border-white/5 flex items-center justify-between px-3">
-                        <span className="text-xs text-zinc-500">Hue Companion</span>
-                        <div className="flex gap-2">
-                            <div className="w-3 h-3 rounded-full bg-zinc-700" />
-                            <div className="w-3 h-3 rounded-full bg-zinc-700" />
-                            <div className="w-3 h-3 rounded-full bg-zinc-700" />
-                        </div>
-                    </div>
-
-                    {/* Content Mockup */}
-                    <div className="p-6 grid grid-cols-2 gap-6 h-full">
-                        <div className="space-y-4">
-                            <div className="h-20 bg-primary/20 rounded-lg animate-pulse" />
-                            <div className="h-20 bg-white/5 rounded-lg" />
-                            <div className="h-20 bg-white/5 rounded-lg" />
-                        </div>
-                        <div className="bg-zinc-950/50 rounded-lg p-4 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent" />
-                        </div>
-                    </div>
+                    <img
+                        src="/screenshots/room-lights-dark.png"
+                        alt="Hue Companion room detail showing native WinUI 3 controls"
+                        className="rounded-xl border border-white/10 shadow-2xl w-full"
+                    />
 
                     {/* Reflection Glare */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none rounded-xl" />
                 </motion.div>
 
                 {/* Floating Elements */}
