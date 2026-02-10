@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using HueWindows.Core.Models;
+using HueCompanion.Core.Models;
 
 namespace HueCompanion.Mcp.Services;
 

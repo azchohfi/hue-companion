@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using HueWindows.Core.Services;
-using HueWindows.Core.Services.Interfaces;
+using HueCompanion.Core.Services;
+using HueCompanion.Core.Services.Interfaces;
 using HueCompanion.Mcp.Services;
 using ModelContextProtocol.Server;
 

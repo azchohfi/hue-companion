@@ -1,12 +1,12 @@
 using System.Text.Json;
-using HueWindows.Core.Models;
-using HueWindows.Core.Services.Interfaces;
+using HueCompanion.Core.Models;
+using HueCompanion.Core.Services.Interfaces;
 
 namespace HueCompanion.Mcp.Services;
 
 /// <summary>
 /// Settings service that reads bridge configuration from a shared JSON file.
-/// The WinUI app exports bridge config to %LOCALAPPDATA%/HueWindows/bridges.json.
+/// The WinUI app exports bridge config to %LOCALAPPDATA%/HueCompanion/bridges.json.
 /// Falls back to the main settings.json if bridges.json doesn't exist.
 /// </summary>
 public class FileSettingsService : ISettingsService
@@ -24,7 +24,7 @@ public class FileSettingsService : ISettingsService
     public FileSettingsService()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appFolder = Path.Combine(localAppData, "HueWindows");
+        var appFolder = Path.Combine(localAppData, "HueCompanion");
         _bridgesPath = Path.Combine(appFolder, "bridges.json");
         _settingsPath = Path.Combine(appFolder, "settings.json");
     }

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>HueWindows.Mcp</RootNamespace>
+    <RootNamespace>HueCompanion.Mcp</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -13,6 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HueWindows.Core\HueWindows.Core.csproj" />
+    <ProjectReference Include="..\HueCompanion.Core\HueCompanion.Core.csproj" />
   </ItemGroup>
 </Project>

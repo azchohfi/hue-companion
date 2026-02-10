@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
-using HueWindows.Core.Services.Interfaces;
+using HueCompanion.Core.Services.Interfaces;
 using ModelContextProtocol.Server;
 
 namespace HueCompanion.Mcp.Tools;
