@@ -14,7 +14,7 @@
   <mp:PhoneIdentity PhoneProductId="aab6fef7-845f-4634-86d8-3282c33cb550" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Hue Companion</DisplayName>
+    <DisplayName>Hue Companion for Windows</DisplayName>
     <PublisherDisplayName>Dan Drayne</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -32,7 +32,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Hue Companion"
+        DisplayName="Hue Companion for Windows"
         Description="Control your Philips Hue lights from Windows"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
