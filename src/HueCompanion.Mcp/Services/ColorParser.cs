@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using HueWindows.Core.Models;
 
-namespace HueWindows.Mcp.Services;
+namespace HueCompanion.Mcp.Services;
 
 /// <summary>
 /// Parses color strings (hex, RGB, named colors) into HueColor (CIE xy).

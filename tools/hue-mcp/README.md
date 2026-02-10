@@ -59,10 +59,10 @@ If you've already configured bridges in the HueWindows app, the server will also
 
 ```bash
 # Framework-dependent (requires .NET 8 runtime)
-dotnet build src/HueWindows.Mcp -c Release
+dotnet build src/HueCompanion.Mcp -c Release
 
 # Self-contained single file (no runtime needed)
-dotnet publish src/HueWindows.Mcp -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/mcp
+dotnet publish src/HueCompanion.Mcp -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/mcp
 ```
 
 ### Claude Desktop Configuration
@@ -73,7 +73,7 @@ Add to `%APPDATA%/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "hue": {
-      "command": "C:/path/to/HueWindows.Mcp.exe",
+      "command": "C:/path/to/HueCompanion.Mcp.exe",
       "args": []
     }
   }
@@ -87,7 +87,7 @@ Or if using `dotnet run`:
   "mcpServers": {
     "hue": {
       "command": "dotnet",
-      "args": ["run", "--project", "C:/path/to/src/HueWindows.Mcp"]
+      "args": ["run", "--project", "C:/path/to/src/HueCompanion.Mcp"]
     }
   }
 }
@@ -102,7 +102,7 @@ Add to `.vscode/mcp.json` in your workspace:
   "servers": {
     "hue": {
       "type": "stdio",
-      "command": "C:/path/to/HueWindows.Mcp.exe"
+      "command": "C:/path/to/HueCompanion.Mcp.exe"
     }
   }
 }

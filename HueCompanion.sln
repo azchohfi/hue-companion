@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HueCompanion.Core", "src\Hu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HueCompanion.Tests", "src\HueCompanion.Tests\HueCompanion.Tests.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HueWindows.Mcp", "src\HueWindows.Mcp\HueWindows.Mcp.csproj", "{D4E5F6A7-B8C9-0123-DEFA-234567890123}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HueCompanion.Mcp", "src\HueCompanion.Mcp\HueCompanion.Mcp.csproj", "{D4E5F6A7-B8C9-0123-DEFA-234567890123}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

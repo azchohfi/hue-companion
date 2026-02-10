@@ -3,7 +3,7 @@ using System.Text.Json;
 using HueWindows.Core.Services.Interfaces;
 using ModelContextProtocol.Server;
 
-namespace HueWindows.Mcp.Tools;
+namespace HueCompanion.Mcp.Tools;
 
 [McpServerToolType]
 public class BridgeTools

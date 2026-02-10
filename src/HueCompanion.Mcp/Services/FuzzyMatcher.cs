@@ -1,6 +1,6 @@
 using HueWindows.Core.Models;
 
-namespace HueWindows.Mcp.Services;
+namespace HueCompanion.Mcp.Services;
 
 /// <summary>
 /// Fuzzy name matching for lights and rooms.

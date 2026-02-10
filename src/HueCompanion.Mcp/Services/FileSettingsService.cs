@@ -2,7 +2,7 @@ using System.Text.Json;
 using HueWindows.Core.Models;
 using HueWindows.Core.Services.Interfaces;
 
-namespace HueWindows.Mcp.Services;
+namespace HueCompanion.Mcp.Services;
 
 /// <summary>
 /// Settings service that reads bridge configuration from a shared JSON file.

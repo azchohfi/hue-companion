@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using HueWindows.Core.Services;
 using HueWindows.Core.Services.Interfaces;
-using HueWindows.Mcp.Services;
+using HueCompanion.Mcp.Services;
 using ModelContextProtocol.Server;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -26,7 +26,7 @@ builder.Services
     {
         options.ServerInfo = new()
         {
-            Name = "HueWindows",
+            Name = "Hue Companion",
             Version = "1.0.0"
         };
     })
