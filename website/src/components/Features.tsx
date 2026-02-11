@@ -1,14 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Layers, Zap, Monitor, Palette, Flame, Grid3X3, Keyboard, MonitorDown, Bot } from "lucide-react";
+import { Layers, Zap, Palette, Flame, Grid3X3, Keyboard, MonitorDown, Bot } from "lucide-react";
 
 const features = [
-    {
-        icon: <Monitor className="w-6 h-6" />,
-        title: "Native Performance",
-        description: "Built with WinUI 3 for fast startup and low memory usage.",
-    },
     {
         icon: <Layers className="w-6 h-6" />,
         title: "Rooms, Zones & Lights",
@@ -54,7 +49,7 @@ const features = [
 export function Features() {
     return (
         <section className="py-24 bg-zinc-950 relative overflow-hidden">
-            <div className="container px-4 md:px-6 relative z-10">
+            <div className="container mx-auto px-4 md:px-6 relative z-10">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-5xl font-bold mb-4">Features</h2>
                     <p className="text-zinc-400 max-w-2xl mx-auto">

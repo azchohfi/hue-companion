@@ -52,8 +52,8 @@ export function McpShowcase() {
                     >
                         <div className="absolute -inset-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur-2xl opacity-20" />
                         <img
-                            src="/screenshots/settings-mcp.png"
-                            alt="Hue Companion MCP Server settings"
+                            src="/screenshots/claude-mcp.png"
+                            alt="Claude AI controlling Hue lights via MCP"
                             className="relative rounded-xl border border-white/10 shadow-2xl w-full"
                         />
                     </motion.div>
