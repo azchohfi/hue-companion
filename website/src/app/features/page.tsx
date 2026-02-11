@@ -63,7 +63,7 @@ export default function FeaturesPage() {
             <DynamicBackground />
 
             <div className="pt-32 pb-16 text-center border-b border-white/5 relative z-10 glass-panel">
-                <div className="container px-4">
+                <div className="container mx-auto px-4">
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
                         Features
                     </h1>

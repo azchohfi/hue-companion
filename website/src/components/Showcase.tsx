@@ -14,7 +14,7 @@ const screenshots = [
 export function Showcase() {
     return (
         <section className="py-24 bg-black overflow-hidden relative">
-            <div className="container px-4 md:px-6 mb-12 relative z-10">
+            <div className="container mx-auto px-4 md:px-6 mb-12 relative z-10">
                 <h2 className="text-3xl md:text-5xl font-bold text-center mb-6">Designed for Windows 11.</h2>
                 <p className="text-zinc-400 text-center max-w-2xl mx-auto mb-12">
                     Every pixel is crafted to look and feel native. Dark and light themes included.

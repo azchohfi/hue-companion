@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 export function CreativeNative() {
     return (
         <section className="py-32 relative overflow-hidden flex flex-col items-center">
-            <div className="container px-4 md:px-6 relative z-10 text-center mb-16">
+            <div className="container mx-auto px-4 md:px-6 relative z-10 text-center mb-16">
                 <h2 className="text-4xl md:text-6xl font-bold mb-4">Native to Windows.</h2>
                 <p className="text-zinc-400 max-w-2xl mx-auto">
                     Built with WinUI 3 — the same framework as Windows 11 system apps.

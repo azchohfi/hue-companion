@@ -15,7 +15,7 @@ interface DeepDiveProps {
 export function FeatureDeepDive({ title, description, imageSrc, imageAlt, align = "left", index }: DeepDiveProps) {
     return (
         <section className="py-24 overflow-hidden">
-            <div className="container px-4 md:px-6">
+            <div className="container mx-auto px-4 md:px-6">
                 <div className={cn(
                     "flex flex-col gap-12 items-center",
                     align === "left" ? "md:flex-row" : "md:flex-row-reverse"

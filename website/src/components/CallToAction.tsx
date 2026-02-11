@@ -8,7 +8,7 @@ export function CallToAction() {
         <section className="py-32 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />
 
-            <div className="container px-4 md:px-6 relative z-10 text-center">
+            <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
                 <motion.h2
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

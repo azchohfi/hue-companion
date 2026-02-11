@@ -6,7 +6,7 @@ import { Sliders } from "lucide-react";
 export function SceneBuilderHighlight() {
     return (
         <section className="py-24 bg-zinc-950 relative overflow-hidden">
-            <div className="container px-4 md:px-6 relative z-10">
+            <div className="container mx-auto px-4 md:px-6 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
 
                     <motion.div

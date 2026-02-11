@@ -19,7 +19,7 @@ const effects = [
 export function NativeEffects() {
     return (
         <section className="py-32 relative overflow-hidden">
-            <div className="container px-4 md:px-6 relative z-10 flex flex-col items-center text-center">
+            <div className="container mx-auto px-4 md:px-6 relative z-10 flex flex-col items-center text-center">
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

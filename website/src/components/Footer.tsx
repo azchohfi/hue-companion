@@ -1,7 +1,7 @@
 export function Footer() {
     return (
         <footer className="border-t border-white/10 bg-zinc-950 py-12">
-            <div className="container px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
                     <span className="font-bold text-xl tracking-tight">Hue Companion</span>
